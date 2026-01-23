@@ -1,0 +1,43 @@
+# ========================================
+# WildCore 플러그인 기본 설정
+# ========================================
+
+prefix: "&8[&6WildCore&8] &f"
+
+settings:
+  # 주식 가격 업데이트 간격 (초 단위, 기본 30분)
+  stock_update_interval: 1800
+  
+  # 바닐라 인챈트 테이블 사용 금지 여부
+  block_vanilla_enchant_table: true
+  
+  # 디버그 모드 (개발 중 로그 출력)
+  debug: false
+
+# 메시지 설정 (messages.yml로 분리 가능)
+messages:
+  # 공통
+  no_permission: "&c권한이 없습니다."
+  player_only: "&c이 명령어는 플레이어만 사용할 수 있습니다."
+  config_reloaded: "&a설정이 리로드되었습니다."
+  
+  # 경제
+  insufficient_funds: "&c돈이 부족합니다. &7(필요: %amount%원)"
+  insufficient_items: "&c재료 아이템이 부족합니다. &7(%item% x%amount%)"
+  
+  # 인챈트
+  enchant_success: "&a강화에 성공했습니다! &7(%enchant%)"
+  enchant_fail: "&c강화에 실패하여 재료가 소멸되었습니다."
+  enchant_destroy: "&4강화 대실패! 아이템이 파괴되었습니다."
+  enchant_invalid_item: "&c이 아이템은 강화할 수 없습니다."
+  
+  # 주식
+  stock_buy_success: "&a%stock% 주식을 %amount%주 매수했습니다. &7(총액: %total%원)"
+  stock_sell_success: "&a%stock% 주식을 %amount%주 매도했습니다. &7(수익: %total%원)"
+  stock_insufficient: "&c보유 주식이 부족합니다."
+  stock_price_update: "&e주식 시장이 갱신되었습니다!"
+  
+  # 유틸리티
+  save_ticket_used: "&a인벤토리 세이브권이 사용되었습니다! 아이템이 보존됩니다."
+  warp_ticket_used: "&a워프권이 사용되었습니다! 스폰으로 이동합니다."
+  item_given: "&a%player%님에게 %item%을(를) %amount%개 지급했습니다."

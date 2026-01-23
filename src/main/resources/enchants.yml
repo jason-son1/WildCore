@@ -1,0 +1,178 @@
+# ========================================
+# WildCore 인챈트 시스템 설정
+# ========================================
+
+# GUI 설정
+gui:
+  title: "&8[ &5강화소 &8]"
+  size: 27
+
+# 인챈트 티어 정의
+# success + fail + destroy = 100 이어야 합니다
+tiers:
+  # 날카로움 I
+  sharpness_1:
+    display_name: "&b[ 날카로움 I 부여 ]"
+    material: "ENCHANTED_BOOK"
+    slot: 10
+    target_whitelist:
+      - "DIAMOND_SWORD"
+      - "IRON_SWORD"
+      - "NETHERITE_SWORD"
+      - "GOLDEN_SWORD"
+      - "STONE_SWORD"
+    result:
+      enchantment: "sharpness"
+      level: 1
+    cost:
+      money: 1000.0
+      items:
+        - "DIAMOND:2"
+        - "LAPIS_LAZULI:10"
+    probability:
+      success: 80.0
+      fail: 18.0
+      destroy: 2.0
+    lore:
+      - ""
+      - "&7적용 대상: &f검"
+      - "&7성공 확률: &a80%"
+      - "&7실패 확률: &e18%"
+      - "&7파괴 확률: &c2%"
+      - ""
+      - "&7비용: &61,000원"
+      - "&7재료: &b다이아몬드 x2, 청금석 x10"
+
+  # 날카로움 III
+  sharpness_3:
+    display_name: "&9[ 날카로움 III 부여 ]"
+    material: "ENCHANTED_BOOK"
+    slot: 11
+    target_whitelist:
+      - "DIAMOND_SWORD"
+      - "IRON_SWORD"
+      - "NETHERITE_SWORD"
+    result:
+      enchantment: "sharpness"
+      level: 3
+    cost:
+      money: 5000.0
+      items:
+        - "DIAMOND:5"
+        - "LAPIS_LAZULI:32"
+        - "EMERALD:2"
+    probability:
+      success: 50.0
+      fail: 35.0
+      destroy: 15.0
+    lore:
+      - ""
+      - "&7적용 대상: &f검 (철/다이아/네더라이트)"
+      - "&7성공 확률: &a50%"
+      - "&7실패 확률: &e35%"
+      - "&7파괴 확률: &c15%"
+      - ""
+      - "&7비용: &65,000원"
+      - "&7재료: &b다이아 x5, 청금석 x32, 에메랄드 x2"
+
+  # 보호 IV (도박)
+  protection_4:
+    display_name: "&6[ 보호 IV 부여 ] &c(도박)"
+    material: "ENCHANTED_BOOK"
+    slot: 12
+    target_whitelist:
+      - "DIAMOND_CHESTPLATE"
+      - "NETHERITE_CHESTPLATE"
+      - "DIAMOND_HELMET"
+      - "NETHERITE_HELMET"
+      - "DIAMOND_LEGGINGS"
+      - "NETHERITE_LEGGINGS"
+      - "DIAMOND_BOOTS"
+      - "NETHERITE_BOOTS"
+    result:
+      enchantment: "protection"
+      level: 4
+    cost:
+      money: 50000.0
+      items:
+        - "NETHER_STAR:1"
+        - "DIAMOND:10"
+    probability:
+      success: 15.0
+      fail: 35.0
+      destroy: 50.0
+    lore:
+      - ""
+      - "&7적용 대상: &f갑옷 (다이아/네더라이트)"
+      - "&7성공 확률: &a15%"
+      - "&7실패 확률: &e35%"
+      - "&7파괴 확률: &c50%"
+      - "&c⚠ 고위험 고수익!"
+      - ""
+      - "&7비용: &650,000원"
+      - "&7재료: &b네더의 별 x1, 다이아 x10"
+
+  # 효율 V
+  efficiency_5:
+    display_name: "&a[ 효율 V 부여 ]"
+    material: "ENCHANTED_BOOK"
+    slot: 14
+    target_whitelist:
+      - "DIAMOND_PICKAXE"
+      - "NETHERITE_PICKAXE"
+      - "DIAMOND_AXE"
+      - "NETHERITE_AXE"
+      - "DIAMOND_SHOVEL"
+      - "NETHERITE_SHOVEL"
+    result:
+      enchantment: "efficiency"
+      level: 5
+    cost:
+      money: 15000.0
+      items:
+        - "DIAMOND:8"
+        - "REDSTONE:64"
+    probability:
+      success: 40.0
+      fail: 40.0
+      destroy: 20.0
+    lore:
+      - ""
+      - "&7적용 대상: &f도구 (다이아/네더라이트)"
+      - "&7성공 확률: &a40%"
+      - "&7실패 확률: &e40%"
+      - "&7파괴 확률: &c20%"
+      - ""
+      - "&7비용: &615,000원"
+      - "&7재료: &b다이아 x8, 레드스톤 x64"
+
+  # 행운 III
+  fortune_3:
+    display_name: "&e[ 행운 III 부여 ]"
+    material: "ENCHANTED_BOOK"
+    slot: 16
+    target_whitelist:
+      - "DIAMOND_PICKAXE"
+      - "NETHERITE_PICKAXE"
+    result:
+      enchantment: "fortune"
+      level: 3
+    cost:
+      money: 30000.0
+      items:
+        - "EMERALD:16"
+        - "GOLD_INGOT:32"
+        - "RABBIT_FOOT:1"
+    probability:
+      success: 30.0
+      fail: 45.0
+      destroy: 25.0
+    lore:
+      - ""
+      - "&7적용 대상: &f곡괭이 (다이아/네더라이트)"
+      - "&7성공 확률: &a30%"
+      - "&7실패 확률: &e45%"
+      - "&7파괴 확률: &c25%"
+      - ""
+      - "&7비용: &630,000원"
+      - "&7재료: &b에메랄드 x16, 금괴 x32, 토끼발 x1"

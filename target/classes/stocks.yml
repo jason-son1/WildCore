@@ -1,0 +1,84 @@
+# ========================================
+# WildCore 주식 시스템 설정
+# ========================================
+
+# GUI 설정
+gui:
+  title: "&8[ &a주식 시장 &8]"
+  size: 27
+
+# 주식 종목 정의
+# 각 종목은 고유한 ID를 가지며, 가격은 자동으로 변동됩니다.
+stocks:
+  # 좀비 고기 선물
+  rotten_flesh_futures:
+    display_name: "&2좀비 고기 선물"
+    material: "ROTTEN_FLESH"
+    slot: 10
+    base_price: 500.0
+    min_price: 100.0
+    max_price: 2000.0
+    volatility: 0.15
+    lore:
+      - ""
+      - "&7현재 가격: &6%price%원"
+      - "&7변동률: %change%"
+      - ""
+      - "&e좌클릭: &f매수"
+      - "&e우클릭: &f매도"
+      - "&eShift+클릭: &f10주 단위"
+  
+  # 다이아몬드 광산주
+  diamond_mine:
+    display_name: "&b다이아몬드 광산주"
+    material: "DIAMOND_ORE"
+    slot: 12
+    base_price: 5000.0
+    min_price: 1000.0
+    max_price: 50000.0
+    volatility: 0.20
+    lore:
+      - ""
+      - "&7현재 가격: &6%price%원"
+      - "&7변동률: %change%"
+      - ""
+      - "&e좌클릭: &f매수"
+      - "&e우클릭: &f매도"
+      - "&eShift+클릭: &f10주 단위"
+  
+  # 철광 주식회사
+  iron_mining_corp:
+    display_name: "&7철광 주식회사"
+    material: "IRON_ORE"
+    slot: 14
+    base_price: 1500.0
+    min_price: 300.0
+    max_price: 8000.0
+    volatility: 0.12
+    lore:
+      - ""
+      - "&7현재 가격: &6%price%원"
+      - "&7변동률: %change%"
+      - ""
+      - "&e좌클릭: &f매수"
+      - "&e우클릭: &f매도"
+      - "&eShift+클릭: &f10주 단위"
+  
+  # 네더라이트 기업
+  netherite_enterprise:
+    display_name: "&5네더라이트 엔터프라이즈"
+    material: "NETHERITE_INGOT"
+    slot: 16
+    base_price: 25000.0
+    min_price: 5000.0
+    max_price: 200000.0
+    volatility: 0.30
+    lore:
+      - ""
+      - "&7현재 가격: &6%price%원"
+      - "&7변동률: %change%"
+      - "&c⚠ 고위험 고수익"
+      - ""
+      - "&e좌클릭: &f매수"
+      - "&e우클릭: &f매도"
+      - "&eShift+클릭: &f10주 단위"

@@ -1,0 +1,37 @@
+name: WildCore
+version: '${project.version}'
+main: com.myserver.wildcore.WildCore
+api-version: '1.21'
+prefix: WildCore
+description: 마인크래프트 야생 서버용 핵심 플러그인 - 주식, 인챈트, 유틸리티
+
+authors:
+  - Server Team
+
+depend:
+  - Vault
+
+softdepend:
+  - PlaceholderAPI
+  - Essentials
+
+commands:
+  wildcore:
+    description: WildCore 플러그인 메인 명령어
+    usage: /<command> <reload|stock|enchant|give>
+    aliases: [wc]
+    permission: wildcore.admin
+
+permissions:
+  wildcore.admin:
+    description: 관리자 권한
+    default: op
+  wildcore.use:
+    description: 플러그인 기본 사용 권한
+    default: true
+  wildcore.stock:
+    description: 주식 시스템 사용 권한
+    default: true
+  wildcore.enchant:
+    description: 인챈트 시스템 사용 권한
+    default: true

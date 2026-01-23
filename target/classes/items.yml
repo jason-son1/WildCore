@@ -1,0 +1,96 @@
+# ========================================
+# WildCore 커스텀 아이템 정의
+# ========================================
+
+# 특수 아이템 정의
+# /wildcore give <player> <item_id> [amount] 로 지급 가능
+items:
+  # 인벤토리 세이브권
+  inventory_save_ticket:
+    material: "PAPER"
+    display_name: "&6[ 인벤토리 세이브권 ]"
+    custom_model_data: 1001
+    glow: true
+    lore:
+      - ""
+      - "&7인벤토리에 소지하고 죽으면"
+      - "&7아이템을 잃지 않습니다."
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Special Item"
+  
+  # 스폰 워프권 (EssentialsX /spawn 명령어 실행)
+  spawn_warp_ticket:
+    material: "NETHER_STAR"
+    display_name: "&b[ 스폰 워프권 ]"
+    custom_model_data: 1002
+    glow: true
+    lore:
+      - ""
+      - "&7우클릭 시 스폰으로 이동합니다."
+      - "&7(EssentialsX /spawn 명령어 사용)"
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Special Item"
+  
+  # 홈 워프권 (EssentialsX /home 명령어 실행)
+  home_warp_ticket:
+    material: "RED_BED"
+    display_name: "&e[ 홈 워프권 ]"
+    custom_model_data: 1005
+    glow: true
+    lore:
+      - ""
+      - "&7우클릭 시 설정된 &f홈&7으로 이동합니다."
+      - "&7(EssentialsX /home 명령어 사용)"
+      - "&7홈이 없으면 사용할 수 없습니다."
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Special Item"
+  
+  # 랜덤 워프권
+  random_warp_ticket:
+    material: "ENDER_PEARL"
+    display_name: "&d[ 랜덤 워프권 ]"
+    custom_model_data: 1003
+    glow: false
+    lore:
+      - ""
+      - "&7우클릭 시 랜덤한 위치로 이동합니다."
+      - "&7(야생 월드 내 안전한 곳으로 이동)"
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Special Item"
+  
+  # 강화석 (인챈트 재료)
+  enchant_stone:
+    material: "AMETHYST_SHARD"
+    display_name: "&5[ 강화석 ]"
+    custom_model_data: 1010
+    glow: true
+    lore:
+      - ""
+      - "&7강화소에서 사용할 수 있는"
+      - "&7특별한 광물입니다."
+      - ""
+      - "&8WildCore Special Item"
+  
+  # 경험치 보존권
+  exp_save_ticket:
+    material: "EXPERIENCE_BOTTLE"
+    display_name: "&a[ 경험치 보존권 ]"
+    custom_model_data: 1004
+    glow: true
+    lore:
+      - ""
+      - "&7인벤토리에 소지하고 죽으면"
+      - "&7경험치를 잃지 않습니다."
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Special Item"
+
