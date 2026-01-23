@@ -4,6 +4,7 @@ import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.EnchantConfig;
 import com.myserver.wildcore.config.StockConfig;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -60,6 +61,28 @@ public class AdminGuiListener implements Listener {
         if (event.getInventory().getHolder() instanceof EnchantEditGUI editGUI) {
             event.setCancelled(true);
             handleEnchantEditClick(player, event, editGUI);
+            return;
+        }
+
+        // 인챈트 타입 선택 GUI (1단계)
+        if (event.getInventory().getHolder() instanceof EnchantTypeSelectorGUI selectorGUI) {
+            event.setCancelled(true);
+            handleEnchantSelectorClick(player, event, selectorGUI);
+            return;
+        }
+
+        // 인챈트 빌더 GUI (2단계)
+        if (event.getInventory().getHolder() instanceof EnchantBuilderGUI builderGUI) {
+            event.setCancelled(true);
+            handleEnchantBuilderClick(player, event, builderGUI);
+            return;
+        }
+
+        // 인챈트 타겟 GUI (3단계)
+        if (event.getInventory().getHolder() instanceof EnchantTargetGUI targetGUI) {
+            event.setCancelled(true);
+            handleEnchantTargetClick(player, event, targetGUI);
+            return;
         }
     }
 
@@ -203,11 +226,9 @@ public class AdminGuiListener implements Listener {
             return;
         }
 
-        // 새 인챈트 추가
+        // 새 인챈트 추가 - 위저드 GUI로 이동
         if (slot == 49) {
-            player.closeInventory();
-            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e새 인챈트 ID를 채팅으로 입력하세요. (취소: 'cancel')");
-            pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.NEW_ENCHANT_ID, null));
+            new EnchantTypeSelectorGUI(plugin, player).open();
             return;
         }
 
@@ -410,6 +431,43 @@ public class AdminGuiListener implements Listener {
                     player.sendMessage(plugin.getConfigManager().getPrefix() + "§c인챈트 생성에 실패했습니다.");
                 }
             }
+            case ENCHANT_BUILDER_LEVEL -> {
+                EnchantBuilderGUI builderGui = pendingBuilders.remove(player.getUniqueId());
+                if (builderGui != null) {
+                    try {
+                        int level = Integer.parseInt(message.replace(",", ""));
+                        builderGui.setLevel(level);
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§a레벨이 설정되었습니다: " + level);
+                        builderGui.open();
+                    } catch (NumberFormatException e) {
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§c올바른 숫자를 입력하세요.");
+                        builderGui.open();
+                    }
+                }
+            }
+            case ENCHANT_BUILDER_COST -> {
+                EnchantBuilderGUI builderGui = pendingBuilders.remove(player.getUniqueId());
+                if (builderGui != null) {
+                    try {
+                        double cost = Double.parseDouble(message.replace(",", ""));
+                        builderGui.setCostMoney(cost);
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§a비용이 설정되었습니다: "
+                                + String.format("%,.0f", cost));
+                        builderGui.open();
+                    } catch (NumberFormatException e) {
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§c올바른 숫자를 입력하세요.");
+                        builderGui.open();
+                    }
+                }
+            }
+            case ENCHANT_BUILDER_ITEMS -> {
+                EnchantBuilderGUI builderGui = pendingBuilders.remove(player.getUniqueId());
+                if (builderGui != null) {
+                    builderGui.setCostItems(message);
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§a재료 아이템이 설정되었습니다.");
+                    builderGui.open();
+                }
+            }
         }
     }
 
@@ -423,9 +481,202 @@ public class AdminGuiListener implements Listener {
         ENCHANT_COST,
         ENCHANT_ITEMS,
         NEW_STOCK_ID,
-        NEW_ENCHANT_ID
+        NEW_ENCHANT_ID,
+        ENCHANT_BUILDER_LEVEL,
+        ENCHANT_BUILDER_COST,
+        ENCHANT_BUILDER_ITEMS
     }
 
+    // 빌더 GUI 참조 저장
+    private final Map<UUID, EnchantBuilderGUI> pendingBuilders = new HashMap<>();
+
     public record ChatInputRequest(InputType type, String targetId) {
+    }
+
+    // === 인챈트 위저드 GUI 핸들러 ===
+
+    /**
+     * 인챈트 타입 선택 GUI 클릭 처리 (1단계)
+     */
+    private void handleEnchantSelectorClick(Player player, InventoryClickEvent event, EnchantTypeSelectorGUI gui) {
+        int slot = event.getRawSlot();
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.BLACK_STAINED_GLASS_PANE)
+            return;
+
+        // 필터 버튼 (0-8)
+        switch (slot) {
+            case 0 -> gui.setFilter("ALL");
+            case 1 -> gui.setFilter("WEAPON");
+            case 2 -> gui.setFilter("ARMOR");
+            case 3 -> gui.setFilter("TOOL");
+            case 5 -> gui.setFilter("BOW");
+            case 6 -> gui.setFilter("FISHING");
+            case 7 -> gui.setFilter("TRIDENT");
+            case 8 -> gui.setFilter("OTHER");
+        }
+
+        // 이전 페이지
+        if (slot == 45) {
+            gui.previousPage();
+            return;
+        }
+
+        // 다음 페이지
+        if (slot == 53) {
+            gui.nextPage();
+            return;
+        }
+
+        // 뒤로 가기
+        if (slot == 48) {
+            new EnchantAdminGUI(plugin, player).open();
+            return;
+        }
+
+        // 컨텐츠 영역 클릭 - 인챈트 선택
+        if (gui.isContentSlot(slot)) {
+            Enchantment enchant = gui.getEnchantmentAtSlot(slot);
+            if (enchant != null) {
+                new EnchantBuilderGUI(plugin, player, enchant).open();
+            }
+        }
+    }
+
+    /**
+     * 인챈트 빌더 GUI 클릭 처리 (2단계)
+     */
+    private void handleEnchantBuilderClick(Player player, InventoryClickEvent event, EnchantBuilderGUI gui) {
+        int slot = event.getRawSlot();
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
+
+        // 레벨 조정
+        switch (slot) {
+            case 10 -> gui.adjustLevel(-100);
+            case 11 -> gui.adjustLevel(-10);
+            case 12 -> gui.adjustLevel(-1);
+            case 13 -> {
+                // 레벨 직접 입력
+                player.closeInventory();
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§e레벨을 입력하세요. (취소: 'cancel')");
+                pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.ENCHANT_BUILDER_LEVEL, null));
+                pendingBuilders.put(player.getUniqueId(), gui);
+            }
+            case 14 -> gui.adjustLevel(1);
+            case 15 -> gui.adjustLevel(10);
+            case 16 -> gui.adjustLevel(100);
+        }
+
+        // 옵션 토글
+        if (slot == 20) {
+            gui.toggleUnsafeMode();
+            return;
+        }
+        if (slot == 22) {
+            gui.toggleIgnoreConflicts();
+            return;
+        }
+
+        // 적용 대상 설정 (3단계로 이동)
+        if (slot == 24) {
+            new EnchantTargetGUI(plugin, player, gui).open();
+            return;
+        }
+
+        // 확률 조정
+        switch (slot) {
+            case 29 -> gui.adjustSuccessRate(5);
+            case 30 -> gui.adjustSuccessRate(-5);
+            case 32 -> gui.adjustFailRate(5);
+            case 33 -> gui.adjustFailRate(-5);
+        }
+
+        // 비용 설정
+        if (slot == 38) {
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e비용(금액)을 입력하세요.");
+            pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.ENCHANT_BUILDER_COST, null));
+            pendingBuilders.put(player.getUniqueId(), gui);
+            return;
+        }
+        if (slot == 40) {
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e재료 아이템을 입력하세요. (형식: DIAMOND:5,EMERALD:3)");
+            pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.ENCHANT_BUILDER_ITEMS, null));
+            pendingBuilders.put(player.getUniqueId(), gui);
+            return;
+        }
+
+        // 뒤로 가기
+        if (slot == 45) {
+            new EnchantTypeSelectorGUI(plugin, player).open();
+            return;
+        }
+
+        // 생성 및 저장
+        if (slot == 49) {
+            if (gui.saveEnchant()) {
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§a인챈트가 생성되었습니다!");
+                new EnchantAdminGUI(plugin, player).open();
+            } else {
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§c인챈트 생성에 실패했습니다.");
+            }
+            return;
+        }
+
+        // 취소
+        if (slot == 53) {
+            player.closeInventory();
+        }
+    }
+
+    /**
+     * 인챈트 타겟 GUI 클릭 처리 (3단계)
+     */
+    private void handleEnchantTargetClick(Player player, InventoryClickEvent event, EnchantTargetGUI gui) {
+        int slot = event.getRawSlot();
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
+
+        // 그룹 토글 (10-16)
+        String group = gui.getGroupAtSlot(slot);
+        if (group != null) {
+            gui.toggleGroup(group);
+            return;
+        }
+
+        // 손에 든 아이템 토글
+        if (slot == 22) {
+            gui.toggleHandItem();
+            return;
+        }
+
+        // 전체 초기화
+        if (slot == 49) {
+            gui.clearAll();
+            return;
+        }
+
+        // 뒤로 가기
+        if (slot == 45) {
+            gui.applyToBuilder();
+            gui.getParentBuilder().open();
+            return;
+        }
+
+        // 완료
+        if (slot == 53) {
+            gui.applyToBuilder();
+            gui.getParentBuilder().open();
+        }
     }
 }

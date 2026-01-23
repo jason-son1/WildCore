@@ -12,6 +12,7 @@ public class EnchantConfig {
     private final String material;
     private final int slot;
     private final List<String> targetWhitelist;
+    private final List<String> targetGroups; // 타겟 그룹 (WEAPON, ARMOR, TOOL 등)
     private final String resultEnchantment;
     private final int resultLevel;
     private final double costMoney;
@@ -20,17 +21,21 @@ public class EnchantConfig {
     private final double failRate;
     private final double destroyRate;
     private final List<String> lore;
+    private final boolean unsafeMode; // 바닐라 제한 무시 여부
+    private final boolean ignoreConflicts; // 상충 인챈트 무시 여부
 
     public EnchantConfig(String id, String displayName, String material, int slot,
-            List<String> targetWhitelist, String resultEnchantment, int resultLevel,
+            List<String> targetWhitelist, List<String> targetGroups,
+            String resultEnchantment, int resultLevel,
             double costMoney, List<String> costItems,
             double successRate, double failRate, double destroyRate,
-            List<String> lore) {
+            List<String> lore, boolean unsafeMode, boolean ignoreConflicts) {
         this.id = id;
         this.displayName = displayName;
         this.material = material;
         this.slot = slot;
         this.targetWhitelist = targetWhitelist;
+        this.targetGroups = targetGroups;
         this.resultEnchantment = resultEnchantment;
         this.resultLevel = resultLevel;
         this.costMoney = costMoney;
@@ -39,6 +44,8 @@ public class EnchantConfig {
         this.failRate = failRate;
         this.destroyRate = destroyRate;
         this.lore = lore;
+        this.unsafeMode = unsafeMode;
+        this.ignoreConflicts = ignoreConflicts;
     }
 
     public String getId() {
@@ -91,5 +98,17 @@ public class EnchantConfig {
 
     public List<String> getLore() {
         return lore;
+    }
+
+    public List<String> getTargetGroups() {
+        return targetGroups;
+    }
+
+    public boolean isUnsafeMode() {
+        return unsafeMode;
+    }
+
+    public boolean isIgnoreConflicts() {
+        return ignoreConflicts;
     }
 }

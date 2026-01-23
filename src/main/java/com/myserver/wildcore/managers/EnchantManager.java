@@ -2,6 +2,7 @@ package com.myserver.wildcore.managers;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.EnchantConfig;
+import com.myserver.wildcore.util.ItemGroupUtil;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -101,15 +102,33 @@ public class EnchantManager {
     }
 
     /**
-     * 대상 아이템 검증
+     * 대상 아이템 검증 (화이트리스트 + 그룹 기반)
      */
     private boolean isValidTarget(ItemStack item, EnchantConfig enchant) {
         if (item == null || item.getType() == Material.AIR) {
             return false;
         }
 
+        // Unsafe 모드일 경우 모든 아이템 허용
+        if (enchant.isUnsafeMode()) {
+            return true;
+        }
+
         String itemType = item.getType().name();
-        return enchant.getTargetWhitelist().contains(itemType);
+
+        // 개별 화이트리스트 확인
+        if (enchant.getTargetWhitelist().contains(itemType)) {
+            return true;
+        }
+
+        // 그룹 기반 확인
+        for (String group : enchant.getTargetGroups()) {
+            if (ItemGroupUtil.isInGroup(item.getType(), group)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -156,6 +175,7 @@ public class EnchantManager {
 
     /**
      * 인챈트 적용
+     * unsafe_mode가 true일 경우 addUnsafeEnchantment를 사용하여 모든 제한 우회
      */
     private EnchantResult applyEnchantment(Player player, ItemStack item, EnchantConfig enchant) {
         String enchantName = enchant.getResultEnchantment().toLowerCase();
@@ -169,11 +189,18 @@ public class EnchantManager {
             return EnchantResult.INVALID;
         }
 
-        // 인챈트 적용 (레벨 제한 무시)
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.addEnchant(enchantment, level, true);
-            item.setItemMeta(meta);
+        // Unsafe 모드 분기
+        if (enchant.isUnsafeMode()) {
+            // 아이템에 직접 비정상 인챈트 적용 (모든 제한 우회)
+            // 레벨 제한, 아이템 타입 제한, 상충 인챈트 제한 모두 무시
+            item.addUnsafeEnchantment(enchantment, level);
+        } else {
+            // 기존 방식
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                meta.addEnchant(enchantment, level, true);
+                item.setItemMeta(meta);
+            }
         }
 
         playSuccessEffect(player);

@@ -157,6 +157,7 @@ public class ConfigManager {
                         enchantsConfig.getString(path + ".material"),
                         enchantsConfig.getInt(path + ".slot"),
                         enchantsConfig.getStringList(path + ".target_whitelist"),
+                        enchantsConfig.getStringList(path + ".target_groups"),
                         enchantsConfig.getString(path + ".result.enchantment"),
                         enchantsConfig.getInt(path + ".result.level"),
                         enchantsConfig.getDouble(path + ".cost.money"),
@@ -164,7 +165,9 @@ public class ConfigManager {
                         enchantsConfig.getDouble(path + ".probability.success"),
                         enchantsConfig.getDouble(path + ".probability.fail"),
                         enchantsConfig.getDouble(path + ".probability.destroy"),
-                        colorize(enchantsConfig.getStringList(path + ".lore")));
+                        colorize(enchantsConfig.getStringList(path + ".lore")),
+                        enchantsConfig.getBoolean(path + ".unsafe_mode", false),
+                        enchantsConfig.getBoolean(path + ".ignore_conflicts", false));
                 enchants.put(key, enchant);
             }
         }
@@ -420,6 +423,7 @@ public class ConfigManager {
         enchantsConfig.set(path + ".material", "ENCHANTED_BOOK");
         enchantsConfig.set(path + ".slot", getNextAvailableSlot("enchant"));
         enchantsConfig.set(path + ".target_whitelist", Arrays.asList("DIAMOND_SWORD"));
+        enchantsConfig.set(path + ".target_groups", Arrays.asList("WEAPON"));
         enchantsConfig.set(path + ".result.enchantment", "sharpness");
         enchantsConfig.set(path + ".result.level", 1);
         enchantsConfig.set(path + ".cost.money", 1000.0);
@@ -428,6 +432,8 @@ public class ConfigManager {
         enchantsConfig.set(path + ".probability.fail", 40.0);
         enchantsConfig.set(path + ".probability.destroy", 10.0);
         enchantsConfig.set(path + ".lore", Arrays.asList("", "&7성공 확률: &a50%"));
+        enchantsConfig.set(path + ".unsafe_mode", false);
+        enchantsConfig.set(path + ".ignore_conflicts", false);
 
         try {
             enchantsConfig.save(enchantsFile);

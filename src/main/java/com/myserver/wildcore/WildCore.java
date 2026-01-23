@@ -5,6 +5,7 @@ import com.myserver.wildcore.config.ConfigManager;
 import com.myserver.wildcore.gui.admin.AdminGuiListener;
 import com.myserver.wildcore.listeners.BlockListener;
 import com.myserver.wildcore.listeners.ChatListener;
+import com.myserver.wildcore.listeners.CustomItemProtectListener;
 import com.myserver.wildcore.listeners.GuiListener;
 import com.myserver.wildcore.listeners.PlayerListener;
 import com.myserver.wildcore.managers.EnchantManager;
@@ -105,6 +106,7 @@ public class WildCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
         getServer().getPluginManager().registerEvents(new BlockListener(this), this);
+        getServer().getPluginManager().registerEvents(new CustomItemProtectListener(this), this);
         getServer().getPluginManager().registerEvents(adminGuiListener, this);
         getServer().getPluginManager().registerEvents(new ChatListener(this, adminGuiListener), this);
     }

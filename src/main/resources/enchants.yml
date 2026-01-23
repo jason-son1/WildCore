@@ -21,6 +21,8 @@ tiers:
       - "NETHERITE_SWORD"
       - "GOLDEN_SWORD"
       - "STONE_SWORD"
+    target_groups:
+      - "WEAPON"
     result:
       enchantment: "sharpness"
       level: 1
@@ -42,6 +44,8 @@ tiers:
       - ""
       - "&7비용: &61,000원"
       - "&7재료: &b다이아몬드 x2, 청금석 x10"
+    unsafe_mode: false
+    ignore_conflicts: false
 
   # 날카로움 III
   sharpness_3:
