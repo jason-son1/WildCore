@@ -1,9 +1,8 @@
 package com.myserver.wildcore.listeners;
 
 import com.myserver.wildcore.WildCore;
-import com.myserver.wildcore.config.EnchantConfig;
-import com.myserver.wildcore.config.StockConfig;
 import com.myserver.wildcore.gui.EnchantGUI;
+import com.myserver.wildcore.gui.PaginatedGui;
 import com.myserver.wildcore.gui.StockGUI;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -46,63 +45,116 @@ public class GuiListener implements Listener {
     }
 
     /**
-     * 주식 GUI 클릭 처리
+     * 주식 GUI 클릭 처리 (페이지네이션 지원)
      */
     private void handleStockClick(Player player, InventoryClickEvent event, StockGUI stockGUI) {
         int slot = event.getRawSlot();
         ClickType click = event.getClick();
 
-        // 새로고침 버튼 (마지막 줄 중앙)
-        int size = plugin.getConfigManager().getStockGuiSize();
-        if (slot == size - 5) {
-            stockGUI.refresh();
+        // 네비게이션 처리
+        if (handlePaginationNavigation(slot, stockGUI)) {
             return;
         }
 
-        // 주식 종목 찾기
-        for (StockConfig stock : plugin.getConfigManager().getStocks().values()) {
-            if (stock.getSlot() == slot) {
+        // 배경 클릭 무시
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
+        if (clicked.getType() == Material.BARRIER)
+            return;
+
+        // 아이템 영역(0~44) 클릭 확인
+        if (slot >= 0 && slot < PaginatedGui.ITEMS_PER_PAGE) {
+            String stockId = stockGUI.getStockIdAtSlot(slot);
+            if (stockId != null) {
                 int amount = click.isShiftClick() ? 10 : 1;
 
                 if (click.isLeftClick()) {
                     // 매수
-                    plugin.getStockManager().buyStock(player, stock.getId(), amount);
+                    plugin.getStockManager().buyStock(player, stockId, amount);
                 } else if (click.isRightClick()) {
                     // 매도
-                    plugin.getStockManager().sellStock(player, stock.getId(), amount);
+                    plugin.getStockManager().sellStock(player, stockId, amount);
                 }
 
                 // GUI 갱신
                 stockGUI.refresh();
-                return;
             }
         }
     }
 
     /**
-     * 인챈트 GUI 클릭 처리
+     * 인챈트 GUI 클릭 처리 (페이지네이션 지원)
      */
     private void handleEnchantClick(Player player, InventoryClickEvent event, EnchantGUI enchantGUI) {
         int slot = event.getRawSlot();
         ItemStack clicked = event.getCurrentItem();
 
+        // 네비게이션 처리
+        if (handlePaginationNavigation(slot, enchantGUI)) {
+            return;
+        }
+
+        // 배경 클릭 무시
         if (clicked == null || clicked.getType() == Material.AIR)
             return;
         if (clicked.getType() == Material.PURPLE_STAINED_GLASS_PANE)
             return;
+        if (clicked.getType() == Material.BLACK_STAINED_GLASS_PANE)
+            return;
         if (clicked.getType() == Material.BARRIER)
             return;
 
-        // 인챈트 옵션 찾기
-        for (EnchantConfig enchant : plugin.getConfigManager().getEnchants().values()) {
-            if (enchant.getSlot() == slot) {
-                // 확인 메시지
-                player.closeInventory();
+        // 상단 정보 아이템 무시 (슬롯 4: 손에 든 아이템)
+        if (slot == 4) {
+            return;
+        }
 
+        // 아이템 영역(0~44) 클릭 확인
+        if (slot >= 0 && slot < PaginatedGui.ITEMS_PER_PAGE) {
+            String enchantId = enchantGUI.getEnchantIdAtSlot(slot);
+            if (enchantId != null) {
                 // 인챈트 시도
-                plugin.getEnchantManager().tryEnchant(player, enchant.getId());
-                return;
+                player.closeInventory();
+                plugin.getEnchantManager().tryEnchant(player, enchantId);
             }
         }
+    }
+
+    /**
+     * 페이지네이션 네비게이션 처리
+     * 
+     * @return true if navigation was handled, false otherwise
+     */
+    private boolean handlePaginationNavigation(int slot, PaginatedGui<?> gui) {
+        // 이전 페이지 (슬롯 45)
+        if (slot == PaginatedGui.SLOT_PREV_PAGE) {
+            if (gui.getCurrentPage() > 0) {
+                gui.previousPage();
+            }
+            return true;
+        }
+
+        // 다음 페이지 (슬롯 53)
+        if (slot == PaginatedGui.SLOT_NEXT_PAGE) {
+            if (gui.getCurrentPage() < gui.getTotalPages() - 1) {
+                gui.nextPage();
+            }
+            return true;
+        }
+
+        // 정보 아이콘 (슬롯 49)
+        if (slot == PaginatedGui.SLOT_INFO) {
+            return true; // 정보 아이콘은 클릭해도 아무것도 하지 않음
+        }
+
+        // 네비게이션 바 영역(45~53) 전체 무시
+        if (slot >= 45 && slot <= 53) {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -195,6 +195,33 @@ public class AdminGuiListener implements Listener {
             }
         }
 
+        // 표시 이름 변경 (슬롯 25)
+        if (slot == 25) {
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e새 표시 이름을 입력하세요. (색상 코드 & 사용 가능)");
+            pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.STOCK_DISPLAY_NAME, stockId));
+            return;
+        }
+
+        // 아이콘 변경 (슬롯 34)
+        if (slot == 34) {
+            ItemStack handItem = player.getInventory().getItemInMainHand();
+            if (handItem != null && handItem.getType() != Material.AIR) {
+                // 손에 든 아이템으로 설정
+                String materialName = handItem.getType().name();
+                plugin.getConfigManager().setStockMaterial(stockId, materialName);
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§a아이콘이 변경되었습니다: " + materialName);
+                editGUI.refresh();
+            } else {
+                // 채팅으로 Material 이름 입력
+                player.closeInventory();
+                player.sendMessage(
+                        plugin.getConfigManager().getPrefix() + "§eMaterial 이름을 입력하세요. (예: DIAMOND, GOLD_INGOT)");
+                pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.STOCK_MATERIAL, stockId));
+            }
+            return;
+        }
+
         // 저장
         if (slot == 48) {
             plugin.getConfigManager().saveStockConfig(stockId);
@@ -399,6 +426,25 @@ public class AdminGuiListener implements Listener {
                     player.sendMessage(plugin.getConfigManager().getPrefix() + "§c올바른 숫자를 입력하세요.");
                 }
             }
+            case STOCK_DISPLAY_NAME -> {
+                // 색상 코드 변환 및 저장
+                plugin.getConfigManager().setStockDisplayName(request.targetId, message);
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§a표시 이름이 변경되었습니다.");
+                new StockEditGUI(plugin, player, request.targetId).open();
+            }
+            case STOCK_MATERIAL -> {
+                // Material 이름 검증 및 저장
+                try {
+                    Material material = Material.valueOf(message.toUpperCase().replace(" ", "_"));
+                    plugin.getConfigManager().setStockMaterial(request.targetId, material.name());
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§a아이콘이 변경되었습니다: " + material.name());
+                    new StockEditGUI(plugin, player, request.targetId).open();
+                } catch (IllegalArgumentException e) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c존재하지 않는 Material입니다: " + message);
+                    player.sendMessage(
+                            plugin.getConfigManager().getPrefix() + "§7예시: DIAMOND, GOLD_INGOT, NETHERITE_INGOT");
+                }
+            }
             case ENCHANT_COST -> {
                 try {
                     double cost = Double.parseDouble(message.replace(",", ""));
@@ -478,6 +524,8 @@ public class AdminGuiListener implements Listener {
         STOCK_MIN_PRICE,
         STOCK_BASE_PRICE,
         STOCK_MAX_PRICE,
+        STOCK_DISPLAY_NAME, // 주식 표시 이름 변경
+        STOCK_MATERIAL, // 주식 아이콘(Material) 변경
         ENCHANT_COST,
         ENCHANT_ITEMS,
         NEW_STOCK_ID,

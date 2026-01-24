@@ -15,6 +15,7 @@ com\myserver\wildcore\gui\admin\EnchantTargetGUI.class
 com\myserver\wildcore\WildCore.class
 com\myserver\wildcore\placeholder\WildCorePlaceholder.class
 com\myserver\wildcore\config\EnchantConfig.class
+com\myserver\wildcore\gui\PaginatedGui.class
 com\myserver\wildcore\gui\admin\AdminGuiListener$ChatInputRequest.class
 com\myserver\wildcore\gui\admin\EnchantEditGUI.class
 com\myserver\wildcore\config\StockConfig.class

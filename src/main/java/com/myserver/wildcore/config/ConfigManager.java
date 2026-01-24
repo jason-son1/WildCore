@@ -7,7 +7,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -523,6 +525,54 @@ public class ConfigManager {
 
     public Map<String, EnchantConfig> getEnchants() {
         return enchants;
+    }
+
+    /**
+     * 정렬된 주식 목록 반환 (이름순)
+     */
+    public List<StockConfig> getAllStocksSorted() {
+        List<StockConfig> list = new ArrayList<>(stocks.values());
+        list.sort(Comparator.comparing(StockConfig::getDisplayName));
+        return list;
+    }
+
+    /**
+     * 정렬된 인챈트 목록 반환 (이름순)
+     */
+    public List<EnchantConfig> getAllEnchantsSorted() {
+        List<EnchantConfig> list = new ArrayList<>(enchants.values());
+        list.sort(Comparator.comparing(EnchantConfig::getDisplayName));
+        return list;
+    }
+
+    /**
+     * 주식 표시 이름 설정 (메모리 + 파일)
+     */
+    public void setStockDisplayName(String stockId, String displayName) {
+        String path = "stocks." + stockId + ".display_name";
+        stocksConfig.set(path, displayName);
+        try {
+            stocksConfig.save(stocksFile);
+            loadStocks(); // 리로드
+            plugin.getLogger().info("주식 표시 이름 변경됨: " + stockId + " -> " + displayName);
+        } catch (IOException e) {
+            plugin.getLogger().severe("주식 표시 이름 저장 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 주식 아이콘(Material) 설정 (메모리 + 파일)
+     */
+    public void setStockMaterial(String stockId, String material) {
+        String path = "stocks." + stockId + ".material";
+        stocksConfig.set(path, material);
+        try {
+            stocksConfig.save(stocksFile);
+            loadStocks(); // 리로드
+            plugin.getLogger().info("주식 아이콘 변경됨: " + stockId + " -> " + material);
+        } catch (IOException e) {
+            plugin.getLogger().severe("주식 아이콘 저장 실패: " + e.getMessage());
+        }
     }
 
     public EnchantConfig getEnchant(String id) {

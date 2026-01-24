@@ -2,76 +2,43 @@ package com.myserver.wildcore.gui;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.StockConfig;
-import com.myserver.wildcore.util.ItemUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
- * 주식 시장 GUI
+ * 주식 시장 GUI (페이지네이션 지원)
  */
-public class StockGUI implements InventoryHolder {
-
-    private final WildCore plugin;
-    private final Player player;
-    private Inventory inventory;
+public class StockGUI extends PaginatedGui<StockConfig> {
 
     public StockGUI(WildCore plugin, Player player) {
-        this.plugin = plugin;
-        this.player = player;
-        createInventory();
+        super(plugin, player);
     }
 
-    /**
-     * 인벤토리 생성
-     */
-    private void createInventory() {
-        String title = plugin.getConfigManager().getStockGuiTitle();
-        int size = plugin.getConfigManager().getStockGuiSize();
-
-        inventory = Bukkit.createInventory(this, size, ItemUtil.parse(title));
-
-        // 배경 유리판 채우기
-        ItemStack background = createItem(Material.GRAY_STAINED_GLASS_PANE, " ", null);
-        for (int i = 0; i < size; i++) {
-            inventory.setItem(i, background);
-        }
-
-        // 주식 아이콘 배치
-        for (StockConfig stock : plugin.getConfigManager().getStocks().values()) {
-            ItemStack stockItem = createStockItem(stock);
-            inventory.setItem(stock.getSlot(), stockItem);
-        }
-
-        // 정보 아이콘 추가
-        ItemStack infoItem = createInfoItem();
-        inventory.setItem(4, infoItem);
-
-        // 새로고침 버튼
-        ItemStack refreshItem = createItem(Material.CLOCK, "§e[ 새로고침 ]",
-                List.of("", "§7클릭하여 가격을 갱신합니다."));
-        inventory.setItem(size - 5, refreshItem);
+    @Override
+    protected List<StockConfig> getItems() {
+        // 이름순으로 정렬된 주식 목록 반환
+        List<StockConfig> stocks = new ArrayList<>(plugin.getConfigManager().getStocks().values());
+        stocks.sort(Comparator.comparing(StockConfig::getDisplayName));
+        return stocks;
     }
 
-    /**
-     * 주식 아이템 생성
-     */
-    private ItemStack createStockItem(StockConfig stock) {
+    @Override
+    protected ItemStack createItemDisplay(StockConfig stock) {
         Material material = Material.getMaterial(stock.getMaterial());
-        if (material == null)
+        if (material == null) {
             material = Material.PAPER;
+        }
 
         // Lore 생성 (플레이스홀더 치환)
         List<String> lore = new ArrayList<>();
         for (String line : stock.getLore()) {
             line = line.replace("%price%", plugin.getStockManager().getFormattedPrice(stock.getId()));
-            line = line.replace("%change%", plugin.getStockManager().getFormattedChange(stock.getId()));
+            line = line.replace("%change%", getFormattedChangeWithArrow(stock.getId()));
             lore.add(line);
         }
 
@@ -79,14 +46,47 @@ public class StockGUI implements InventoryHolder {
         int holdings = plugin.getStockManager().getPlayerStockAmount(player.getUniqueId(), stock.getId());
         lore.add("");
         lore.add("§7보유량: §f" + holdings + "주");
+        lore.add("");
+        lore.add("§e좌클릭: §f1주 매수");
+        lore.add("§e우클릭: §f1주 매도");
+        lore.add("§eShift+좌클릭: §f10주 매수");
+        lore.add("§eShift+우클릭: §f10주 매도");
 
         return createItem(material, stock.getDisplayName(), lore);
     }
 
     /**
-     * 정보 아이콘 생성
+     * 등락률을 화살표와 함께 포맷팅합니다.
+     * 상승: §c▲ [등락폭]% (빨강)
+     * 하락: §9▼ [등락폭]% (파랑)
      */
-    private ItemStack createInfoItem() {
+    private String getFormattedChangeWithArrow(String stockId) {
+        double changePercent = plugin.getStockManager().getChangePercent(stockId);
+
+        if (changePercent > 0) {
+            return "§c▲ +" + String.format("%.2f", changePercent) + "%";
+        } else if (changePercent < 0) {
+            return "§9▼ " + String.format("%.2f", changePercent) + "%";
+        } else {
+            return "§7- 0.00%";
+        }
+    }
+
+    @Override
+    protected String getTitle(int page, int totalPages) {
+        if (totalPages <= 1) {
+            return "§8[ §a주식 시장 §8]";
+        }
+        return "§8[ §a주식 시장 §8] §7(" + page + "/" + totalPages + ")";
+    }
+
+    @Override
+    protected Material getMainBackgroundMaterial() {
+        return Material.GRAY_STAINED_GLASS_PANE;
+    }
+
+    @Override
+    protected ItemStack createInfoItem(int page, int totalPages, int totalItems) {
         double totalValue = 0;
         for (StockConfig stock : plugin.getConfigManager().getStocks().values()) {
             int amount = plugin.getStockManager().getPlayerStockAmount(player.getUniqueId(), stock.getId());
@@ -98,42 +98,17 @@ public class StockGUI implements InventoryHolder {
         lore.add("§7총 자산 가치: §6" + String.format("%,.0f", totalValue) + "원");
         lore.add("§7현재 보유 현금: §6" + String.format("%,.0f", plugin.getEconomy().getBalance(player)) + "원");
         lore.add("");
-        lore.add("§e좌클릭: §f1주 매수");
-        lore.add("§e우클릭: §f1주 매도");
-        lore.add("§eShift+좌클릭: §f10주 매수");
-        lore.add("§eShift+우클릭: §f10주 매도");
+        lore.add("§7현재 페이지: §e" + page + " / " + totalPages);
+        lore.add("§7총 종목: §e" + totalItems + "개");
 
         return createItem(Material.GOLD_INGOT, "§6[ 내 포트폴리오 ]", lore);
     }
 
     /**
-     * 아이템 생성 헬퍼
+     * 특정 슬롯에 해당하는 주식 ID를 반환합니다.
      */
-    private ItemStack createItem(Material material, String name, List<String> lore) {
-        return ItemUtil.createItem(material, name, lore, 1, null, 0, false, null);
-    }
-
-    /**
-     * GUI 새로고침
-     */
-    public void refresh() {
-        createInventory();
-        player.openInventory(inventory);
-    }
-
-    /**
-     * GUI 열기
-     */
-    public void open() {
-        player.openInventory(inventory);
-    }
-
-    @Override
-    public Inventory getInventory() {
-        return inventory;
-    }
-
-    public Player getPlayer() {
-        return player;
+    public String getStockIdAtSlot(int slot) {
+        StockConfig stock = getItemAtSlot(slot);
+        return stock != null ? stock.getId() : null;
     }
 }

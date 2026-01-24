@@ -96,6 +96,19 @@ public class StockEditGUI implements InventoryHolder {
                                 List.of("", "§7현재: §f" + String.format("%,.0f", stock.getMaxPrice()) + "원",
                                                 "", "§e클릭하여 채팅으로 입력")));
 
+                // === 커스터마이징 버튼 (새로 추가) ===
+                inventory.setItem(25, createItem(Material.NAME_TAG, "§e[ 표시 이름 변경 ]",
+                                List.of("", "§7현재: " + stock.getDisplayName(),
+                                                "", "§e클릭하여 채팅으로 입력",
+                                                "§7색상 코드(&) 사용 가능")));
+
+                inventory.setItem(34, createItem(Material.PAINTING, "§b[ 아이콘 변경 ]",
+                                List.of("", "§7현재: §f" + stock.getMaterial(),
+                                                "", "§e손에 든 아이템으로 설정하려면",
+                                                "§e아이템을 들고 클릭하세요",
+                                                "", "§7또는 빈 손으로 클릭 시",
+                                                "§7채팅으로 Material 이름 입력")));
+
                 // === 액션 버튼 ===
                 inventory.setItem(48, createItem(Material.EMERALD, "§a[ 설정 저장 ]",
                                 List.of("", "§7변경사항을 파일에 저장합니다.")));

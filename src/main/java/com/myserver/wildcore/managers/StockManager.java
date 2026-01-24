@@ -303,6 +303,18 @@ public class StockManager {
         return color + String.format("%.2f%%", Math.abs(changePercent));
     }
 
+    /**
+     * 등락률을 퍼센트 값으로 반환합니다.
+     * 상승: 양수, 하락: 음수
+     */
+    public double getChangePercent(String stockId) {
+        double current = getCurrentPrice(stockId);
+        double previous = getPreviousPrice(stockId);
+        if (previous <= 0)
+            return 0;
+        return ((current - previous) / previous) * 100;
+    }
+
     public int getPlayerStockAmount(UUID uuid, String stockId) {
         Map<String, Integer> stocks = playerStocks.get(uuid);
         return stocks != null ? stocks.getOrDefault(stockId, 0) : 0;

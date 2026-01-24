@@ -4,73 +4,110 @@ import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.EnchantConfig;
 import com.myserver.wildcore.util.ItemUtil;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
- * 인챈트(강화소) GUI
+ * 인챈트(강화소) GUI (페이지네이션 지원)
  */
-public class EnchantGUI implements InventoryHolder {
+public class EnchantGUI extends PaginatedGui<EnchantConfig> {
 
-    private final WildCore plugin;
-    private final Player player;
-    private Inventory inventory;
+    private final ItemStack heldItem;
+    private final List<EnchantConfig> availableEnchants;
 
     public EnchantGUI(WildCore plugin, Player player) {
-        this.plugin = plugin;
-        this.player = player;
-        createInventory();
+        super(plugin, player);
+        this.heldItem = player.getInventory().getItemInMainHand();
+        this.availableEnchants = loadAvailableEnchants();
     }
 
     /**
-     * 인벤토리 생성
+     * 현재 손에 든 아이템에 적용 가능한 인챈트 목록을 로드합니다.
      */
-    private void createInventory() {
-        String title = plugin.getConfigManager().getEnchantGuiTitle();
-        int size = plugin.getConfigManager().getEnchantGuiSize();
+    private List<EnchantConfig> loadAvailableEnchants() {
+        List<EnchantConfig> enchants = plugin.getEnchantManager().getAvailableEnchants(heldItem);
+        // 이름순으로 정렬
+        enchants.sort(Comparator.comparing(EnchantConfig::getDisplayName));
+        return enchants;
+    }
 
-        inventory = Bukkit.createInventory(this, size, ItemUtil.parse(title));
+    @Override
+    protected List<EnchantConfig> getItems() {
+        return availableEnchants;
+    }
 
-        // 배경 유리판 채우기
-        ItemStack background = createItem(Material.PURPLE_STAINED_GLASS_PANE, " ", null);
-        for (int i = 0; i < size; i++) {
-            inventory.setItem(i, background);
+    @Override
+    protected ItemStack createItemDisplay(EnchantConfig enchant) {
+        Material material = Material.getMaterial(enchant.getMaterial());
+        if (material == null) {
+            material = Material.ENCHANTED_BOOK;
         }
 
-        // 현재 손에 든 아이템 정보 표시
-        ItemStack heldItem = player.getInventory().getItemInMainHand();
-        ItemStack heldItemInfo = createHeldItemInfo(heldItem);
+        List<String> lore = new ArrayList<>(enchant.getLore());
+        lore.add("");
+        lore.add("§7결과: §f" + enchant.getResultEnchantment() + " Lv." + enchant.getResultLevel());
+        lore.add("§7비용: §6" + String.format("%,.0f", enchant.getCostMoney()) + "원");
+        lore.add("");
+        lore.add(formatProbability("성공", enchant.getSuccessRate(), "§a"));
+        lore.add(formatProbability("실패", enchant.getFailRate(), "§e"));
+        lore.add(formatProbability("파괴", enchant.getDestroyRate(), "§c"));
+        lore.add("");
+        lore.add("§e클릭하여 강화 시도!");
+
+        return createItem(material, enchant.getDisplayName(), lore);
+    }
+
+    /**
+     * 확률을 포맷팅합니다.
+     */
+    private String formatProbability(String label, double rate, String color) {
+        return "§7" + label + ": " + color + String.format("%.1f", rate) + "%";
+    }
+
+    @Override
+    protected String getTitle(int page, int totalPages) {
+        if (totalPages <= 1) {
+            return "§8[ §5강화소 §8]";
+        }
+        return "§8[ §5강화소 §8] §7(" + page + "/" + totalPages + ")";
+    }
+
+    @Override
+    protected Material getMainBackgroundMaterial() {
+        return Material.PURPLE_STAINED_GLASS_PANE;
+    }
+
+    @Override
+    protected Material getBackgroundMaterial() {
+        return Material.BLACK_STAINED_GLASS_PANE;
+    }
+
+    @Override
+    protected void createInventory(int page) {
+        super.createInventory(page);
+
+        // 상단에 현재 손에 든 아이템 정보 표시 (슬롯 4)
+        ItemStack heldItemInfo = createHeldItemInfo();
         inventory.setItem(4, heldItemInfo);
 
-        // 인챈트 옵션 배치
-        List<EnchantConfig> availableEnchants = plugin.getEnchantManager().getAvailableEnchants(heldItem);
-
+        // 적용 가능한 인챈트가 없는 경우 알림 표시 (슬롯 22)
         if (availableEnchants.isEmpty()) {
-            // 적용 가능한 인챈트가 없음
             ItemStack noEnchant = createItem(Material.BARRIER, "§c적용 가능한 강화가 없습니다",
                     List.of("", "§7손에 강화 가능한 아이템을 들고", "§7다시 열어주세요."));
-            inventory.setItem(13, noEnchant);
-        } else {
-            // 가능한 인챈트 표시
-            for (EnchantConfig enchant : availableEnchants) {
-                ItemStack enchantItem = createEnchantItem(enchant);
-                inventory.setItem(enchant.getSlot(), enchantItem);
-            }
+            inventory.setItem(22, noEnchant);
         }
     }
 
     /**
-     * 손에 든 아이템 정보 생성
+     * 손에 든 아이템 정보를 생성합니다.
      */
-    private ItemStack createHeldItemInfo(ItemStack heldItem) {
+    private ItemStack createHeldItemInfo() {
         if (heldItem == null || heldItem.getType() == Material.AIR) {
             return createItem(Material.IRON_SWORD, "§7[ 대상 아이템 없음 ]",
                     List.of("", "§c손에 아이템을 들고 있지 않습니다.", "§7강화할 아이템을 손에 들고", "§7다시 GUI를 열어주세요."));
@@ -89,41 +126,30 @@ public class EnchantGUI implements InventoryHolder {
         return displayItem;
     }
 
-    /**
-     * 인챈트 아이템 생성
-     */
-    private ItemStack createEnchantItem(EnchantConfig enchant) {
-        Material material = Material.getMaterial(enchant.getMaterial());
-        if (material == null)
-            material = Material.ENCHANTED_BOOK;
-
-        List<String> lore = new ArrayList<>(enchant.getLore());
-        lore.add("");
-        lore.add("§e클릭하여 강화 시도!");
-
-        return createItem(material, enchant.getDisplayName(), lore);
-    }
-
-    /**
-     * 아이템 생성 헬퍼
-     */
-    private ItemStack createItem(Material material, String name, List<String> lore) {
-        return ItemUtil.createItem(material, name, lore, 1, null, 0, false, null);
-    }
-
-    /**
-     * GUI 열기
-     */
-    public void open() {
-        player.openInventory(inventory);
-    }
-
     @Override
-    public Inventory getInventory() {
-        return inventory;
+    protected ItemStack createInfoItem(int page, int totalPages, int totalItems) {
+        List<String> lore = new ArrayList<>();
+        lore.add("");
+        lore.add("§7현재 페이지: §e" + page + " / " + totalPages);
+        lore.add("§7가능한 강화: §e" + totalItems + "개");
+        lore.add("");
+        lore.add("§e클릭: §f원하는 강화를 선택하세요");
+
+        return createItem(Material.ENCHANTED_BOOK, "§5[ 강화 정보 ]", lore);
     }
 
-    public Player getPlayer() {
-        return player;
+    /**
+     * 특정 슬롯에 해당하는 인챈트 ID를 반환합니다.
+     */
+    public String getEnchantIdAtSlot(int slot) {
+        EnchantConfig enchant = getItemAtSlot(slot);
+        return enchant != null ? enchant.getId() : null;
+    }
+
+    /**
+     * 현재 손에 든 아이템을 반환합니다.
+     */
+    public ItemStack getHeldItem() {
+        return heldItem;
     }
 }
