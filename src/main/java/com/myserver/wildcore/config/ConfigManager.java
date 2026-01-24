@@ -359,6 +359,36 @@ public class ConfigManager {
     }
 
     /**
+     * 인챈트 설정 파일 저장하고 리로드 (새 인챈트 생성용)
+     */
+    public boolean saveAndReloadEnchants() {
+        try {
+            enchantsConfig.save(enchantsFile);
+            loadEnchants();
+            plugin.getLogger().info("인챈트 설정 저장 및 리로드 완료");
+            return true;
+        } catch (IOException e) {
+            plugin.getLogger().severe("인챈트 설정 저장 실패: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 주식 설정 파일 저장하고 리로드 (새 주식 생성용)
+     */
+    public boolean saveAndReloadStocks() {
+        try {
+            stocksConfig.save(stocksFile);
+            loadStocks();
+            plugin.getLogger().info("주식 설정 저장 및 리로드 완료");
+            return true;
+        } catch (IOException e) {
+            plugin.getLogger().severe("주식 설정 저장 실패: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * 주식 삭제
      */
     public void deleteStock(String stockId) {

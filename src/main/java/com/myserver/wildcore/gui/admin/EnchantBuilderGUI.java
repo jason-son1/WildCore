@@ -240,41 +240,41 @@ public class EnchantBuilderGUI implements InventoryHolder {
     public boolean saveEnchant() {
         String enchantId = selectedEnchant.getKey().getKey() + "_" + level;
 
-        // ConfigManager를 통해 새 인챈트 생성
-        if (!plugin.getConfigManager().createNewEnchant(enchantId)) {
+        // 이미 존재하는지 확인
+        if (plugin.getConfigManager().getEnchants().containsKey(enchantId)) {
             return false;
         }
 
-        // 추가 설정 적용
+        // 설정 값 직접 세팅
         String path = "tiers." + enchantId;
         String koreanName = formatEnchantmentName(selectedEnchant);
+        org.bukkit.configuration.file.FileConfiguration enchantsConfig = plugin.getConfigManager().getEnchantsConfig();
 
         // 기본 정보
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".display_name",
-                "§b[ " + koreanName + " " + level + " ]");
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".material", "ENCHANTED_BOOK");
+        enchantsConfig.set(path + ".display_name", "§b[ " + koreanName + " " + level + " ]");
+        enchantsConfig.set(path + ".material", "ENCHANTED_BOOK");
+        enchantsConfig.set(path + ".slot", getNextAvailableSlot());
 
         // 결과 인챈트
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".result.enchantment",
-                selectedEnchant.getKey().getKey());
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".result.level", level);
+        enchantsConfig.set(path + ".result.enchantment", selectedEnchant.getKey().getKey());
+        enchantsConfig.set(path + ".result.level", level);
 
         // 옵션
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".unsafe_mode", unsafeMode);
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".ignore_conflicts", ignoreConflicts);
+        enchantsConfig.set(path + ".unsafe_mode", unsafeMode);
+        enchantsConfig.set(path + ".ignore_conflicts", ignoreConflicts);
 
         // 대상 설정
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".target_groups", new ArrayList<>(targetGroups));
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".target_whitelist", new ArrayList<>(targetWhitelist));
+        enchantsConfig.set(path + ".target_groups", new ArrayList<>(targetGroups));
+        enchantsConfig.set(path + ".target_whitelist", new ArrayList<>(targetWhitelist));
 
         // 확률
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".probability.success", successRate);
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".probability.fail", failRate);
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".probability.destroy", destroyRate);
+        enchantsConfig.set(path + ".probability.success", successRate);
+        enchantsConfig.set(path + ".probability.fail", failRate);
+        enchantsConfig.set(path + ".probability.destroy", destroyRate);
 
         // 비용
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".cost.money", costMoney);
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".cost.items", costItems);
+        enchantsConfig.set(path + ".cost.money", costMoney);
+        enchantsConfig.set(path + ".cost.items", costItems);
 
         // Lore 자동 생성
         List<String> lore = Arrays.asList(
@@ -285,12 +285,16 @@ public class EnchantBuilderGUI implements InventoryHolder {
                 "§7파괴 확률: §c" + String.format("%.1f", destroyRate) + "%",
                 "",
                 "§7비용: §6" + String.format("%,.0f", costMoney) + "원");
-        plugin.getConfigManager().getEnchantsConfig().set(path + ".lore", lore);
+        enchantsConfig.set(path + ".lore", lore);
 
-        // 저장
-        plugin.getConfigManager().saveEnchantConfig(enchantId);
+        // 저장 및 리로드
+        return plugin.getConfigManager().saveAndReloadEnchants();
+    }
 
-        return true;
+    private int getNextAvailableSlot() {
+        int[] slots = { 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34 };
+        int usedCount = plugin.getConfigManager().getEnchants().size();
+        return slots[Math.min(usedCount, slots.length - 1)];
     }
 
     // === Getter ===
