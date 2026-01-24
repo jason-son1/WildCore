@@ -8,7 +8,9 @@ import com.myserver.wildcore.listeners.ChatListener;
 import com.myserver.wildcore.listeners.CustomItemProtectListener;
 import com.myserver.wildcore.listeners.GuiListener;
 import com.myserver.wildcore.listeners.PlayerListener;
+import com.myserver.wildcore.listeners.ShopInteractListener;
 import com.myserver.wildcore.managers.EnchantManager;
+import com.myserver.wildcore.managers.ShopManager;
 import com.myserver.wildcore.managers.StockManager;
 import com.myserver.wildcore.placeholder.WildCorePlaceholder;
 import com.myserver.wildcore.tasks.ActionBarMoneyTask;
@@ -31,6 +33,7 @@ public class WildCore extends JavaPlugin {
     private ConfigManager configManager;
     private StockManager stockManager;
     private EnchantManager enchantManager;
+    private ShopManager shopManager;
     private AdminGuiListener adminGuiListener;
     private ActionBarMoneyTask actionBarMoneyTask;
 
@@ -52,10 +55,14 @@ public class WildCore extends JavaPlugin {
         // 매니저 초기화
         stockManager = new StockManager(this);
         enchantManager = new EnchantManager(this);
+        shopManager = new ShopManager(this);
         adminGuiListener = new AdminGuiListener(this);
 
         // 주식 스케줄러 시작
         stockManager.startScheduler();
+
+        // 상점 NPC 로드
+        shopManager.loadAllShops();
 
         // 이벤트 리스너 등록
         registerListeners();
@@ -93,6 +100,11 @@ public class WildCore extends JavaPlugin {
             stockManager.saveAllData();
         }
 
+        // 상점 데이터 저장
+        if (shopManager != null) {
+            shopManager.saveAllShops();
+        }
+
         getLogger().info("WildCore 플러그인이 비활성화되었습니다.");
     }
 
@@ -119,6 +131,7 @@ public class WildCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
         getServer().getPluginManager().registerEvents(new BlockListener(this), this);
         getServer().getPluginManager().registerEvents(new CustomItemProtectListener(this), this);
+        getServer().getPluginManager().registerEvents(new ShopInteractListener(this), this);
         getServer().getPluginManager().registerEvents(adminGuiListener, this);
         getServer().getPluginManager().registerEvents(new ChatListener(this, adminGuiListener), this);
     }
@@ -139,6 +152,7 @@ public class WildCore extends JavaPlugin {
         configManager.loadAllConfigs();
         stockManager.reload();
         enchantManager.reload();
+        shopManager.reload();
     }
 
     /**
@@ -169,5 +183,9 @@ public class WildCore extends JavaPlugin {
 
     public EnchantManager getEnchantManager() {
         return enchantManager;
+    }
+
+    public ShopManager getShopManager() {
+        return shopManager;
     }
 }

@@ -2,12 +2,17 @@ package com.myserver.wildcore.gui.admin;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.EnchantConfig;
+import com.myserver.wildcore.config.ShopConfig;
 import com.myserver.wildcore.config.StockConfig;
+import com.myserver.wildcore.gui.shop.ShopAdminGUI;
+import com.myserver.wildcore.gui.shop.ShopEditorGUI;
+import com.myserver.wildcore.gui.shop.ShopGUI;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -82,6 +87,20 @@ public class AdminGuiListener implements Listener {
         if (event.getInventory().getHolder() instanceof EnchantTargetGUI targetGUI) {
             event.setCancelled(true);
             handleEnchantTargetClick(player, event, targetGUI);
+            return;
+        }
+
+        // 상점 관리 GUI
+        if (event.getInventory().getHolder() instanceof ShopAdminGUI shopAdminGUI) {
+            event.setCancelled(true);
+            handleShopAdminClick(player, event, shopAdminGUI);
+            return;
+        }
+
+        // 상점 아이템 편집 GUI
+        if (event.getInventory().getHolder() instanceof ShopEditorGUI shopEditorGUI) {
+            event.setCancelled(true);
+            handleShopEditorClick(player, event, shopEditorGUI);
             return;
         }
     }
@@ -514,6 +533,56 @@ public class AdminGuiListener implements Listener {
                     builderGui.open();
                 }
             }
+            // === 상점 관련 입력 ===
+            case SHOP_DISPLAY_NAME -> {
+                ShopConfig shop = plugin.getConfigManager().getShop(request.targetId);
+                if (shop != null) {
+                    shop.setDisplayName(message);
+                    plugin.getConfigManager().saveShop(shop);
+                    // NPC 이름도 갱신
+                    plugin.getShopManager().removeNPC(shop);
+                    plugin.getShopManager().spawnNPC(shop);
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§a상점 이름이 변경되었습니다.");
+                    new ShopAdminGUI(plugin, player, shop).open();
+                }
+            }
+            case SHOP_BUY_PRICE -> {
+                ShopEditorGUI editor = pendingShopEditors.remove(player.getUniqueId());
+                if (editor != null) {
+                    try {
+                        double price = Double.parseDouble(message.replace(",", ""));
+                        editor.setBuyPrice(price);
+                    } catch (NumberFormatException e) {
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§c올바른 숫자를 입력하세요.");
+                        editor.cancelPriceSetting();
+                    }
+                }
+            }
+            case SHOP_SELL_PRICE -> {
+                ShopEditorGUI editor = pendingShopEditors.remove(player.getUniqueId());
+                if (editor != null) {
+                    try {
+                        double price = Double.parseDouble(message.replace(",", ""));
+                        editor.setSellPrice(price);
+                    } catch (NumberFormatException e) {
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§c올바른 숫자를 입력하세요.");
+                        editor.cancelPriceSetting();
+                    }
+                }
+            }
+            case NEW_SHOP_ID -> {
+                ShopConfig newShop = plugin.getShopManager().createShop(
+                        message,
+                        "&a새 상점",
+                        player.getLocation(),
+                        "VILLAGER");
+                if (newShop != null) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§a새 상점이 생성되었습니다: " + message);
+                    new ShopAdminGUI(plugin, player, newShop).open();
+                } else {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c상점 생성에 실패했습니다. (이미 존재하는 ID일 수 있습니다)");
+                }
+            }
         }
     }
 
@@ -532,7 +601,12 @@ public class AdminGuiListener implements Listener {
         NEW_ENCHANT_ID,
         ENCHANT_BUILDER_LEVEL,
         ENCHANT_BUILDER_COST,
-        ENCHANT_BUILDER_ITEMS
+        ENCHANT_BUILDER_ITEMS,
+        // 상점 관련
+        SHOP_DISPLAY_NAME,
+        SHOP_BUY_PRICE,
+        SHOP_SELL_PRICE,
+        NEW_SHOP_ID
     }
 
     // 빌더 GUI 참조 저장
@@ -726,5 +800,146 @@ public class AdminGuiListener implements Listener {
             gui.applyToBuilder();
             gui.getParentBuilder().open();
         }
+    }
+
+    // === 상점 GUI 핸들러 ===
+
+    /**
+     * 상점 관리 GUI 클릭 처리
+     */
+    private void handleShopAdminClick(Player player, InventoryClickEvent event, ShopAdminGUI gui) {
+        int slot = event.getRawSlot();
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
+
+        ShopConfig shop = gui.getShop();
+
+        // 상점 이름 변경
+        if (slot == ShopAdminGUI.getSlotName()) {
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e새 상점 이름을 입력하세요. (색상 코드 & 사용 가능)");
+            pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.SHOP_DISPLAY_NAME, shop.getId()));
+            return;
+        }
+
+        // 위치 이동
+        if (slot == ShopAdminGUI.getSlotLocation()) {
+            plugin.getShopManager().moveShop(shop, player.getLocation());
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§a상점이 현재 위치로 이동되었습니다.");
+            gui.refresh();
+            return;
+        }
+
+        // NPC 타입 변경
+        if (slot == ShopAdminGUI.getSlotNpcType()) {
+            String newType = shop.isVillager() ? "ARMOR_STAND" : "VILLAGER";
+            plugin.getShopManager().changeNpcType(shop, newType);
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§aNPC 타입이 변경되었습니다: " + newType);
+            gui.refresh();
+            return;
+        }
+
+        // 아이템 편집 모드
+        if (slot == ShopAdminGUI.getSlotEditItems()) {
+            new ShopEditorGUI(plugin, player, shop).open();
+            return;
+        }
+
+        // 뒤로 가기
+        if (slot == ShopAdminGUI.getSlotBack()) {
+            new ShopGUI(plugin, player, shop).open();
+            return;
+        }
+
+        // 상점 삭제
+        if (slot == ShopAdminGUI.getSlotDelete()) {
+            if (event.getClick().isShiftClick()) {
+                plugin.getShopManager().deleteShop(shop.getId());
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§c상점이 삭제되었습니다: " + shop.getId());
+                player.closeInventory();
+            } else {
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§c삭제하려면 Shift+클릭하세요.");
+            }
+            return;
+        }
+
+        // 닫기
+        if (slot == ShopAdminGUI.getSlotClose()) {
+            player.closeInventory();
+        }
+    }
+
+    /**
+     * 상점 아이템 편집 GUI 클릭 처리
+     */
+    private void handleShopEditorClick(Player player, InventoryClickEvent event, ShopEditorGUI gui) {
+        int slot = event.getRawSlot();
+        ItemStack clicked = event.getCurrentItem();
+        ClickType click = event.getClick();
+
+        // 네비게이션 영역
+        if (slot == ShopEditorGUI.getSlotBack()) {
+            new ShopAdminGUI(plugin, player, gui.getShop()).open();
+            return;
+        }
+
+        if (slot == ShopEditorGUI.getSlotSave()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§a상점 아이템이 저장되었습니다.");
+            new ShopAdminGUI(plugin, player, gui.getShop()).open();
+            return;
+        }
+
+        if (slot == ShopEditorGUI.getSlotHelp()) {
+            return; // 도움말 클릭 무시
+        }
+
+        // 아이템 영역 (0~44)
+        if (gui.isItemSlot(slot)) {
+            // 플레이어 인벤토리에서 드래그한 아이템 등록
+            if (event.getClickedInventory() == player.getInventory()) {
+                // 플레이어 인벤토리 클릭 - 허용
+                return;
+            }
+
+            // 기존 아이템이 있는 슬롯 클릭
+            if (clicked != null && clicked.getType() != Material.AIR
+                    && clicked.getType() != Material.LIGHT_GRAY_STAINED_GLASS_PANE) {
+
+                if (click.isShiftClick() && click.isRightClick()) {
+                    // Shift+우클릭: 아이템 제거
+                    gui.removeItem(slot);
+                } else if (click.isLeftClick()) {
+                    // 좌클릭: 가격 설정
+                    gui.startPriceSetting(slot);
+                }
+            } else {
+                // 빈 슬롯에 커서에 든 아이템 등록
+                ItemStack cursor = event.getCursor();
+                if (cursor != null && cursor.getType() != Material.AIR) {
+                    gui.registerItem(slot, cursor);
+                    event.setCursor(null); // 커서 비우기
+                }
+            }
+        }
+    }
+
+    /**
+     * 상점 편집기 참조 저장 (가격 입력용)
+     */
+    private final Map<UUID, ShopEditorGUI> pendingShopEditors = new HashMap<>();
+
+    public ShopEditorGUI getPendingShopEditor(UUID uuid) {
+        return pendingShopEditors.get(uuid);
+    }
+
+    public void setPendingShopEditor(UUID uuid, ShopEditorGUI editor) {
+        pendingShopEditors.put(uuid, editor);
+    }
+
+    public void removePendingShopEditor(UUID uuid) {
+        pendingShopEditors.remove(uuid);
     }
 }

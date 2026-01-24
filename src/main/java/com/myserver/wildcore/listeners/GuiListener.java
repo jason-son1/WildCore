@@ -1,9 +1,11 @@
 package com.myserver.wildcore.listeners;
 
 import com.myserver.wildcore.WildCore;
+import com.myserver.wildcore.config.ShopItemConfig;
 import com.myserver.wildcore.gui.EnchantGUI;
 import com.myserver.wildcore.gui.PaginatedGui;
 import com.myserver.wildcore.gui.StockGUI;
+import com.myserver.wildcore.gui.shop.ShopGUI;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -41,6 +43,14 @@ public class GuiListener implements Listener {
         if (event.getInventory().getHolder() instanceof EnchantGUI enchantGUI) {
             event.setCancelled(true);
             handleEnchantClick(player, event, enchantGUI);
+            return;
+        }
+
+        // 상점 GUI 처리
+        if (event.getInventory().getHolder() instanceof ShopGUI shopGUI) {
+            event.setCancelled(true);
+            handleShopClick(player, event, shopGUI);
+            return;
         }
     }
 
@@ -156,5 +166,57 @@ public class GuiListener implements Listener {
         }
 
         return false;
+    }
+
+    /**
+     * 상점 GUI 클릭 처리 (페이지네이션 지원)
+     */
+    private void handleShopClick(Player player, InventoryClickEvent event, ShopGUI shopGUI) {
+        int slot = event.getRawSlot();
+        ClickType click = event.getClick();
+
+        // 네비게이션 처리
+        if (handlePaginationNavigation(slot, shopGUI)) {
+            return;
+        }
+
+        // 배경 클릭 무시
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
+        if (clicked.getType() == Material.LIME_STAINED_GLASS_PANE)
+            return;
+        if (clicked.getType() == Material.BARRIER)
+            return;
+
+        // 아이템 영역(0~44) 클릭 확인
+        if (slot >= 0 && slot < PaginatedGui.ITEMS_PER_PAGE) {
+            ShopItemConfig shopItem = shopGUI.getShopItemAtSlot(slot);
+            if (shopItem != null) {
+                // 구매/판매 처리
+                if (click.isLeftClick()) {
+                    // 구매
+                    int amount = click.isShiftClick() ? 64 : 1;
+                    plugin.getShopManager().buyItem(player, shopGUI.getShop(), shopItem.getSlot(), amount);
+                } else if (click.isRightClick()) {
+                    // 판매
+                    if (click.isShiftClick()) {
+                        // 전량 판매
+                        plugin.getShopManager().sellAllItems(player, shopGUI.getShop(), shopItem.getSlot());
+                    } else {
+                        // 1개 판매
+                        plugin.getShopManager().sellItem(player, shopGUI.getShop(), shopItem.getSlot(), 1);
+                    }
+                } else if (click == ClickType.MIDDLE) {
+                    // 휠클릭: 전량 판매
+                    plugin.getShopManager().sellAllItems(player, shopGUI.getShop(), shopItem.getSlot());
+                }
+
+                // GUI 갱신
+                shopGUI.refresh();
+            }
+        }
     }
 }

@@ -1,0 +1,45 @@
+# ========================================
+# WildCore 상점 시스템 설정
+# ========================================
+
+# 상점 NPC 설정
+settings:
+  npc_invulnerable: true
+  npc_silent: true
+  npc_no_ai: true
+
+# GUI 설정
+gui:
+  title: "&8[ &a상점 &8]"
+  size: 54
+
+# 상점 정의
+# 각 상점은 NPC로 표시되며, 관리자가 인게임에서 생성/편집 가능합니다.
+shops:
+  # 예시 상점 (기본값)
+  example_shop:
+    display_name: "&a잡화점"
+    npc_type: VILLAGER  # VILLAGER 또는 ARMOR_STAND
+    location:
+      world: "world"
+      x: 0.5
+      y: 64.0
+      z: 0.5
+      yaw: 0.0
+    entity_uuid: ""  # 런타임에 자동 생성됨
+    items:
+      0:
+        type: "VANILLA"  # VANILLA 또는 CUSTOM
+        id: "DIAMOND"    # Material 이름 또는 커스텀 아이템 ID
+        buy_price: 500.0   # 구매가 (-1이면 구매 불가)
+        sell_price: 100.0  # 판매가 (-1이면 판매 불가)
+      1:
+        type: "VANILLA"
+        id: "IRON_INGOT"
+        buy_price: 50.0
+        sell_price: 10.0
+      2:
+        type: "VANILLA"
+        id: "GOLD_INGOT"
+        buy_price: 100.0
+        sell_price: 25.0

@@ -5,6 +5,8 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import org.bukkit.Location;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 모든 설정 파일을 관리하는 클래스
@@ -26,17 +29,20 @@ public class ConfigManager {
     private FileConfiguration stocksConfig;
     private FileConfiguration enchantsConfig;
     private FileConfiguration itemsConfig;
+    private FileConfiguration shopsConfig;
 
     // 파일 객체들
     private File configFile;
     private File stocksFile;
     private File enchantsFile;
     private File itemsFile;
+    private File shopsFile;
 
     // 캐시된 데이터
     private Map<String, StockConfig> stocks = new HashMap<>();
     private Map<String, EnchantConfig> enchants = new HashMap<>();
     private Map<String, CustomItemConfig> customItems = new HashMap<>();
+    private Map<String, ShopConfig> shops = new HashMap<>();
     private Map<String, String> messages = new HashMap<>();
 
     // 수정된 설정 캐시 (실시간 편집용)
@@ -63,23 +69,27 @@ public class ConfigManager {
         saveDefaultFile("stocks.yml");
         saveDefaultFile("enchants.yml");
         saveDefaultFile("items.yml");
+        saveDefaultFile("shops.yml");
 
         // 파일 로드
         configFile = new File(plugin.getDataFolder(), "config.yml");
         stocksFile = new File(plugin.getDataFolder(), "stocks.yml");
         enchantsFile = new File(plugin.getDataFolder(), "enchants.yml");
         itemsFile = new File(plugin.getDataFolder(), "items.yml");
+        shopsFile = new File(plugin.getDataFolder(), "shops.yml");
 
         config = YamlConfiguration.loadConfiguration(configFile);
         stocksConfig = YamlConfiguration.loadConfiguration(stocksFile);
         enchantsConfig = YamlConfiguration.loadConfiguration(enchantsFile);
         itemsConfig = YamlConfiguration.loadConfiguration(itemsFile);
+        shopsConfig = YamlConfiguration.loadConfiguration(shopsFile);
 
         // 데이터 파싱
         loadMessages();
         loadStocks();
         loadEnchants();
         loadCustomItems();
+        loadShops();
 
         // 수정 캐시 초기화
         clearModifiedCaches();
@@ -613,5 +623,199 @@ public class ConfigManager {
 
     public FileConfiguration getItemsConfig() {
         return itemsConfig;
+    }
+
+    public FileConfiguration getShopsConfig() {
+        return shopsConfig;
+    }
+
+    // =====================
+    // 상점 관련 메서드
+    // =====================
+
+    /**
+     * 상점 설정 로드
+     */
+    private void loadShops() {
+        shops.clear();
+        if (shopsConfig.isConfigurationSection("shops")) {
+            for (String shopId : shopsConfig.getConfigurationSection("shops").getKeys(false)) {
+                String path = "shops." + shopId;
+
+                // 위치 정보 파싱
+                String worldName = shopsConfig.getString(path + ".location.world", "world");
+                double x = shopsConfig.getDouble(path + ".location.x", 0);
+                double y = shopsConfig.getDouble(path + ".location.y", 64);
+                double z = shopsConfig.getDouble(path + ".location.z", 0);
+                float yaw = (float) shopsConfig.getDouble(path + ".location.yaw", 0);
+                Location location = ShopConfig.createLocation(worldName, x, y, z, yaw);
+
+                // 엔티티 UUID 파싱
+                String uuidStr = shopsConfig.getString(path + ".entity_uuid", "");
+                UUID entityUuid = null;
+                if (uuidStr != null && !uuidStr.isEmpty()) {
+                    try {
+                        entityUuid = UUID.fromString(uuidStr);
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+
+                // 아이템 파싱
+                Map<Integer, ShopItemConfig> items = new HashMap<>();
+                if (shopsConfig.isConfigurationSection(path + ".items")) {
+                    for (String slotStr : shopsConfig.getConfigurationSection(path + ".items").getKeys(false)) {
+                        try {
+                            int slot = Integer.parseInt(slotStr);
+                            String itemPath = path + ".items." + slotStr;
+                            ShopItemConfig item = new ShopItemConfig(
+                                    slot,
+                                    shopsConfig.getString(itemPath + ".type", "VANILLA"),
+                                    shopsConfig.getString(itemPath + ".id", "STONE"),
+                                    shopsConfig.getDouble(itemPath + ".buy_price", -1),
+                                    shopsConfig.getDouble(itemPath + ".sell_price", -1));
+                            items.put(slot, item);
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+
+                ShopConfig shop = new ShopConfig(
+                        shopId,
+                        colorize(shopsConfig.getString(path + ".display_name", "&f상점")),
+                        shopsConfig.getString(path + ".npc_type", "VILLAGER"),
+                        location,
+                        entityUuid,
+                        items);
+                shops.put(shopId, shop);
+            }
+        }
+        plugin.getLogger().info("상점 " + shops.size() + "개 로드됨");
+    }
+
+    /**
+     * 상점 설정 저장
+     */
+    public boolean saveShop(ShopConfig shop) {
+        String path = "shops." + shop.getId();
+
+        shopsConfig.set(path + ".display_name", shop.getDisplayName());
+        shopsConfig.set(path + ".npc_type", shop.getNpcType());
+
+        // 위치 저장
+        if (shop.getLocation() != null) {
+            Location loc = shop.getLocation();
+            shopsConfig.set(path + ".location.world", loc.getWorld() != null ? loc.getWorld().getName() : "world");
+            shopsConfig.set(path + ".location.x", loc.getX());
+            shopsConfig.set(path + ".location.y", loc.getY());
+            shopsConfig.set(path + ".location.z", loc.getZ());
+            shopsConfig.set(path + ".location.yaw", loc.getYaw());
+        }
+
+        // UUID 저장
+        shopsConfig.set(path + ".entity_uuid",
+                shop.getEntityUuid() != null ? shop.getEntityUuid().toString() : "");
+
+        // 아이템 저장
+        shopsConfig.set(path + ".items", null); // 기존 아이템 삭제
+        for (Map.Entry<Integer, ShopItemConfig> entry : shop.getItems().entrySet()) {
+            String itemPath = path + ".items." + entry.getKey();
+            ShopItemConfig item = entry.getValue();
+            shopsConfig.set(itemPath + ".type", item.getType());
+            shopsConfig.set(itemPath + ".id", item.getId());
+            shopsConfig.set(itemPath + ".buy_price", item.getBuyPrice());
+            shopsConfig.set(itemPath + ".sell_price", item.getSellPrice());
+        }
+
+        try {
+            shopsConfig.save(shopsFile);
+            shops.put(shop.getId(), shop);
+            plugin.getLogger().info("상점 저장됨: " + shop.getId());
+            return true;
+        } catch (IOException e) {
+            plugin.getLogger().severe("상점 저장 실패: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 상점 삭제
+     */
+    public boolean deleteShop(String shopId) {
+        shopsConfig.set("shops." + shopId, null);
+        try {
+            shopsConfig.save(shopsFile);
+            shops.remove(shopId);
+            plugin.getLogger().info("상점 삭제됨: " + shopId);
+            return true;
+        } catch (IOException e) {
+            plugin.getLogger().severe("상점 삭제 실패: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 상점 설정 저장 및 리로드
+     */
+    public boolean saveAndReloadShops() {
+        try {
+            shopsConfig.save(shopsFile);
+            loadShops();
+            plugin.getLogger().info("상점 설정 저장 및 리로드 완료");
+            return true;
+        } catch (IOException e) {
+            plugin.getLogger().severe("상점 설정 저장 실패: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 모든 상점 가져오기
+     */
+    public Map<String, ShopConfig> getShops() {
+        return shops;
+    }
+
+    /**
+     * 특정 상점 가져오기
+     */
+    public ShopConfig getShop(String id) {
+        return shops.get(id);
+    }
+
+    /**
+     * 정렬된 상점 목록 반환 (이름순)
+     */
+    public List<ShopConfig> getAllShopsSorted() {
+        List<ShopConfig> list = new ArrayList<>(shops.values());
+        list.sort(Comparator.comparing(ShopConfig::getDisplayName));
+        return list;
+    }
+
+    /**
+     * 상점 GUI 제목
+     */
+    public String getShopGuiTitle() {
+        return colorize(shopsConfig.getString("gui.title", "&8[ &a상점 &8]"));
+    }
+
+    /**
+     * 상점 NPC 무적 여부
+     */
+    public boolean isShopNpcInvulnerable() {
+        return shopsConfig.getBoolean("settings.npc_invulnerable", true);
+    }
+
+    /**
+     * 상점 NPC 무음 여부
+     */
+    public boolean isShopNpcSilent() {
+        return shopsConfig.getBoolean("settings.npc_silent", true);
+    }
+
+    /**
+     * 상점 NPC AI 비활성화 여부
+     */
+    public boolean isShopNpcNoAi() {
+        return shopsConfig.getBoolean("settings.npc_no_ai", true);
     }
 }

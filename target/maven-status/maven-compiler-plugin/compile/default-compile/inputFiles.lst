@@ -3,6 +3,8 @@ E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\comma
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\ConfigManager.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\CustomItemConfig.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\EnchantConfig.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\ShopConfig.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\ShopItemConfig.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\StockConfig.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\admin\AdminGuiListener.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\admin\EnchantAdminGUI.java
@@ -14,13 +16,18 @@ E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\a
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\admin\StockEditGUI.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\EnchantGUI.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\PaginatedGui.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopAdminGUI.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopEditorGUI.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopGUI.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\StockGUI.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\listeners\BlockListener.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\listeners\ChatListener.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\listeners\CustomItemProtectListener.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\listeners\GuiListener.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\listeners\PlayerListener.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\listeners\ShopInteractListener.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\EnchantManager.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\ShopManager.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\StockManager.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\placeholder\WildCorePlaceholder.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\tasks\ActionBarMoneyTask.java
