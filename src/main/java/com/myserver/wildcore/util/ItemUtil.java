@@ -13,6 +13,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 아이템 관련 유틸리티 클래스
  */
@@ -35,41 +38,64 @@ public class ItemUtil {
             material = Material.PAPER;
         }
 
+        return createItem(material, config.getDisplayName(), config.getLore(), amount, itemId, config.getCustomModelData(), config.isGlow(), plugin);
+    }
+
+    /**
+     * 기본 아이템 생성 (Adventure API 지원)
+     */
+    public static ItemStack createItem(Material material, String name, List<String> lore, int amount, String wildcoreId,
+            int modelData, boolean glow, WildCore plugin) {
         ItemStack item = new ItemStack(material, amount);
         ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
-            // 이름 설정 (Adventure API 사용)
-            Component displayName = LegacyComponentSerializer.legacySection().deserialize(config.getDisplayName());
-            meta.displayName(displayName);
-
-            // Lore 설정 (Adventure API 사용)
-            if (config.getLore() != null && !config.getLore().isEmpty()) {
-                java.util.List<Component> loreComponents = config.getLore().stream()
-                        .map(line -> (Component) LegacyComponentSerializer.legacySection().deserialize(line))
-                        .toList();
-                meta.lore(loreComponents);
+            if (name != null) {
+                meta.displayName(parse(name));
             }
 
-            // CustomModelData 설정
-            if (config.getCustomModelData() > 0) {
-                meta.setCustomModelData(config.getCustomModelData());
+            if (lore != null && !lore.isEmpty()) {
+                meta.lore(parseList(lore));
             }
 
-            // 발광 효과
-            if (config.isGlow()) {
+            if (modelData > 0) {
+                meta.setCustomModelData(modelData);
+            }
+
+            if (glow) {
                 meta.addEnchant(Enchantment.UNBREAKING, 1, true);
                 meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             }
 
-            // PDC에 아이템 ID 저장 (악용 방지)
-            NamespacedKey key = new NamespacedKey(plugin, WILDCORE_ITEM_KEY);
-            meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, itemId);
+            if (wildcoreId != null && plugin != null) {
+                NamespacedKey key = new NamespacedKey(plugin, WILDCORE_ITEM_KEY);
+                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, wildcoreId);
+            }
 
             item.setItemMeta(meta);
         }
 
         return item;
+    }
+
+    /**
+     * 레거시 문자열을 Component로 변환
+     */
+    public static Component parse(String legacyText) {
+        if (legacyText == null)
+            return Component.empty();
+        return LegacyComponentSerializer.legacySection().deserialize(legacyText);
+    }
+
+    /**
+     * 레거시 문자열 리스트를 Component 리스트로 변환
+     */
+    public static List<Component> parseList(List<String> legacyLore) {
+        if (legacyLore == null)
+            return new ArrayList<>();
+        return legacyLore.stream()
+                .map(ItemUtil::parse)
+                .toList();
     }
 
     /**

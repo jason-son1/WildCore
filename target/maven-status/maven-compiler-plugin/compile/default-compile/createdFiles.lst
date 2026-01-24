@@ -8,6 +8,7 @@ com\myserver\wildcore\commands\MainCommand.class
 com\myserver\wildcore\listeners\CustomItemProtectListener.class
 com\myserver\wildcore\listeners\PlayerListener.class
 com\myserver\wildcore\managers\EnchantManager$EnchantResult.class
+com\myserver\wildcore\util\EnchantNameUtil.class
 com\myserver\wildcore\gui\admin\EnchantBuilderGUI.class
 com\myserver\wildcore\gui\admin\StockEditGUI.class
 com\myserver\wildcore\gui\admin\EnchantTargetGUI.class
@@ -30,3 +31,4 @@ com\myserver\wildcore\config\ConfigManager.class
 com\myserver\wildcore\gui\admin\EnchantTypeSelectorGUI.class
 com\myserver\wildcore\managers\StockManager$1.class
 com\myserver\wildcore\gui\admin\StockAdminGUI.class
+com\myserver\wildcore\tasks\ActionBarMoneyTask.class

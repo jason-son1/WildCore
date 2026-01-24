@@ -3,6 +3,7 @@ package com.myserver.wildcore.managers;
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.EnchantConfig;
 import com.myserver.wildcore.util.ItemGroupUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -11,7 +12,6 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.Registry;
 
 import java.util.*;
 
@@ -182,7 +182,7 @@ public class EnchantManager {
         int level = enchant.getResultLevel();
 
         // 인챈트 찾기
-        Enchantment enchantment = Registry.ENCHANTMENT.get(NamespacedKey.minecraft(enchantName));
+        Enchantment enchantment = Bukkit.getRegistry(Enchantment.class).get(NamespacedKey.minecraft(enchantName));
 
         if (enchantment == null) {
             plugin.getLogger().warning("유효하지 않은 인챈트: " + enchantName);

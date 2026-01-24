@@ -2,6 +2,8 @@ package com.myserver.wildcore.gui;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.EnchantConfig;
+import com.myserver.wildcore.util.ItemUtil;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -35,7 +37,7 @@ public class EnchantGUI implements InventoryHolder {
         String title = plugin.getConfigManager().getEnchantGuiTitle();
         int size = plugin.getConfigManager().getEnchantGuiSize();
 
-        inventory = Bukkit.createInventory(this, size, title);
+        inventory = Bukkit.createInventory(this, size, ItemUtil.parse(title));
 
         // 배경 유리판 채우기
         ItemStack background = createItem(Material.PURPLE_STAINED_GLASS_PANE, " ", null);
@@ -77,11 +79,11 @@ public class EnchantGUI implements InventoryHolder {
         ItemStack displayItem = heldItem.clone();
         ItemMeta meta = displayItem.getItemMeta();
         if (meta != null) {
-            List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
-            lore.add("");
-            lore.add("§a▶ 강화 대상 아이템");
-            lore.add("§7아래에서 원하는 강화를 선택하세요.");
-            meta.setLore(lore);
+            List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
+            lore.add(Component.empty());
+            lore.add(ItemUtil.parse("§a▶ 강화 대상 아이템"));
+            lore.add(ItemUtil.parse("§7아래에서 원하는 강화를 선택하세요."));
+            meta.lore(lore);
             displayItem.setItemMeta(meta);
         }
         return displayItem;
@@ -106,16 +108,7 @@ public class EnchantGUI implements InventoryHolder {
      * 아이템 생성 헬퍼
      */
     private ItemStack createItem(Material material, String name, List<String> lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(name);
-            if (lore != null) {
-                meta.setLore(lore);
-            }
-            item.setItemMeta(meta);
-        }
-        return item;
+        return ItemUtil.createItem(material, name, lore, 1, null, 0, false, null);
     }
 
     /**

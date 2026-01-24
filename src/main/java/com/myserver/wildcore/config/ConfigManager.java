@@ -1,7 +1,7 @@
 package com.myserver.wildcore.config;
 
 import com.myserver.wildcore.WildCore;
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 

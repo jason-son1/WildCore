@@ -2,15 +2,13 @@ package com.myserver.wildcore.gui;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.StockConfig;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import com.myserver.wildcore.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +35,7 @@ public class StockGUI implements InventoryHolder {
         String title = plugin.getConfigManager().getStockGuiTitle();
         int size = plugin.getConfigManager().getStockGuiSize();
 
-        Component titleComponent = LegacyComponentSerializer.legacySection().deserialize(title);
-        inventory = Bukkit.createInventory(this, size, titleComponent);
+        inventory = Bukkit.createInventory(this, size, ItemUtil.parse(title));
 
         // 배경 유리판 채우기
         ItemStack background = createItem(Material.GRAY_STAINED_GLASS_PANE, " ", null);
@@ -113,16 +110,7 @@ public class StockGUI implements InventoryHolder {
      * 아이템 생성 헬퍼
      */
     private ItemStack createItem(Material material, String name, List<String> lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(name);
-            if (lore != null) {
-                meta.setLore(lore);
-            }
-            item.setItemMeta(meta);
-        }
-        return item;
+        return ItemUtil.createItem(material, name, lore, 1, null, 0, false, null);
     }
 
     /**

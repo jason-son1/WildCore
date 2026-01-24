@@ -11,6 +11,7 @@ import com.myserver.wildcore.listeners.PlayerListener;
 import com.myserver.wildcore.managers.EnchantManager;
 import com.myserver.wildcore.managers.StockManager;
 import com.myserver.wildcore.placeholder.WildCorePlaceholder;
+import com.myserver.wildcore.tasks.ActionBarMoneyTask;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -31,6 +32,7 @@ public class WildCore extends JavaPlugin {
     private StockManager stockManager;
     private EnchantManager enchantManager;
     private AdminGuiListener adminGuiListener;
+    private ActionBarMoneyTask actionBarMoneyTask;
 
     @Override
     public void onEnable() {
@@ -61,6 +63,11 @@ public class WildCore extends JavaPlugin {
         // 명령어 등록
         registerCommands();
 
+        // ActionBar 돈 표시 태스크 시작
+        actionBarMoneyTask = new ActionBarMoneyTask(this);
+        actionBarMoneyTask.start();
+        getLogger().info("ActionBar 잔액 표시 기능이 활성화되었습니다.");
+
         // PlaceholderAPI 연동
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new WildCorePlaceholder(this).register();
@@ -75,6 +82,11 @@ public class WildCore extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // ActionBar 태스크 중지
+        if (actionBarMoneyTask != null) {
+            actionBarMoneyTask.stop();
+        }
+
         // 주식 스케줄러 중지
         if (stockManager != null) {
             stockManager.stopScheduler();

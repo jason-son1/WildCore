@@ -1,7 +1,9 @@
 package com.myserver.wildcore.gui.admin;
 
 import com.myserver.wildcore.WildCore;
+import com.myserver.wildcore.util.EnchantNameUtil;
 import com.myserver.wildcore.util.ItemGroupUtil;
+import com.myserver.wildcore.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -9,9 +11,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,7 +52,8 @@ public class EnchantBuilderGUI implements InventoryHolder {
 
     private void createInventory() {
         String enchantName = formatEnchantmentName(selectedEnchant);
-        inventory = Bukkit.createInventory(this, 54, "§8[ §5" + enchantName + " 설정 §8]");
+        inventory = Bukkit.createInventory(this, 54,
+                ItemUtil.parse("§8[ §5" + enchantName + " 설정 §8]"));
         updateInventory();
     }
 
@@ -158,14 +161,7 @@ public class EnchantBuilderGUI implements InventoryHolder {
     }
 
     private String formatEnchantmentName(Enchantment enchant) {
-        String key = enchant.getKey().getKey();
-        StringBuilder result = new StringBuilder();
-        for (String word : key.split("_")) {
-            if (result.length() > 0)
-                result.append(" ");
-            result.append(word.substring(0, 1).toUpperCase()).append(word.substring(1).toLowerCase());
-        }
-        return result.toString();
+        return EnchantNameUtil.getKoreanName(enchant);
     }
 
     // === 조작 메서드들 ===
@@ -249,21 +245,47 @@ public class EnchantBuilderGUI implements InventoryHolder {
             return false;
         }
 
-        // 추가 설정 적용 (ConfigManager에 메서드 추가 필요)
+        // 추가 설정 적용
         String path = "tiers." + enchantId;
+        String koreanName = formatEnchantmentName(selectedEnchant);
+
+        // 기본 정보
         plugin.getConfigManager().getEnchantsConfig().set(path + ".display_name",
-                "&b[ " + formatEnchantmentName(selectedEnchant) + " " + level + " ]");
+                "§b[ " + koreanName + " " + level + " ]");
+        plugin.getConfigManager().getEnchantsConfig().set(path + ".material", "ENCHANTED_BOOK");
+
+        // 결과 인챈트
         plugin.getConfigManager().getEnchantsConfig().set(path + ".result.enchantment",
                 selectedEnchant.getKey().getKey());
         plugin.getConfigManager().getEnchantsConfig().set(path + ".result.level", level);
+
+        // 옵션
         plugin.getConfigManager().getEnchantsConfig().set(path + ".unsafe_mode", unsafeMode);
         plugin.getConfigManager().getEnchantsConfig().set(path + ".ignore_conflicts", ignoreConflicts);
+
+        // 대상 설정
         plugin.getConfigManager().getEnchantsConfig().set(path + ".target_groups", new ArrayList<>(targetGroups));
+        plugin.getConfigManager().getEnchantsConfig().set(path + ".target_whitelist", new ArrayList<>(targetWhitelist));
+
+        // 확률
         plugin.getConfigManager().getEnchantsConfig().set(path + ".probability.success", successRate);
         plugin.getConfigManager().getEnchantsConfig().set(path + ".probability.fail", failRate);
         plugin.getConfigManager().getEnchantsConfig().set(path + ".probability.destroy", destroyRate);
+
+        // 비용
         plugin.getConfigManager().getEnchantsConfig().set(path + ".cost.money", costMoney);
         plugin.getConfigManager().getEnchantsConfig().set(path + ".cost.items", costItems);
+
+        // Lore 자동 생성
+        List<String> lore = Arrays.asList(
+                "",
+                "§7적용 인챈트: §f" + koreanName + " " + level,
+                "§7성공 확률: §a" + String.format("%.1f", successRate) + "%",
+                "§7실패 확률: §e" + String.format("%.1f", failRate) + "%",
+                "§7파괴 확률: §c" + String.format("%.1f", destroyRate) + "%",
+                "",
+                "§7비용: §6" + String.format("%,.0f", costMoney) + "원");
+        plugin.getConfigManager().getEnchantsConfig().set(path + ".lore", lore);
 
         // 저장
         plugin.getConfigManager().saveEnchantConfig(enchantId);
@@ -298,15 +320,7 @@ public class EnchantBuilderGUI implements InventoryHolder {
     }
 
     private ItemStack createItem(Material material, String name, List<String> lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(name);
-            if (lore != null)
-                meta.setLore(lore);
-            item.setItemMeta(meta);
-        }
-        return item;
+        return ItemUtil.createItem(material, name, lore, 1, null, 0, false, null);
     }
 
     public void open() {

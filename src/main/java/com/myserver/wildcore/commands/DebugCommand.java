@@ -3,6 +3,8 @@ package com.myserver.wildcore.commands;
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.StockConfig;
 import com.myserver.wildcore.util.ItemUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -470,7 +472,10 @@ public class DebugCommand {
         if (item.hasItemMeta()) {
             var meta = item.getItemMeta();
             if (meta.hasDisplayName()) {
-                sender.sendMessage("§7이름: §f" + meta.getDisplayName());
+                Component displayName = meta.displayName();
+                String name = displayName != null ? LegacyComponentSerializer.legacySection().serialize(displayName)
+                        : "null";
+                sender.sendMessage("§7이름: §f" + name);
             }
             if (meta.hasCustomModelData()) {
                 sender.sendMessage("§7CustomModelData: §f" + meta.getCustomModelData());

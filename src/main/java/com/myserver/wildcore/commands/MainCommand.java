@@ -242,6 +242,9 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             completions.addAll(Arrays.asList("reload", "stock", "enchant", "give", "admin", "debug", "help"));
+        } else if (args[0].equalsIgnoreCase("debug")) {
+            // debug 명령어는 DebugCommand에 위임 (모든 인자 길이에서)
+            return debugCommand.tabComplete(args);
         } else if (args.length == 2) {
             if (args[0].equalsIgnoreCase("give")) {
                 // 온라인 플레이어 목록
@@ -250,9 +253,6 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                         .collect(Collectors.toList()));
             } else if (args[0].equalsIgnoreCase("admin")) {
                 completions.addAll(Arrays.asList("stock", "enchant"));
-            } else if (args[0].equalsIgnoreCase("debug")) {
-                completions.addAll(debugCommand.tabComplete(args));
-                return completions;
             }
         } else if (args.length == 3) {
             if (args[0].equalsIgnoreCase("give")) {

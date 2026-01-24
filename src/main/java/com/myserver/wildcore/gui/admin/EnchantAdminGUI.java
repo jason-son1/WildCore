@@ -2,13 +2,14 @@ package com.myserver.wildcore.gui.admin;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.EnchantConfig;
+import com.myserver.wildcore.util.EnchantNameUtil;
+import com.myserver.wildcore.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,8 @@ public class EnchantAdminGUI implements InventoryHolder {
     }
 
     private void createInventory() {
-        inventory = Bukkit.createInventory(this, 54, "§8[ §5인챈트 관리 §8]");
+        inventory = Bukkit.createInventory(this, 54,
+                ItemUtil.parse("§8[ §5인챈트 관리 §8]"));
 
         // 배경
         ItemStack background = createItem(Material.BLACK_STAINED_GLASS_PANE, " ", null);
@@ -63,7 +65,8 @@ public class EnchantAdminGUI implements InventoryHolder {
             lore.add("");
             lore.add("§7ID: §f" + enchant.getId());
             lore.add("");
-            lore.add("§7결과: §f" + enchant.getResultEnchantment() + " " + enchant.getResultLevel());
+            lore.add("§7결과: §f" + EnchantNameUtil.getKoreanName(enchant.getResultEnchantment()) + " "
+                    + enchant.getResultLevel());
             lore.add("§7비용: §6" + String.format("%,.0f", enchant.getCostMoney()) + "원");
             lore.add("");
             lore.add("§a성공: §f" + enchant.getSuccessRate() + "%");
@@ -87,15 +90,7 @@ public class EnchantAdminGUI implements InventoryHolder {
     }
 
     private ItemStack createItem(Material material, String name, List<String> lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(name);
-            if (lore != null)
-                meta.setLore(lore);
-            item.setItemMeta(meta);
-        }
-        return item;
+        return ItemUtil.createItem(material, name, lore, 1, null, 0, false, null);
     }
 
     public void open() {

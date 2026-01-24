@@ -22,6 +22,8 @@ E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\liste
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\EnchantManager.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\StockManager.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\placeholder\WildCorePlaceholder.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\tasks\ActionBarMoneyTask.java
+E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\EnchantNameUtil.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\ItemGroupUtil.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\ItemUtil.java
 E:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\WildCore.java
