@@ -16,6 +16,7 @@ com\myserver\wildcore\gui\shop\ShopEditorGUI.class
 com\myserver\wildcore\npc\NpcData.class
 com\myserver\wildcore\gui\EnchantProcessGUI$2.class
 com\myserver\wildcore\gui\admin\AdminGuiListener.class
+com\myserver\wildcore\util\KoreanMaterialUtil.class
 com\myserver\wildcore\config\ShopConfig.class
 com\myserver\wildcore\gui\StockGUI.class
 com\myserver\wildcore\util\ItemUtil.class
@@ -40,9 +41,11 @@ com\myserver\wildcore\placeholder\WildCorePlaceholder.class
 com\myserver\wildcore\config\EnchantConfig.class
 com\myserver\wildcore\gui\PaginatedGui.class
 com\myserver\wildcore\gui\admin\NpcAdminGUI.class
+com\myserver\wildcore\gui\PlayerInfoGUI.class
 com\myserver\wildcore\gui\admin\EnchantEditGUI.class
 com\myserver\wildcore\listeners\NpcInteractListener$1.class
 com\myserver\wildcore\config\StockConfig.class
+com\myserver\wildcore\gui\MyStockGUI.class
 com\myserver\wildcore\gui\shop\ShopGUI.class
 com\myserver\wildcore\gui\admin\EnchantAdminGUI.class
 com\myserver\wildcore\listeners\NpcDamageListener.class

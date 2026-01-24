@@ -70,7 +70,7 @@ public class MyStockGUI extends PaginatedGui<String> {
         lore.add("§7평단가: §f" + String.format("%,.0f", avgPrice) + "원");
         lore.add("");
         lore.add("§7평가액: §e" + String.format("%,.0f", totalValue) + "원");
-        lore.add("§7수익금: " + profitColor + String.format("%+, .0f", profit) + "원");
+        lore.add("§7수익금: " + profitColor + String.format("%+,.0f", profit) + "원");
         lore.add("§7수익률: " + profitColor + String.format("%+.2f%%", profitPercent));
         lore.add("");
         lore.add("§e클릭하여 주식 거래소로 이동");

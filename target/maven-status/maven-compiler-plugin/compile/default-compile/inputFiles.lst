@@ -18,7 +18,9 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\a
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\admin\StockEditGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\EnchantGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\EnchantProcessGUI.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\MyStockGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\PaginatedGui.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\PlayerInfoGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopAdminGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopEditorGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopGUI.java
@@ -42,5 +44,6 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\tasks
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\EnchantNameUtil.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\ItemGroupUtil.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\ItemUtil.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\KoreanMaterialUtil.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\NpcTagUtil.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\WildCore.java
