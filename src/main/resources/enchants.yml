@@ -9,6 +9,11 @@ gui:
 
 # 인챈트 티어 정의
 # success + fail + destroy = 100 이어야 합니다
+#
+# 비용 아이템(cost.items) 설정법:
+# 1. 바닐라 아이템: "MATERIAL_NAME:수량" (예: "DIAMOND:2")
+# 2. 커스텀 아이템: "custom:ID:수량" (예: "custom:enchant_stone:1")
+#
 tiers:
   # 날카로움 I
   sharpness_1:
@@ -29,8 +34,8 @@ tiers:
     cost:
       money: 1000.0
       items:
-        - "DIAMOND:2"
-        - "LAPIS_LAZULI:10"
+        - "custom:enchant_stone:1"
+        - "LAPIS_LAZULI:5"
     probability:
       success: 80.0
       fail: 18.0
@@ -43,7 +48,7 @@ tiers:
       - "&7파괴 확률: &c2%"
       - ""
       - "&7비용: &61,000원"
-      - "&7재료: &b다이아몬드 x2, 청금석 x10"
+      - "&7재료: &5강화석 x1&7, &b청금석 x5"
     unsafe_mode: false
     ignore_conflicts: false
 

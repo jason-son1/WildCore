@@ -197,6 +197,7 @@ public class ShopManager {
         if (!economy.has(player, totalCost)) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
                     "§c잔액이 부족합니다. (필요: §6" + String.format("%,.0f", totalCost) + "원§c)");
+            plugin.getConfigManager().playSound(player, "error");
             return false;
         }
 
@@ -209,6 +210,7 @@ public class ShopManager {
 
         if (!hasInventorySpace(player, itemStack)) {
             player.sendMessage(plugin.getConfigManager().getPrefix() + "§c인벤토리 공간이 부족합니다.");
+            plugin.getConfigManager().playSound(player, "error");
             return false;
         }
 
@@ -218,6 +220,7 @@ public class ShopManager {
             player.getInventory().addItem(itemStack);
             player.sendMessage(plugin.getConfigManager().getPrefix() +
                     "§a구매 완료! §7(§6-" + String.format("%,.0f", totalCost) + "원§7)");
+            plugin.getConfigManager().playSound(player, "buy");
 
             plugin.debug("상점 구매: " + player.getName() + " - " + item.getId() + " x" + amount +
                     " (" + shop.getId() + ")");
@@ -242,6 +245,7 @@ public class ShopManager {
         int totalInInventory = countItemInInventory(player, item);
         if (totalInInventory < amount) {
             player.sendMessage(plugin.getConfigManager().getPrefix() + "§c보유한 아이템이 부족합니다.");
+            plugin.getConfigManager().playSound(player, "error");
             return false;
         }
 
@@ -256,6 +260,7 @@ public class ShopManager {
         if (response.transactionSuccess()) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
                     "§a판매 완료! §7(§6+" + String.format("%,.0f", totalPrice) + "원§7)");
+            plugin.getConfigManager().playSound(player, "sell");
 
             plugin.debug("상점 판매: " + player.getName() + " - " + item.getId() + " x" + amount +
                     " (" + shop.getId() + ")");

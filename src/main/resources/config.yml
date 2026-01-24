@@ -14,6 +14,13 @@ settings:
   # 디버그 모드 (개발 중 로그 출력)
   debug: false
 
+  # 효과음 설정
+  # https://jd.papermc.io/paper/1.20/org/bukkit/Sound.html
+  sounds:
+    buy: "ENTITY_EXPERIENCE_ORB_PICKUP"
+    sell: "ENTITY_PLAYER_LEVELUP"
+    error: "ENTITY_VILLAGER_NO"
+
 # 메시지 설정 (messages.yml로 분리 가능)
 messages:
   # 공통

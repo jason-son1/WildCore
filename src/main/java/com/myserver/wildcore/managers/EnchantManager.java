@@ -186,8 +186,12 @@ public class EnchantManager {
                     continue;
                 String customId = parts[1];
                 if (countCustomItemInInventory(player, customId) < amount) {
+                    com.myserver.wildcore.config.CustomItemConfig customItem = plugin.getConfigManager()
+                            .getCustomItem(customId);
+                    String displayName = (customItem != null) ? customItem.getDisplayName() : customId;
+
                     Map<String, String> replacements = new HashMap<>();
-                    replacements.put("item", customId);
+                    replacements.put("item", displayName);
                     replacements.put("amount", String.valueOf(amount));
                     player.sendMessage(plugin.getConfigManager().getPrefix() +
                             plugin.getConfigManager().getMessage("insufficient_items", replacements));
@@ -377,7 +381,9 @@ public class EnchantManager {
                 if (parts.length < 3)
                     continue;
                 String customId = parts[1];
-                name = customId; // 커스텀 아이템은 ID로 표시 (혹은 DisplayName 가져오면 좋겠지만 여기선 ID)
+                com.myserver.wildcore.config.CustomItemConfig customItem = plugin.getConfigManager()
+                        .getCustomItem(customId);
+                name = (customItem != null) ? customItem.getDisplayName() : customId;
                 current = countCustomItemInInventory(player, customId);
             } else {
                 Material material = Material.getMaterial(parts[0].toUpperCase());

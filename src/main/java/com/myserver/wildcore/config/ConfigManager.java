@@ -891,4 +891,27 @@ public class ConfigManager {
             plugin.getLogger().severe("NPC 위치 저장 실패: " + e.getMessage());
         }
     }
+
+    /**
+     * 특정 타입의 효과음을 가져옵니다.
+     */
+    public String getSound(String type) {
+        return config.getString("settings.sounds." + type, "");
+    }
+
+    /**
+     * 플레이어에게 효과음을 재생합니다.
+     */
+    public void playSound(org.bukkit.entity.Player player, String soundType) {
+        String soundName = getSound(soundType);
+        if (soundName == null || soundName.isEmpty())
+            return;
+
+        try {
+            org.bukkit.Sound sound = org.bukkit.Sound.valueOf(soundName.toUpperCase());
+            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("잘못된 사운드 설정: " + soundName);
+        }
+    }
 }
