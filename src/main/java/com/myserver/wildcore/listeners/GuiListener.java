@@ -126,10 +126,24 @@ public class GuiListener implements Listener {
         if (slot >= 0 && slot < PaginatedGui.ITEMS_PER_PAGE) {
             String enchantId = enchantGUI.getEnchantIdAtSlot(slot);
             if (enchantId != null) {
-                // 인챈트 시도
-                player.closeInventory();
-                plugin.getEnchantManager().tryEnchant(player, enchantId);
+                com.myserver.wildcore.managers.EnchantManager.EnchantProcess process = plugin.getEnchantManager()
+                        .prepareEnchant(player, enchantId);
+
+                if (process != null && !process.result.isError()) {
+                    // 애니메이션 GUI 열기
+                    new com.myserver.wildcore.gui.EnchantProcessGUI(plugin, player, process).open();
+                }
             }
+        }
+    }
+
+    /**
+     * 강화 진행 GUI 클릭 방지
+     */
+    @EventHandler
+    public void onEnchantProcessClick(InventoryClickEvent event) {
+        if (event.getInventory().getHolder() instanceof com.myserver.wildcore.gui.EnchantProcessGUI) {
+            event.setCancelled(true);
         }
     }
 

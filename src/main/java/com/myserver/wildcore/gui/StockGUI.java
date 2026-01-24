@@ -39,13 +39,37 @@ public class StockGUI extends PaginatedGui<StockConfig> {
         for (String line : stock.getLore()) {
             line = line.replace("%price%", plugin.getStockManager().getFormattedPrice(stock.getId()));
             line = line.replace("%change%", getFormattedChangeWithArrow(stock.getId()));
+            line = line.replace("%trend%", plugin.getStockManager().getTrendIcons(stock.getId(), 5));
             lore.add(line);
+        }
+
+        // 만약 lore에 %trend%가 없다면 마지막에 추가 (기본 제공)
+        if (!stock.getLore().stream().anyMatch(l -> l.contains("%trend%"))) {
+            lore.add("§7최근 추세: " + plugin.getStockManager().getTrendIcons(stock.getId(), 5));
         }
 
         // 보유량 정보 추가
         int holdings = plugin.getStockManager().getPlayerStockAmount(player.getUniqueId(), stock.getId());
         lore.add("");
         lore.add("§7보유량: §f" + holdings + "주");
+
+        if (holdings > 0) {
+            double avgPrice = plugin.getStockManager().getPlayerAveragePrice(player.getUniqueId(), stock.getId());
+            double currentPrice = plugin.getStockManager().getCurrentPrice(stock.getId());
+            double profitLoss = (currentPrice - avgPrice) * holdings;
+            double roi = 0;
+            if (avgPrice > 0) {
+                roi = ((currentPrice - avgPrice) / avgPrice) * 100;
+            }
+
+            lore.add("§7평단가: §6" + String.format("%,.0f", avgPrice) + "원");
+
+            String plColor = profitLoss >= 0 ? "§a+" : "§c";
+            lore.add("§7평가손익: " + plColor + String.format("%,.0f", profitLoss) + "원");
+
+            String roiColor = roi >= 0 ? "§a+" : "§c";
+            lore.add("§7수익률: " + roiColor + String.format("%.2f", roi) + "%");
+        }
         lore.add("");
         lore.add("§e좌클릭: §f1주 매수");
         lore.add("§e우클릭: §f1주 매도");

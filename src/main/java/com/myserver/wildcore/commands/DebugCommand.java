@@ -1,6 +1,7 @@
 package com.myserver.wildcore.commands;
 
 import com.myserver.wildcore.WildCore;
+import com.myserver.wildcore.config.PlayerStockData;
 import com.myserver.wildcore.config.StockConfig;
 import com.myserver.wildcore.util.ItemUtil;
 import net.kyori.adventure.text.Component;
@@ -254,16 +255,17 @@ public class DebugCommand {
             if (target != null) {
                 sender.sendMessage("");
                 sender.sendMessage("§e" + target.getName() + "의 보유 주식:");
-                Map<String, Integer> stocks = plugin.getStockManager().getPlayerStocks(target.getUniqueId());
+                Map<String, PlayerStockData> stocks = plugin.getStockManager().getPlayerStocks(target.getUniqueId());
                 if (stocks.isEmpty()) {
                     sender.sendMessage("  §7(보유 주식 없음)");
                 } else {
                     double totalValue = 0;
-                    for (Map.Entry<String, Integer> entry : stocks.entrySet()) {
+                    for (Map.Entry<String, PlayerStockData> entry : stocks.entrySet()) {
                         double price = plugin.getStockManager().getCurrentPrice(entry.getKey());
-                        double value = price * entry.getValue();
+                        int amount = entry.getValue().getAmount();
+                        double value = price * amount;
                         totalValue += value;
-                        sender.sendMessage("  §7" + entry.getKey() + ": §f" + entry.getValue() +
+                        sender.sendMessage("  §7" + entry.getKey() + ": §f" + amount +
                                 "주 §8(가치: " + format(value) + "원)");
                     }
                     sender.sendMessage("  §6총 자산 가치: §f" + format(totalValue) + "원");
@@ -349,11 +351,11 @@ public class DebugCommand {
                 (int) target.getLocation().getZ());
 
         // 주식 보유 현황
-        Map<String, Integer> stocks = plugin.getStockManager().getPlayerStocks(target.getUniqueId());
+        Map<String, PlayerStockData> stocks = plugin.getStockManager().getPlayerStocks(target.getUniqueId());
         if (!stocks.isEmpty()) {
             sender.sendMessage("§7보유 주식:");
-            for (Map.Entry<String, Integer> entry : stocks.entrySet()) {
-                sender.sendMessage("  §7- " + entry.getKey() + ": §f" + entry.getValue() + "주");
+            for (Map.Entry<String, PlayerStockData> entry : stocks.entrySet()) {
+                sender.sendMessage("  §7- " + entry.getKey() + ": §f" + entry.getValue().getAmount() + "주");
             }
         } else {
             sender.sendMessage("§7보유 주식: §8(없음)");

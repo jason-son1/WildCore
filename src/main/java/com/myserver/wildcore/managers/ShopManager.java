@@ -238,9 +238,9 @@ public class ShopManager {
             return false;
         }
 
-        // 판매할 아이템 찾기
-        ItemStack toSell = findItemInInventory(player, item);
-        if (toSell == null || toSell.getAmount() < amount) {
+        // 전체 인벤토리에서 아이템 수량 확인
+        int totalInInventory = countItemInInventory(player, item);
+        if (totalInInventory < amount) {
             player.sendMessage(plugin.getConfigManager().getPrefix() + "§c보유한 아이템이 부족합니다.");
             return false;
         }
@@ -316,18 +316,6 @@ public class ShopManager {
     private boolean hasInventorySpace(Player player, ItemStack item) {
         return player.getInventory().firstEmpty() != -1 ||
                 player.getInventory().containsAtLeast(item, 1);
-    }
-
-    /**
-     * 인벤토리에서 아이템 찾기
-     */
-    private ItemStack findItemInInventory(Player player, ShopItemConfig item) {
-        for (ItemStack stack : player.getInventory().getContents()) {
-            if (stack != null && matchesItem(stack, item)) {
-                return stack;
-            }
-        }
-        return null;
     }
 
     /**

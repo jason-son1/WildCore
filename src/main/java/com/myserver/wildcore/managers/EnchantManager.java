@@ -36,9 +36,20 @@ public class EnchantManager {
      * @return 결과 (SUCCESS, FAIL, DESTROY)
      */
     public EnchantResult tryEnchant(Player player, String enchantId) {
+        EnchantProcess process = prepareEnchant(player, enchantId);
+        if (process.result.isError()) {
+            return process.result;
+        }
+        return executeEnchant(player, process);
+    }
+
+    /**
+     * 인챈트 진행을 위한 사전 준비 및 결과 결정
+     */
+    public EnchantProcess prepareEnchant(Player player, String enchantId) {
         EnchantConfig enchant = plugin.getConfigManager().getEnchant(enchantId);
         if (enchant == null) {
-            return EnchantResult.INVALID;
+            return new EnchantProcess(null, EnchantResult.INVALID);
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
@@ -48,7 +59,7 @@ public class EnchantManager {
             Map<String, String> replacements = new HashMap<>();
             player.sendMessage(plugin.getConfigManager().getPrefix() +
                     plugin.getConfigManager().getMessage("enchant_invalid_item", replacements));
-            return EnchantResult.INVALID;
+            return new EnchantProcess(enchant, EnchantResult.INVALID);
         }
 
         // 돈 검증
@@ -57,17 +68,13 @@ public class EnchantManager {
             replacements.put("amount", String.format("%,.0f", enchant.getCostMoney()));
             player.sendMessage(plugin.getConfigManager().getPrefix() +
                     plugin.getConfigManager().getMessage("insufficient_funds", replacements));
-            return EnchantResult.INSUFFICIENT_FUNDS;
+            return new EnchantProcess(enchant, EnchantResult.INSUFFICIENT_FUNDS);
         }
 
         // 재료 검증
         if (!hasRequiredItems(player, enchant)) {
-            return EnchantResult.INSUFFICIENT_ITEMS;
+            return new EnchantProcess(enchant, EnchantResult.INSUFFICIENT_ITEMS);
         }
-
-        // 비용 차감
-        plugin.getEconomy().withdrawPlayer(player, enchant.getCostMoney());
-        removeRequiredItems(player, enchant);
 
         // 확률 계산
         double roll = random.nextDouble() * 100;
@@ -75,30 +82,61 @@ public class EnchantManager {
         double failThreshold = successThreshold + enchant.getFailRate();
 
         EnchantResult result;
-
         if (roll < successThreshold) {
-            // 성공
-            result = applyEnchantment(player, item, enchant);
+            result = EnchantResult.SUCCESS;
         } else if (roll < failThreshold) {
-            // 실패 (재료만 소멸)
             result = EnchantResult.FAIL;
-            playFailEffect(player);
+        } else {
+            result = EnchantResult.DESTROY;
+        }
 
+        return new EnchantProcess(enchant, result);
+    }
+
+    /**
+     * 결정된 결과를 실제로 적용
+     */
+    public EnchantResult executeEnchant(Player player, EnchantProcess process) {
+        EnchantConfig enchant = process.enchant;
+        EnchantResult result = process.result;
+        ItemStack item = player.getInventory().getItemInMainHand();
+
+        // 최종 재검증 (아이템 바꿨을 가능성 대비)
+        if (!isValidTarget(item, enchant) || !plugin.getEconomy().has(player, enchant.getCostMoney())
+                || !hasRequiredItems(player, enchant)) {
+            return EnchantResult.INVALID;
+        }
+
+        // 비용 차감
+        plugin.getEconomy().withdrawPlayer(player, enchant.getCostMoney());
+        removeRequiredItems(player, enchant);
+
+        if (result == EnchantResult.SUCCESS) {
+            applyEnchantment(player, item, enchant);
+        } else if (result == EnchantResult.FAIL) {
+            playFailEffect(player);
             Map<String, String> replacements = new HashMap<>();
             player.sendMessage(plugin.getConfigManager().getPrefix() +
                     plugin.getConfigManager().getMessage("enchant_fail", replacements));
-        } else {
-            // 파괴
-            result = EnchantResult.DESTROY;
+        } else if (result == EnchantResult.DESTROY) {
             item.setAmount(0);
             playDestroyEffect(player);
-
             Map<String, String> replacements = new HashMap<>();
             player.sendMessage(plugin.getConfigManager().getPrefix() +
                     plugin.getConfigManager().getMessage("enchant_destroy", replacements));
         }
 
         return result;
+    }
+
+    public static class EnchantProcess {
+        public final EnchantConfig enchant;
+        public final EnchantResult result;
+
+        public EnchantProcess(EnchantConfig enchant, EnchantResult result) {
+            this.enchant = enchant;
+            this.result = result;
+        }
     }
 
     /**
@@ -137,19 +175,34 @@ public class EnchantManager {
     private boolean hasRequiredItems(Player player, EnchantConfig enchant) {
         for (String itemStr : enchant.getCostItems()) {
             String[] parts = itemStr.split(":");
-            if (parts.length != 2)
+            if (parts.length < 2)
                 continue;
 
-            Material material = Material.getMaterial(parts[0].toUpperCase());
-            int amount = Integer.parseInt(parts[1]);
+            int amount = Integer.parseInt(parts[parts.length - 1]);
+            String type = parts[0];
 
-            if (material == null || !player.getInventory().containsAtLeast(new ItemStack(material), amount)) {
-                Map<String, String> replacements = new HashMap<>();
-                replacements.put("item", parts[0]);
-                replacements.put("amount", parts[1]);
-                player.sendMessage(plugin.getConfigManager().getPrefix() +
-                        plugin.getConfigManager().getMessage("insufficient_items", replacements));
-                return false;
+            if (type.equalsIgnoreCase("custom")) {
+                if (parts.length < 3)
+                    continue;
+                String customId = parts[1];
+                if (countCustomItemInInventory(player, customId) < amount) {
+                    Map<String, String> replacements = new HashMap<>();
+                    replacements.put("item", customId);
+                    replacements.put("amount", String.valueOf(amount));
+                    player.sendMessage(plugin.getConfigManager().getPrefix() +
+                            plugin.getConfigManager().getMessage("insufficient_items", replacements));
+                    return false;
+                }
+            } else {
+                Material material = Material.getMaterial(parts[0].toUpperCase());
+                if (material == null || !player.getInventory().containsAtLeast(new ItemStack(material), amount)) {
+                    Map<String, String> replacements = new HashMap<>();
+                    replacements.put("item", parts[0]);
+                    replacements.put("amount", String.valueOf(amount));
+                    player.sendMessage(plugin.getConfigManager().getPrefix() +
+                            plugin.getConfigManager().getMessage("insufficient_items", replacements));
+                    return false;
+                }
             }
         }
         return true;
@@ -161,14 +214,47 @@ public class EnchantManager {
     private void removeRequiredItems(Player player, EnchantConfig enchant) {
         for (String itemStr : enchant.getCostItems()) {
             String[] parts = itemStr.split(":");
-            if (parts.length != 2)
+            if (parts.length < 2)
                 continue;
 
-            Material material = Material.getMaterial(parts[0].toUpperCase());
-            int amount = Integer.parseInt(parts[1]);
+            int amount = Integer.parseInt(parts[parts.length - 1]);
+            String type = parts[0];
 
-            if (material != null) {
-                player.getInventory().removeItem(new ItemStack(material, amount));
+            if (type.equalsIgnoreCase("custom")) {
+                if (parts.length < 3)
+                    continue;
+                removeCustomItemFromInventory(player, parts[1], amount);
+            } else {
+                Material material = Material.getMaterial(parts[0].toUpperCase());
+                if (material != null) {
+                    player.getInventory().removeItem(new ItemStack(material, amount));
+                }
+            }
+        }
+    }
+
+    private int countCustomItemInInventory(Player player, String customId) {
+        int count = 0;
+        for (ItemStack stack : player.getInventory().getContents()) {
+            if (stack != null && customId.equals(com.myserver.wildcore.util.ItemUtil.getCustomItemId(plugin, stack))) {
+                count += stack.getAmount();
+            }
+        }
+        return count;
+    }
+
+    private void removeCustomItemFromInventory(Player player, String customId, int amount) {
+        int remaining = amount;
+        for (int i = 0; i < player.getInventory().getSize() && remaining > 0; i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack != null && customId.equals(com.myserver.wildcore.util.ItemUtil.getCustomItemId(plugin, stack))) {
+                int toRemove = Math.min(remaining, stack.getAmount());
+                if (toRemove >= stack.getAmount()) {
+                    player.getInventory().setItem(i, null);
+                } else {
+                    stack.setAmount(stack.getAmount() - toRemove);
+                }
+                remaining -= toRemove;
             }
         }
     }
@@ -271,12 +357,57 @@ public class EnchantManager {
     /**
      * 인챈트 결과 열거형
      */
+    /**
+     * 비용 아이템 상태 목록 반환 (GUI 표시용)
+     */
+    public List<String> getCostItemStatus(Player player, EnchantConfig enchant) {
+        List<String> status = new ArrayList<>();
+
+        for (String itemStr : enchant.getCostItems()) {
+            String[] parts = itemStr.split(":");
+            if (parts.length < 2)
+                continue;
+
+            int required = Integer.parseInt(parts[parts.length - 1]);
+            String type = parts[0];
+            String name = parts[0];
+            int current = 0;
+
+            if (type.equalsIgnoreCase("custom")) {
+                if (parts.length < 3)
+                    continue;
+                String customId = parts[1];
+                name = customId; // 커스텀 아이템은 ID로 표시 (혹은 DisplayName 가져오면 좋겠지만 여기선 ID)
+                current = countCustomItemInInventory(player, customId);
+            } else {
+                Material material = Material.getMaterial(parts[0].toUpperCase());
+                if (material != null) {
+                    name = material.name();
+                    // 바닐라 아이템 수량 체크
+                    for (ItemStack stack : player.getInventory().getContents()) {
+                        if (stack != null && stack.getType() == material) {
+                            current += stack.getAmount();
+                        }
+                    }
+                }
+            }
+
+            String color = (current >= required) ? "§a" : "§c";
+            status.add("§7- " + name + ": " + color + current + "§7/" + required);
+        }
+        return status;
+    }
+
     public enum EnchantResult {
         SUCCESS,
         FAIL,
         DESTROY,
         INVALID,
         INSUFFICIENT_FUNDS,
-        INSUFFICIENT_ITEMS
+        INSUFFICIENT_ITEMS;
+
+        public boolean isError() {
+            return this == INVALID || this == INSUFFICIENT_FUNDS || this == INSUFFICIENT_ITEMS;
+        }
     }
 }

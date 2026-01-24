@@ -54,6 +54,11 @@ public class EnchantGUI extends PaginatedGui<EnchantConfig> {
         lore.add("§7결과: §f" + enchant.getResultEnchantment() + " Lv." + enchant.getResultLevel());
         lore.add("§7비용: §6" + String.format("%,.0f", enchant.getCostMoney()) + "원");
         lore.add("");
+        if (!enchant.getCostItems().isEmpty()) {
+            lore.add("§7재료:");
+            lore.addAll(plugin.getEnchantManager().getCostItemStatus(player, enchant));
+        }
+        lore.add("");
         lore.add(formatProbability("성공", enchant.getSuccessRate(), "§a"));
         lore.add(formatProbability("실패", enchant.getFailRate(), "§e"));
         lore.add(formatProbability("파괴", enchant.getDestroyRate(), "§c"));
