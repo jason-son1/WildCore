@@ -1,11 +1,14 @@
 package com.myserver.wildcore.config;
 
 import com.myserver.wildcore.WildCore;
+import com.myserver.wildcore.npc.NpcType;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +33,7 @@ public class ConfigManager {
     private FileConfiguration enchantsConfig;
     private FileConfiguration itemsConfig;
     private FileConfiguration shopsConfig;
+    private FileConfiguration locationsConfig;
 
     // 파일 객체들
     private File configFile;
@@ -37,6 +41,7 @@ public class ConfigManager {
     private File enchantsFile;
     private File itemsFile;
     private File shopsFile;
+    private File locationsFile;
 
     // 캐시된 데이터
     private Map<String, StockConfig> stocks = new HashMap<>();
@@ -70,6 +75,8 @@ public class ConfigManager {
         saveDefaultFile("enchants.yml");
         saveDefaultFile("items.yml");
         saveDefaultFile("shops.yml");
+        saveDefaultFile("locations.yml");
+        saveDefaultFile("messages.yml");
 
         // 파일 로드
         configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -77,12 +84,14 @@ public class ConfigManager {
         enchantsFile = new File(plugin.getDataFolder(), "enchants.yml");
         itemsFile = new File(plugin.getDataFolder(), "items.yml");
         shopsFile = new File(plugin.getDataFolder(), "shops.yml");
+        locationsFile = new File(plugin.getDataFolder(), "locations.yml");
 
         config = YamlConfiguration.loadConfiguration(configFile);
         stocksConfig = YamlConfiguration.loadConfiguration(stocksFile);
         enchantsConfig = YamlConfiguration.loadConfiguration(enchantsFile);
         itemsConfig = YamlConfiguration.loadConfiguration(itemsFile);
         shopsConfig = YamlConfiguration.loadConfiguration(shopsFile);
+        locationsConfig = YamlConfiguration.loadConfiguration(locationsFile);
 
         // 데이터 파싱
         loadMessages();
@@ -817,5 +826,69 @@ public class ConfigManager {
      */
     public boolean isShopNpcNoAi() {
         return shopsConfig.getBoolean("settings.npc_no_ai", true);
+    }
+
+    // =====================
+    // NPC 위치 관리 (locations.yml)
+    // =====================
+
+    /**
+     * NPC 위치 추가
+     */
+    public void addNpcLocation(NpcType type, Location loc) {
+        if (loc == null || loc.getWorld() == null)
+            return;
+        String typePath = type.getId();
+        List<String> locations = locationsConfig.getStringList(typePath + ".locations");
+        String locStr = loc.getWorld().getName() + ":" + loc.getBlockX() + ":" + loc.getBlockY() + ":"
+                + loc.getBlockZ();
+        locations.add(locStr);
+        locationsConfig.set(typePath + ".locations", locations);
+        saveLocationsConfig();
+    }
+
+    /**
+     * NPC 위치 목록 가져오기
+     */
+    public List<Location> getNpcLocations(NpcType type) {
+        List<Location> result = new ArrayList<>();
+        String typePath = type.getId();
+        List<String> locations = locationsConfig.getStringList(typePath + ".locations");
+        for (String locStr : locations) {
+            String[] parts = locStr.split(":");
+            if (parts.length >= 4) {
+                World world = Bukkit.getWorld(parts[0]);
+                if (world != null) {
+                    try {
+                        int x = Integer.parseInt(parts[1]);
+                        int y = Integer.parseInt(parts[2]);
+                        int z = Integer.parseInt(parts[3]);
+                        result.add(new Location(world, x + 0.5, y, z + 0.5));
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 특정 타입의 모든 NPC 위치 삭제
+     */
+    public void clearNpcLocations(NpcType type) {
+        String typePath = type.getId();
+        locationsConfig.set(typePath + ".locations", new ArrayList<>());
+        saveLocationsConfig();
+    }
+
+    /**
+     * locations.yml 저장
+     */
+    private void saveLocationsConfig() {
+        try {
+            locationsConfig.save(locationsFile);
+        } catch (IOException e) {
+            plugin.getLogger().severe("NPC 위치 저장 실패: " + e.getMessage());
+        }
     }
 }

@@ -3,9 +3,12 @@ package com.myserver.wildcore.managers;
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.ShopConfig;
 import com.myserver.wildcore.config.ShopItemConfig;
+import com.myserver.wildcore.npc.NpcType;
 import com.myserver.wildcore.util.ItemUtil;
+import com.myserver.wildcore.util.NpcTagUtil;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
@@ -34,44 +37,34 @@ public class ShopManager {
     }
 
     /**
-     * 모든 상점 로드 및 NPC 스폰
+     * 모든 상점 로드 및 NPC 스폰 (Wipe & Respawn)
+     * 서버 리로드 시 기존 상점 NPC를 모두 제거하고 새로 생성합니다.
      */
     public void loadAllShops() {
         entityToShopMap.clear();
 
+        // Wipe: 기존 상점 NPC 제거 (PDC 태그 기반)
+        if (plugin.getNpcManager() != null) {
+            plugin.getNpcManager().removeAllTaggedNpcs(NpcType.SHOP);
+        }
+
+        // Respawn: 설정된 모든 상점 NPC 새로 생성
         for (ShopConfig shop : plugin.getConfigManager().getShops().values()) {
-            // NPC가 존재하는지 확인하고, 없으면 새로 생성
-            if (shop.getEntityUuid() != null) {
-                Entity entity = findEntityByUUID(shop.getEntityUuid());
-                if (entity != null && entity.isValid()) {
-                    // 기존 NPC 유지
-                    entityToShopMap.put(shop.getEntityUuid(), shop.getId());
-                    plugin.debug("상점 NPC 발견: " + shop.getId() + " (UUID: " + shop.getEntityUuid() + ")");
-                } else {
-                    // NPC가 없으면 새로 생성
-                    spawnNPC(shop);
-                }
-            } else if (shop.getLocation() != null) {
-                // UUID가 없으면 새로 생성
+            if (shop.getLocation() != null) {
                 spawnNPC(shop);
             }
         }
 
-        plugin.getLogger().info("상점 NPC " + entityToShopMap.size() + "개 로드됨");
+        plugin.getLogger().info("상점 NPC " + entityToShopMap.size() + "개 로드됨 (Wipe & Respawn)");
     }
 
     /**
-     * UUID로 엔티티 찾기
+     * UUID로 엔티티 찾기 (최적화: Bukkit.getEntity 직접 호출)
      */
     private Entity findEntityByUUID(UUID uuid) {
-        for (org.bukkit.World world : plugin.getServer().getWorlds()) {
-            for (Entity entity : world.getEntities()) {
-                if (entity.getUniqueId().equals(uuid)) {
-                    return entity;
-                }
-            }
-        }
-        return null;
+        if (uuid == null)
+            return null;
+        return Bukkit.getEntity(uuid);
     }
 
     /**
@@ -112,6 +105,9 @@ public class ShopManager {
                 villager.setVillagerType(Villager.Type.PLAINS);
             });
         }
+
+        // PDC 태그 설정 (NPC 식별용)
+        NpcTagUtil.setNpcTag(npc, NpcType.SHOP, shop.getId());
 
         // UUID 저장
         shop.setEntityUuid(npc.getUniqueId());

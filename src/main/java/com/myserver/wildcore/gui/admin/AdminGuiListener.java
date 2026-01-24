@@ -7,6 +7,7 @@ import com.myserver.wildcore.config.StockConfig;
 import com.myserver.wildcore.gui.shop.ShopAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopEditorGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
+import com.myserver.wildcore.npc.NpcType;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -100,6 +101,13 @@ public class AdminGuiListener implements Listener {
         // 상점 아이템 편집 GUI - 아이템 드래그를 허용해야 하므로 특별 처리
         if (event.getInventory().getHolder() instanceof ShopEditorGUI shopEditorGUI) {
             handleShopEditorClick(player, event, shopEditorGUI);
+            return;
+        }
+
+        // NPC 관리 GUI
+        if (event.getInventory().getHolder() instanceof NpcAdminGUI npcAdminGUI) {
+            event.setCancelled(true);
+            handleNpcAdminClick(player, event, npcAdminGUI);
             return;
         }
     }
@@ -798,6 +806,57 @@ public class AdminGuiListener implements Listener {
         if (slot == 53) {
             gui.applyToBuilder();
             gui.getParentBuilder().open();
+        }
+    }
+
+    // === NPC 관리 GUI 핸들러 ===
+
+    /**
+     * NPC 관리 GUI 클릭 처리
+     */
+    private void handleNpcAdminClick(Player player, InventoryClickEvent event, NpcAdminGUI gui) {
+        int slot = event.getRawSlot();
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
+
+        ClickType click = event.getClick();
+
+        // 강화 NPC 생성
+        if (slot == 20) {
+            gui.spawnEnchantNpc();
+            return;
+        }
+
+        // 주식 NPC 생성
+        if (slot == 22) {
+            gui.spawnStockNpc();
+            return;
+        }
+
+        // 강화 NPC 목록 (우클릭: 전체 삭제)
+        if (slot == 29 && click.isRightClick()) {
+            gui.removeAllNpcs(NpcType.ENCHANT);
+            return;
+        }
+
+        // 주식 NPC 목록 (우클릭: 전체 삭제)
+        if (slot == 33 && click.isRightClick()) {
+            gui.removeAllNpcs(NpcType.STOCK);
+            return;
+        }
+
+        // 뒤로 가기
+        if (slot == 45) {
+            player.closeInventory();
+            return;
+        }
+
+        // 모든 NPC 제거 (우클릭)
+        if (slot == 49 && click.isRightClick()) {
+            gui.removeAllNonShopNpcs();
         }
     }
 

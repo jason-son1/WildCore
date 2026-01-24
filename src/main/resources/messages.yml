@@ -1,0 +1,47 @@
+# WildCore Messages
+# 플러그인 메시지 설정 파일
+# 색상 코드: &0~&f, &l(굵게), &n(밑줄), &r(초기화)
+
+prefix: "&7[&6WildCore&7]&r "
+
+# 상점 관련 메시지
+shop:
+  buy_success: "&a구매 완료! &7(&6-{price}원&7)"
+  buy_fail_no_money: "&c잔액이 부족합니다. (필요: &6{price}원&c)"
+  buy_fail_no_space: "&c인벤토리 공간이 부족합니다."
+  buy_fail_error: "&c거래에 실패했습니다."
+  buy_fail_cannot_buy: "&c이 아이템은 구매할 수 없습니다."
+  sell_success: "&a판매 완료! &7(&6+{price}원&7)"
+  sell_fail_no_item: "&c보유한 아이템이 부족합니다."
+  sell_fail_error: "&c거래에 실패했습니다."
+  sell_fail_cannot_sell: "&c이 아이템은 판매할 수 없습니다."
+
+# 인챈트 관련 메시지
+enchant:
+  success: "&a강화 성공!"
+  fail: "&c강화 실패..."
+  destroy: "&4아이템이 파괴되었습니다!"
+  no_item: "&c손에 아이템을 들고 있어야 합니다."
+  invalid_target: "&c이 아이템에는 이 인챈트를 적용할 수 없습니다."
+  no_materials: "&c필요한 재료가 부족합니다."
+  no_money: "&c비용이 부족합니다."
+
+# 주식 관련 메시지
+stock:
+  buy_success: "&a{stock} 주식 {amount}주를 구매했습니다. &7(&6-{price}원&7)"
+  sell_success: "&a{stock} 주식 {amount}주를 판매했습니다. &7(&6+{price}원&7)"
+  no_money: "&c잔액이 부족합니다."
+  no_stocks: "&c보유한 주식이 부족합니다."
+
+# NPC 관련 메시지
+npc:
+  created: "&a{type} NPC가 생성되었습니다."
+  removed: "&c{type} NPC가 제거되었습니다."
+  not_found: "&c해당 NPC를 찾을 수 없습니다."
+  no_permission: "&c이 기능을 사용할 권한이 없습니다."
+
+# 일반 메시지
+general:
+  reload_success: "&a설정이 리로드되었습니다."
+  no_permission: "&c권한이 없습니다."
+  invalid_command: "&c잘못된 명령어입니다. /wildcore help를 입력하세요."

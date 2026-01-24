@@ -1,0 +1,13 @@
+# WildCore NPC Locations
+# 상점 외의 NPC(인챈트/주식) 위치를 저장합니다.
+# 이 파일은 플러그인에 의해 자동으로 관리됩니다.
+
+enchant:
+  # 예시:
+  # - world:100:64:200
+  locations: []
+
+stock:
+  # 예시:
+  # - world:150:64:250
+  locations: []

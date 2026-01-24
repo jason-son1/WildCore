@@ -7,9 +7,10 @@ import com.myserver.wildcore.listeners.BlockListener;
 import com.myserver.wildcore.listeners.ChatListener;
 import com.myserver.wildcore.listeners.CustomItemProtectListener;
 import com.myserver.wildcore.listeners.GuiListener;
+import com.myserver.wildcore.listeners.NpcInteractListener;
 import com.myserver.wildcore.listeners.PlayerListener;
-import com.myserver.wildcore.listeners.ShopInteractListener;
 import com.myserver.wildcore.managers.EnchantManager;
+import com.myserver.wildcore.managers.NpcManager;
 import com.myserver.wildcore.managers.ShopManager;
 import com.myserver.wildcore.managers.StockManager;
 import com.myserver.wildcore.placeholder.WildCorePlaceholder;
@@ -33,6 +34,7 @@ public class WildCore extends JavaPlugin {
     private ConfigManager configManager;
     private StockManager stockManager;
     private EnchantManager enchantManager;
+    private NpcManager npcManager;
     private ShopManager shopManager;
     private AdminGuiListener adminGuiListener;
     private ActionBarMoneyTask actionBarMoneyTask;
@@ -55,6 +57,7 @@ public class WildCore extends JavaPlugin {
         // 매니저 초기화
         stockManager = new StockManager(this);
         enchantManager = new EnchantManager(this);
+        npcManager = new NpcManager(this);
         shopManager = new ShopManager(this);
         adminGuiListener = new AdminGuiListener(this);
 
@@ -131,7 +134,7 @@ public class WildCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
         getServer().getPluginManager().registerEvents(new BlockListener(this), this);
         getServer().getPluginManager().registerEvents(new CustomItemProtectListener(this), this);
-        getServer().getPluginManager().registerEvents(new ShopInteractListener(this), this);
+        getServer().getPluginManager().registerEvents(new NpcInteractListener(this), this);
         getServer().getPluginManager().registerEvents(adminGuiListener, this);
         getServer().getPluginManager().registerEvents(new ChatListener(this, adminGuiListener), this);
     }
@@ -152,6 +155,7 @@ public class WildCore extends JavaPlugin {
         configManager.loadAllConfigs();
         stockManager.reload();
         enchantManager.reload();
+        npcManager.reload();
         shopManager.reload();
     }
 
@@ -187,5 +191,9 @@ public class WildCore extends JavaPlugin {
 
     public ShopManager getShopManager() {
         return shopManager;
+    }
+
+    public NpcManager getNpcManager() {
+        return npcManager;
     }
 }
