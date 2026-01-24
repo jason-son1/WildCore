@@ -245,6 +245,16 @@ public class EnchantBuilderGUI implements InventoryHolder {
             return false;
         }
 
+        // 타겟 그룹에서 화이트리스트 자동 생성 (화이트리스트가 비어있으면)
+        Set<String> finalWhitelist = new HashSet<>(targetWhitelist);
+        if (finalWhitelist.isEmpty() && !targetGroups.isEmpty()) {
+            for (String group : targetGroups) {
+                for (org.bukkit.Material mat : ItemGroupUtil.getGroupMaterials(group)) {
+                    finalWhitelist.add(mat.name());
+                }
+            }
+        }
+
         // 설정 값 직접 세팅
         String path = "tiers." + enchantId;
         String koreanName = formatEnchantmentName(selectedEnchant);
@@ -263,9 +273,9 @@ public class EnchantBuilderGUI implements InventoryHolder {
         enchantsConfig.set(path + ".unsafe_mode", unsafeMode);
         enchantsConfig.set(path + ".ignore_conflicts", ignoreConflicts);
 
-        // 대상 설정
+        // 대상 설정 - 그룹과 화이트리스트 모두 저장
         enchantsConfig.set(path + ".target_groups", new ArrayList<>(targetGroups));
-        enchantsConfig.set(path + ".target_whitelist", new ArrayList<>(targetWhitelist));
+        enchantsConfig.set(path + ".target_whitelist", new ArrayList<>(finalWhitelist));
 
         // 확률
         enchantsConfig.set(path + ".probability.success", successRate);
