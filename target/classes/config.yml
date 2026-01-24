@@ -21,6 +21,12 @@ settings:
     sell: "ENTITY_PLAYER_LEVELUP"
     error: "ENTITY_VILLAGER_NO"
 
+  # 액션바 설정
+  actionbar:
+    enabled: true
+    format: "&6보유 금액: &f%money%원"
+    update_interval: 20 # 틱 단위 (20틱 = 1초)
+
 # 메시지 설정 (messages.yml로 분리 가능)
 messages:
   # 공통

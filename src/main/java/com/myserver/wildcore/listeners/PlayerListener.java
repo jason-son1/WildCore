@@ -12,6 +12,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import com.myserver.wildcore.gui.PlayerInfoGUI;
 
 import java.util.Random;
 
@@ -135,6 +137,17 @@ public class PlayerListener implements Listener {
                 // 아이템 반환
                 player.getInventory().addItem(ItemUtil.createCustomItem(plugin, "random_warp_ticket", 1));
             }
+        }
+    }
+
+    /**
+     * 키 입력 이벤트 - 내 정보 GUI (Shift + F)
+     */
+    @EventHandler
+    public void onPlayerSwapHandItems(PlayerSwapHandItemsEvent event) {
+        if (event.getPlayer().isSneaking()) {
+            event.setCancelled(true);
+            new PlayerInfoGUI(plugin, event.getPlayer()).open();
         }
     }
 

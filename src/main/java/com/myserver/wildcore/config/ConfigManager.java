@@ -914,4 +914,16 @@ public class ConfigManager {
             plugin.getLogger().warning("잘못된 사운드 설정: " + soundName);
         }
     }
+
+    public boolean isActionBarEnabled() {
+        return config.getBoolean("settings.actionbar.enabled", true);
+    }
+
+    public String getActionBarFormat() {
+        return colorize(config.getString("settings.actionbar.format", "&6보유 금액: &f%money%원"));
+    }
+
+    public long getActionBarUpdateInterval() {
+        return config.getLong("settings.actionbar.update_interval", 20L);
+    }
 }

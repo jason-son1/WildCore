@@ -12,7 +12,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
+import com.myserver.wildcore.gui.PlayerInfoGUI;
 
 /**
  * GUI 클릭 이벤트 리스너
@@ -51,6 +53,30 @@ public class GuiListener implements Listener {
             event.setCancelled(true);
             handleShopClick(player, event, shopGUI);
             return;
+        }
+
+        // 내 정보 GUI 처리
+        if (event.getInventory().getHolder() instanceof PlayerInfoGUI) {
+            event.setCancelled(true);
+
+            // 주식 정보 버튼 클릭 (슬롯 13)
+            if (event.getRawSlot() == 13) {
+                new com.myserver.wildcore.gui.MyStockGUI(plugin, player).open();
+            }
+            return;
+        }
+        // 내 주식 정보 GUI 처리
+        if (event.getInventory().getHolder() instanceof com.myserver.wildcore.gui.MyStockGUI myStockGUI) {
+            event.setCancelled(true);
+            handleMyStockClick(player, event, myStockGUI);
+            return;
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (event.getInventory().getHolder() instanceof PlayerInfoGUI) {
+            event.setCancelled(true);
         }
     }
 
@@ -230,6 +256,28 @@ public class GuiListener implements Listener {
 
                 // GUI 갱신
                 shopGUI.refresh();
+            }
+        }
+    }
+
+    /**
+     * 내 주식 정보 GUI 클릭 처리 - 주식 거래소로 이동
+     */
+    private void handleMyStockClick(Player player, InventoryClickEvent event,
+            com.myserver.wildcore.gui.MyStockGUI myStockGUI) {
+        int slot = event.getRawSlot();
+
+        // 페이지 네비게이션
+        if (handlePaginationNavigation(slot, myStockGUI)) {
+            return;
+        }
+
+        // 아이템 클릭 시 주식 거래소 오픈
+        if (slot >= 0 && slot < PaginatedGui.ITEMS_PER_PAGE) {
+            String stockId = myStockGUI.getStockIdAtSlot(slot);
+            if (stockId != null) {
+                // 주식 거래소 오픈
+                new StockGUI(plugin, player).open();
             }
         }
     }

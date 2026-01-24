@@ -5,6 +5,7 @@ import com.myserver.wildcore.config.ShopConfig;
 import com.myserver.wildcore.config.ShopItemConfig;
 import com.myserver.wildcore.gui.PaginatedGui;
 import com.myserver.wildcore.util.ItemUtil;
+import com.myserver.wildcore.util.KoreanMaterialUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -45,7 +46,7 @@ public class ShopGUI extends PaginatedGui<ShopItemConfig> {
         if (item.isVanilla()) {
             try {
                 material = Material.valueOf(item.getId().toUpperCase());
-                displayName = "§f" + formatMaterialName(material);
+                displayName = "§f" + KoreanMaterialUtil.getName(material);
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("잘못된 Material: " + item.getId());
             }
@@ -179,26 +180,4 @@ public class ShopGUI extends PaginatedGui<ShopItemConfig> {
         }
     }
 
-    /**
-     * Material 이름 포맷팅
-     */
-    private String formatMaterialName(Material material) {
-        String name = material.name().toLowerCase().replace("_", " ");
-        StringBuilder result = new StringBuilder();
-        boolean capitalizeNext = true;
-
-        for (char c : name.toCharArray()) {
-            if (c == ' ') {
-                result.append(c);
-                capitalizeNext = true;
-            } else if (capitalizeNext) {
-                result.append(Character.toUpperCase(c));
-                capitalizeNext = false;
-            } else {
-                result.append(c);
-            }
-        }
-
-        return result.toString();
-    }
 }

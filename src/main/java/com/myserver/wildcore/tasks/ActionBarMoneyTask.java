@@ -1,9 +1,6 @@
 package com.myserver.wildcore.tasks;
 
 import com.myserver.wildcore.WildCore;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -22,6 +19,12 @@ public class ActionBarMoneyTask extends BukkitRunnable {
 
     @Override
     public void run() {
+        if (!plugin.getConfigManager().isActionBarEnabled()) {
+            return;
+        }
+
+        String format = plugin.getConfigManager().getActionBarFormat();
+
         for (Player player : Bukkit.getOnlinePlayers()) {
             // 권한이 없는 플레이어는 스킵
             if (!player.hasPermission("wildcore.actionbar.money")) {
@@ -31,19 +34,18 @@ public class ActionBarMoneyTask extends BukkitRunnable {
             double balance = plugin.getEconomy().getBalance(player);
             String formattedBalance = String.format("%,.0f", balance);
 
-            Component message = Component.text(" ", NamedTextColor.GOLD)
-                    .append(Component.text(formattedBalance + " 원", NamedTextColor.GOLD));
-
-            player.sendActionBar(message);
+            String finalMessage = format.replace("%money%", formattedBalance);
+            player.sendActionBar(com.myserver.wildcore.util.ItemUtil.parse(finalMessage));
         }
     }
 
     /**
-     * 태스크 시작 (20틱 = 1초마다 갱신)
+     * 태스크 시작
      */
     public void start() {
-        // 20틱(1초) 후 시작, 20틱(1초)마다 반복
-        this.runTaskTimer(plugin, 20L, 20L);
+        long interval = plugin.getConfigManager().getActionBarUpdateInterval();
+        // interval틱 후 시작, interval틱마다 반복
+        this.runTaskTimer(plugin, interval, interval);
     }
 
     /**
