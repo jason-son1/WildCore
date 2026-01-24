@@ -97,9 +97,8 @@ public class AdminGuiListener implements Listener {
             return;
         }
 
-        // 상점 아이템 편집 GUI
+        // 상점 아이템 편집 GUI - 아이템 드래그를 허용해야 하므로 특별 처리
         if (event.getInventory().getHolder() instanceof ShopEditorGUI shopEditorGUI) {
-            event.setCancelled(true);
             handleShopEditorClick(player, event, shopEditorGUI);
             return;
         }
@@ -880,30 +879,39 @@ public class AdminGuiListener implements Listener {
         ItemStack clicked = event.getCurrentItem();
         ClickType click = event.getClick();
 
-        // 네비게이션 영역
-        if (slot == ShopEditorGUI.getSlotBack()) {
-            new ShopAdminGUI(plugin, player, gui.getShop()).open();
+        // 플레이어 인벤토리 클릭은 허용 (아이템을 집을 수 있도록)
+        if (event.getClickedInventory() == player.getInventory()) {
+            // Shift 클릭으로 상단 GUI로 이동하는 것은 막음
+            if (click.isShiftClick()) {
+                event.setCancelled(true);
+            }
             return;
         }
 
-        if (slot == ShopEditorGUI.getSlotSave()) {
-            player.sendMessage(plugin.getConfigManager().getPrefix() + "§a상점 아이템이 저장되었습니다.");
-            new ShopAdminGUI(plugin, player, gui.getShop()).open();
-            return;
-        }
+        // 상단 GUI 클릭은 기본적으로 취소
+        event.setCancelled(true);
 
-        if (slot == ShopEditorGUI.getSlotHelp()) {
-            return; // 도움말 클릭 무시
+        // 네비게이션 영역 (45~53)
+        if (slot >= 45 && slot <= 53) {
+            if (slot == ShopEditorGUI.getSlotBack()) {
+                new ShopAdminGUI(plugin, player, gui.getShop()).open();
+                return;
+            }
+
+            if (slot == ShopEditorGUI.getSlotSave()) {
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§a상점 아이템이 저장되었습니다.");
+                new ShopAdminGUI(plugin, player, gui.getShop()).open();
+                return;
+            }
+
+            if (slot == ShopEditorGUI.getSlotHelp()) {
+                return; // 도움말 클릭 무시
+            }
+            return;
         }
 
         // 아이템 영역 (0~44)
         if (gui.isItemSlot(slot)) {
-            // 플레이어 인벤토리에서 드래그한 아이템 등록
-            if (event.getClickedInventory() == player.getInventory()) {
-                // 플레이어 인벤토리 클릭 - 허용
-                return;
-            }
-
             // 기존 아이템이 있는 슬롯 클릭
             if (clicked != null && clicked.getType() != Material.AIR
                     && clicked.getType() != Material.LIGHT_GRAY_STAINED_GLASS_PANE) {
@@ -919,8 +927,9 @@ public class AdminGuiListener implements Listener {
                 // 빈 슬롯에 커서에 든 아이템 등록
                 ItemStack cursor = event.getCursor();
                 if (cursor != null && cursor.getType() != Material.AIR) {
-                    gui.registerItem(slot, cursor);
-                    event.setCursor(null); // 커서 비우기
+                    gui.registerItem(slot, cursor.clone());
+                    // 커서 아이템 소모
+                    player.setItemOnCursor(null);
                 }
             }
         }

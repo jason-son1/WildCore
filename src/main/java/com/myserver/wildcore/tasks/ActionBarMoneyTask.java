@@ -32,9 +32,7 @@ public class ActionBarMoneyTask extends BukkitRunnable {
             String formattedBalance = String.format("%,.0f", balance);
 
             Component message = Component.text(" ", NamedTextColor.GOLD)
-                    .decoration(TextDecoration.BOLD, false)
-                    .append(Component.text(formattedBalance + "원", NamedTextColor.GOLD)
-                            .decoration(TextDecoration.BOLD, true));
+                    .append(Component.text(formattedBalance + "원", NamedTextColor.GOLD));
 
             player.sendActionBar(message);
         }
