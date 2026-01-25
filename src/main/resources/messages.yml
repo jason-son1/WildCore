@@ -45,3 +45,21 @@ general:
   reload_success: "&a설정이 리로드되었습니다."
   no_permission: "&c권한이 없습니다."
   invalid_command: "&c잘못된 명령어입니다. /wildcore help를 입력하세요."
+
+# 은행 관련 메시지
+bank:
+  account_created: "&a%product% 계좌가 개설되었습니다!"
+  account_closed: "&a계좌가 해지되었습니다. 총 수령액: &6%total%원"
+  account_not_found: "&c계좌를 찾을 수 없습니다."
+  product_not_found: "&c해당 은행 상품을 찾을 수 없습니다."
+  deposit_success: "&a%product%에 &6%amount%원&a을 입금했습니다."
+  deposit_not_allowed: "&c이 계좌는 추가 입금이 불가능합니다."
+  withdraw_success: "&a%product%에서 &6%amount%원&a을 출금했습니다. &7(이자: %interest%원)"
+  withdraw_not_allowed: "&c이 계좌는 출금이 불가능합니다."
+  insufficient_balance: "&c계좌 잔액이 부족합니다."
+  limit_exceeded: "&c입금 한도를 초과했습니다. &7(최대: %max%원)"
+  min_deposit: "&c최소 입금액은 &6%min%원&c입니다."
+  early_withdrawal_warning: "&c중도 해지 시 &6%penalty%%&c의 페널티가 부과됩니다. &7(우클릭으로 확정)"
+  early_withdrawal_applied: "&c중도 해지로 &6%penalty%%&c의 페널티가 적용되었습니다."
+  matured: "&6%product% 적금이 만기되었습니다! 이자를 수령하세요!"
+  no_accounts: "&7보유 중인 계좌가 없습니다."

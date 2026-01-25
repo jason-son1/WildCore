@@ -1,0 +1,123 @@
+# ========================================
+# WildCore 은행 시스템 설정
+# ========================================
+
+# GUI 설정
+gui:
+  title: "&8[ &6은행 &8]"
+  size: 54
+
+# 은행 상품 정의
+products:
+  # ========================================
+  # 자유 예금 상품
+  # ========================================
+  
+  # 자유 예금 - 기본
+  free_savings_basic:
+    display_name: "&a자유 예금 (기본)"
+    material: "GOLD_INGOT"
+    type: SAVINGS
+    interest_rate: 0.001  # 0.1% (시간당)
+    interest_interval: 3600  # 1시간마다 정산 (초 단위)
+    min_deposit: 1000
+    max_deposit: 10000000  # 1천만원 한도
+    compound_interest: false
+    lore:
+      - ""
+      - "&7유형: &e자유 예금"
+      - "&7이자율: &6시간당 0.1%"
+      - "&7입금 한도: &f1,000 ~ 10,000,000원"
+      - ""
+      - "&a✔ 언제든 입출금 가능!"
+      - ""
+      - "&e좌클릭: &f가입하기"
+
+  # 자유 예금 - 프리미엄
+  free_savings_premium:
+    display_name: "&6자유 예금 (프리미엄)"
+    material: "GOLD_BLOCK"
+    type: SAVINGS
+    interest_rate: 0.002  # 0.2% (시간당)
+    interest_interval: 3600
+    min_deposit: 100000
+    max_deposit: 100000000  # 1억원 한도
+    compound_interest: true
+    lore:
+      - ""
+      - "&7유형: &e자유 예금 (프리미엄)"
+      - "&7이자율: &6시간당 0.2% &d(복리)"
+      - "&7입금 한도: &f100,000 ~ 100,000,000원"
+      - ""
+      - "&6⭐ 고액 예치자 전용!"
+      - "&a✔ 언제든 입출금 가능!"
+      - ""
+      - "&e좌클릭: &f가입하기"
+
+  # ========================================
+  # 정기 적금 상품
+  # ========================================
+  
+  # 정기 적금 - 1일
+  fixed_deposit_1d:
+    display_name: "&b1일 정기 적금"
+    material: "IRON_INGOT"
+    type: TERM_DEPOSIT
+    interest_rate: 0.02  # 만기 시 2%
+    duration: 86400  # 1일 (24*60*60)
+    min_deposit: 5000
+    max_deposit: 10000000
+    early_withdrawal_penalty: 0.02  # 중도 해지 시 2% 손실
+    lore:
+      - ""
+      - "&7유형: &b정기 적금"
+      - "&7만기 이자: &62%"
+      - "&7기간: &f1일"
+      - "&7입금 한도: &f5,000 ~ 10,000,000원"
+      - ""
+      - "&c⚠ 중도 해지 시 2% 페널티"
+      - ""
+      - "&e좌클릭: &f가입하기"
+
+  # 정기 적금 - 7일
+  fixed_deposit_7d:
+    display_name: "&b7일 정기 적금"
+    material: "DIAMOND"
+    type: TERM_DEPOSIT
+    interest_rate: 0.10  # 만기 시 10%
+    duration: 604800  # 7일 (7*24*60*60)
+    min_deposit: 10000
+    max_deposit: 50000000
+    early_withdrawal_penalty: 0.05  # 중도 해지 시 5% 손실
+    lore:
+      - ""
+      - "&7유형: &b정기 적금"
+      - "&7만기 이자: &610%"
+      - "&7기간: &f7일"
+      - "&7입금 한도: &f10,000 ~ 50,000,000원"
+      - ""
+      - "&c⚠ 중도 해지 시 5% 페널티"
+      - ""
+      - "&e좌클릭: &f가입하기"
+
+  # 정기 적금 - 30일
+  fixed_deposit_30d:
+    display_name: "&530일 정기 적금"
+    material: "NETHERITE_INGOT"
+    type: TERM_DEPOSIT
+    interest_rate: 0.50  # 만기 시 50%
+    duration: 2592000  # 30일 (30*24*60*60)
+    min_deposit: 100000
+    max_deposit: 200000000
+    early_withdrawal_penalty: 0.10  # 10% 손실
+    lore:
+      - ""
+      - "&7유형: &5정기 적금 (장기)"
+      - "&7만기 이자: &650%"
+      - "&7기간: &f30일"
+      - "&7입금 한도: &f100,000 ~ 200,000,000원"
+      - ""
+      - "&6⭐ 고수익 장기 상품"
+      - "&c⚠ 중도 해지 시 10% 페널티"
+      - ""
+      - "&e좌클릭: &f가입하기"

@@ -1,0 +1,32 @@
+# WildCore NPC 데이터 파일
+# 이 파일은 플러그인에 의해 자동으로 관리됩니다.
+# 직접 수정 시 주의하세요!
+
+# NPC 설정
+settings:
+  # NPC 무적 여부
+  invulnerable: true
+  # NPC 소리 끄기
+  silent: true
+  # NPC AI 비활성화
+  no_ai: true
+  # 기본 엔티티 타입 (VILLAGER, ARMOR_STAND)
+  default_entity_type: VILLAGER
+
+# NPC 데이터
+# 형식:
+# npcs:
+#   abc123:
+#     type: ENCHANT
+#     display_name: "&d[ 강화소 ]"
+#     entity_type: VILLAGER
+#     target_id: ""
+#     location:
+#       world: world
+#       x: 100.5
+#       y: 64.0
+#       z: 200.5
+#       yaw: 180.0
+#     created: 1706140200000
+#     creator: "uuid"
+npcs: {}

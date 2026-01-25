@@ -5,6 +5,7 @@ import com.myserver.wildcore.config.CustomItemConfig;
 import com.myserver.wildcore.config.ShopConfig;
 import com.myserver.wildcore.gui.EnchantGUI;
 import com.myserver.wildcore.gui.StockGUI;
+import com.myserver.wildcore.gui.BankMainGUI;
 import com.myserver.wildcore.gui.admin.EnchantAdminGUI;
 import com.myserver.wildcore.gui.admin.NpcAdminGUI;
 import com.myserver.wildcore.gui.admin.StockAdminGUI;
@@ -53,6 +54,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "stock" -> handleStock(sender, args);
             case "enchant" -> handleEnchant(sender, args);
             case "shop" -> handleShop(sender, args);
+            case "bank" -> handleBank(sender, args);
             case "npc" -> handleNpc(sender, args);
             case "give" -> handleGive(sender, args);
             case "admin" -> handleAdmin(sender, args);
@@ -304,6 +306,25 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     }
 
     /**
+     * 은행 명령어
+     */
+    private void handleBank(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("player_only"));
+            return;
+        }
+
+        if (!player.hasPermission("wildcore.bank.use")) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("no_permission"));
+            return;
+        }
+
+        new BankMainGUI(plugin, player).open();
+    }
+
+    /**
      * 아이템 지급 명령어
      */
     private void handleGive(CommandSender sender, String[] args) {
@@ -431,6 +452,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/wildcore stock §7- 주식 시장 열기");
         sender.sendMessage("§e/wildcore enchant §7- 강화소 열기");
         sender.sendMessage("§e/wildcore shop §7- 상점 명령어");
+        sender.sendMessage("§e/wildcore bank §7- 은행 열기");
         sender.sendMessage("§e/wildcore npc §7- NPC 관리 GUI");
         sender.sendMessage("§e/wildcore give <플레이어> <아이템ID> [수량] §7- 아이템 지급");
         sender.sendMessage("§e/wildcore admin <stock|enchant|npc> §7- 관리자 GUI");
@@ -455,7 +477,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             completions.addAll(
-                    Arrays.asList("reload", "stock", "enchant", "shop", "npc", "give", "admin", "debug", "help"));
+                    Arrays.asList("reload", "stock", "enchant", "shop", "bank", "npc", "give", "admin", "debug",
+                            "help"));
         } else if (args[0].equalsIgnoreCase("debug")) {
             // debug 명령어는 DebugCommand에 위임 (모든 인자 길이에서)
             return debugCommand.tabComplete(args);

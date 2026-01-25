@@ -14,6 +14,7 @@ import com.myserver.wildcore.managers.EnchantManager;
 import com.myserver.wildcore.managers.NpcManager;
 import com.myserver.wildcore.managers.ShopManager;
 import com.myserver.wildcore.managers.StockManager;
+import com.myserver.wildcore.managers.BankManager;
 import com.myserver.wildcore.placeholder.WildCorePlaceholder;
 import com.myserver.wildcore.tasks.ActionBarMoneyTask;
 import net.milkbowl.vault.economy.Economy;
@@ -37,6 +38,7 @@ public class WildCore extends JavaPlugin {
     private EnchantManager enchantManager;
     private NpcManager npcManager;
     private ShopManager shopManager;
+    private BankManager bankManager;
     private AdminGuiListener adminGuiListener;
     private ActionBarMoneyTask actionBarMoneyTask;
 
@@ -60,10 +62,15 @@ public class WildCore extends JavaPlugin {
         enchantManager = new EnchantManager(this);
         npcManager = new NpcManager(this);
         shopManager = new ShopManager(this);
+        bankManager = new BankManager(this);
         adminGuiListener = new AdminGuiListener(this);
 
         // 주식 스케줄러 시작
         stockManager.startScheduler();
+
+        // 기존 NPC 엔티티 제거 후 재소환
+        npcManager.removeAllTaggedNpcs();
+        npcManager.respawnAllNpcs();
 
         // 상점 NPC 로드
         shopManager.loadAllShops();
@@ -107,6 +114,11 @@ public class WildCore extends JavaPlugin {
         // 상점 데이터 저장
         if (shopManager != null) {
             shopManager.saveAllShops();
+        }
+
+        // 은행 데이터 저장
+        if (bankManager != null) {
+            bankManager.saveAllData();
         }
 
         getLogger().info("WildCore 플러그인이 비활성화되었습니다.");
@@ -159,6 +171,7 @@ public class WildCore extends JavaPlugin {
         enchantManager.reload();
         npcManager.reload();
         shopManager.reload();
+        bankManager.reload();
     }
 
     /**
@@ -197,5 +210,9 @@ public class WildCore extends JavaPlugin {
 
     public NpcManager getNpcManager() {
         return npcManager;
+    }
+
+    public BankManager getBankManager() {
+        return bankManager;
     }
 }

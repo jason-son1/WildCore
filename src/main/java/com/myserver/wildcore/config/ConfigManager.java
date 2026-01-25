@@ -34,6 +34,7 @@ public class ConfigManager {
     private FileConfiguration itemsConfig;
     private FileConfiguration shopsConfig;
     private FileConfiguration locationsConfig;
+    private FileConfiguration banksConfig;
 
     // 파일 객체들
     private File configFile;
@@ -42,12 +43,14 @@ public class ConfigManager {
     private File itemsFile;
     private File shopsFile;
     private File locationsFile;
+    private File banksFile;
 
     // 캐시된 데이터
     private Map<String, StockConfig> stocks = new HashMap<>();
     private Map<String, EnchantConfig> enchants = new HashMap<>();
     private Map<String, CustomItemConfig> customItems = new HashMap<>();
     private Map<String, ShopConfig> shops = new HashMap<>();
+    private Map<String, BankProductConfig> bankProducts = new HashMap<>();
     private Map<String, String> messages = new HashMap<>();
 
     // 수정된 설정 캐시 (실시간 편집용)
@@ -77,6 +80,7 @@ public class ConfigManager {
         saveDefaultFile("shops.yml");
         saveDefaultFile("locations.yml");
         saveDefaultFile("messages.yml");
+        saveDefaultFile("banks.yml");
 
         // 파일 로드
         configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -85,6 +89,7 @@ public class ConfigManager {
         itemsFile = new File(plugin.getDataFolder(), "items.yml");
         shopsFile = new File(plugin.getDataFolder(), "shops.yml");
         locationsFile = new File(plugin.getDataFolder(), "locations.yml");
+        banksFile = new File(plugin.getDataFolder(), "banks.yml");
 
         config = YamlConfiguration.loadConfiguration(configFile);
         stocksConfig = YamlConfiguration.loadConfiguration(stocksFile);
@@ -92,6 +97,7 @@ public class ConfigManager {
         itemsConfig = YamlConfiguration.loadConfiguration(itemsFile);
         shopsConfig = YamlConfiguration.loadConfiguration(shopsFile);
         locationsConfig = YamlConfiguration.loadConfiguration(locationsFile);
+        banksConfig = YamlConfiguration.loadConfiguration(banksFile);
 
         // 데이터 파싱
         loadMessages();
@@ -99,6 +105,7 @@ public class ConfigManager {
         loadEnchants();
         loadCustomItems();
         loadShops();
+        loadBankProducts();
 
         // 수정 캐시 초기화
         clearModifiedCaches();
@@ -214,6 +221,38 @@ public class ConfigManager {
             }
         }
         plugin.getLogger().info("커스텀 아이템 " + customItems.size() + "개 로드됨");
+    }
+
+    /**
+     * 은행 상품 설정 로드
+     */
+    private void loadBankProducts() {
+        bankProducts.clear();
+        if (banksConfig.isConfigurationSection("products")) {
+            for (String key : banksConfig.getConfigurationSection("products").getKeys(false)) {
+                String path = "products." + key;
+
+                BankProductType type = BankProductType.fromString(
+                        banksConfig.getString(path + ".type", "SAVINGS"));
+
+                BankProductConfig product = new BankProductConfig(
+                        key,
+                        colorize(banksConfig.getString(path + ".display_name", key)),
+                        banksConfig.getString(path + ".material", "GOLD_INGOT"),
+                        type,
+                        banksConfig.getDouble(path + ".interest_rate", 0.001),
+                        banksConfig.getLong(path + ".interest_interval", 3600),
+                        banksConfig.getLong(path + ".duration", 0),
+                        banksConfig.getDouble(path + ".min_deposit", 1000),
+                        banksConfig.getDouble(path + ".max_deposit", 10000000),
+                        banksConfig.getDouble(path + ".early_withdrawal_penalty", 0.05),
+                        banksConfig.getBoolean(path + ".compound_interest", false),
+                        colorize(banksConfig.getStringList(path + ".lore")));
+
+                bankProducts.put(key, product);
+            }
+        }
+        plugin.getLogger().info("은행 상품 " + bankProducts.size() + "개 로드됨");
     }
 
     /**
@@ -925,5 +964,66 @@ public class ConfigManager {
 
     public long getActionBarUpdateInterval() {
         return config.getLong("settings.actionbar.update_interval", 20L);
+    }
+
+    // =====================
+    // 은행 관련 메서드
+    // =====================
+
+    /**
+     * 모든 은행 상품 가져오기
+     */
+    public Map<String, BankProductConfig> getBankProducts() {
+        return bankProducts;
+    }
+
+    /**
+     * 특정 은행 상품 가져오기
+     */
+    public BankProductConfig getBankProduct(String id) {
+        return bankProducts.get(id);
+    }
+
+    /**
+     * 정렬된 은행 상품 목록 반환 (이름순)
+     */
+    public List<BankProductConfig> getAllBankProductsSorted() {
+        List<BankProductConfig> list = new ArrayList<>(bankProducts.values());
+        list.sort(Comparator.comparing(BankProductConfig::getDisplayName));
+        return list;
+    }
+
+    /**
+     * 자유 예금 상품만 반환
+     */
+    public List<BankProductConfig> getSavingsProducts() {
+        return bankProducts.values().stream()
+                .filter(BankProductConfig::isSavings)
+                .sorted(Comparator.comparing(BankProductConfig::getDisplayName))
+                .toList();
+    }
+
+    /**
+     * 정기 적금 상품만 반환
+     */
+    public List<BankProductConfig> getTermDepositProducts() {
+        return bankProducts.values().stream()
+                .filter(BankProductConfig::isTermDeposit)
+                .sorted(Comparator.comparing(BankProductConfig::getDisplayName))
+                .toList();
+    }
+
+    /**
+     * 은행 GUI 제목
+     */
+    public String getBankGuiTitle() {
+        return colorize(banksConfig.getString("gui.title", "&8[ &6은행 &8]"));
+    }
+
+    /**
+     * banks.yml 설정 가져오기
+     */
+    public FileConfiguration getBanksConfig() {
+        return banksConfig;
     }
 }

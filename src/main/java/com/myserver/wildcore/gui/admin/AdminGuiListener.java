@@ -110,6 +110,13 @@ public class AdminGuiListener implements Listener {
             handleNpcAdminClick(player, event, npcAdminGUI);
             return;
         }
+
+        // NPC 목록 GUI
+        if (event.getInventory().getHolder() instanceof NpcListGUI npcListGUI) {
+            event.setCancelled(true);
+            handleNpcListClick(player, event, npcListGUI);
+            return;
+        }
     }
 
     /**
@@ -597,6 +604,14 @@ public class AdminGuiListener implements Listener {
                     player.sendMessage(plugin.getConfigManager().getPrefix() + "§c상점 생성에 실패했습니다. (이미 존재하는 ID일 수 있습니다)");
                 }
             }
+            case NPC_RENAME -> {
+                if (plugin.getNpcManager().renameNpc(request.targetId, message)) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§aNPC 이름이 변경되었습니다.");
+                    new NpcListGUI(plugin, player).open();
+                } else {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§cNPC를 찾을 수 없습니다.");
+                }
+            }
         }
     }
 
@@ -621,7 +636,9 @@ public class AdminGuiListener implements Listener {
         SHOP_DISPLAY_NAME,
         SHOP_BUY_PRICE,
         SHOP_SELL_PRICE,
-        NEW_SHOP_ID
+        NEW_SHOP_ID,
+        // NPC 관련
+        NPC_RENAME
     }
 
     // 빌더 GUI 참조 저장
@@ -829,23 +846,25 @@ public class AdminGuiListener implements Listener {
             return;
         if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
             return;
+        if (clicked.getType() == Material.ORANGE_STAINED_GLASS_PANE)
+            return;
 
         ClickType click = event.getClick();
 
-        // 강화 NPC 생성
-        if (slot == 20) {
+        // NPC 생성 버튼
+        if (gui.isCreateEnchantSlot(slot)) {
             gui.spawnEnchantNpc();
             return;
         }
-
-        // 주식 NPC 생성
-        if (slot == 22) {
+        if (gui.isCreateStockSlot(slot)) {
             gui.spawnStockNpc();
             return;
         }
-
-        // 이동 NPC 생성
-        if (slot == 26) {
+        if (gui.isCreateBankSlot(slot)) {
+            gui.spawnBankNpc();
+            return;
+        }
+        if (gui.isCreateWarpSlot(slot)) {
             player.closeInventory();
             player.sendMessage(
                     plugin.getConfigManager().getPrefix() + "§e이동할 월드 이름을 입력하세요. (예: world, spawn, minigame)");
@@ -853,33 +872,127 @@ public class AdminGuiListener implements Listener {
             return;
         }
 
-        // 강화 NPC 목록 (우클릭: 전체 삭제)
-        if (slot == 29 && click.isRightClick()) {
-            gui.removeAllNpcs(NpcType.ENCHANT);
+        // NPC 목록 버튼
+        if (gui.isListAllSlot(slot)) {
+            new NpcListGUI(plugin, player).open();
+            return;
+        }
+        if (gui.isListEnchantSlot(slot)) {
+            if (click.isRightClick()) {
+                gui.removeAllNpcs(NpcType.ENCHANT);
+            } else {
+                new NpcListGUI(plugin, player, NpcType.ENCHANT).open();
+            }
+            return;
+        }
+        if (gui.isListStockSlot(slot)) {
+            if (click.isRightClick()) {
+                gui.removeAllNpcs(NpcType.STOCK);
+            } else {
+                new NpcListGUI(plugin, player, NpcType.STOCK).open();
+            }
+            return;
+        }
+        if (gui.isListBankSlot(slot)) {
+            if (click.isRightClick()) {
+                gui.removeAllNpcs(NpcType.BANK);
+            } else {
+                new NpcListGUI(plugin, player, NpcType.BANK).open();
+            }
+            return;
+        }
+        if (gui.isListWarpSlot(slot)) {
+            if (click.isRightClick()) {
+                gui.removeAllNpcs(NpcType.WARP);
+            } else {
+                new NpcListGUI(plugin, player, NpcType.WARP).open();
+            }
             return;
         }
 
-        // 이동 NPC 목록 (우클릭: 전체 삭제)
-        if (slot == 31 && click.isRightClick()) {
-            gui.removeAllNpcs(NpcType.WARP);
-            return;
-        }
-
-        // 주식 NPC 목록 (우클릭: 전체 삭제)
-        if (slot == 33 && click.isRightClick()) {
-            gui.removeAllNpcs(NpcType.STOCK);
-            return;
-        }
-
-        // 뒤로 가기
-        if (slot == 45) {
+        // 하단 버튼
+        if (gui.isBackSlot(slot)) {
             player.closeInventory();
             return;
         }
-
-        // 모든 NPC 제거 (우클릭)
-        if (slot == 49 && click.isRightClick()) {
+        if (gui.isRefreshSlot(slot)) {
+            gui.refresh();
+            return;
+        }
+        if (gui.isDeleteAllSlot(slot) && click.isRightClick()) {
             gui.removeAllNonShopNpcs();
+        }
+    }
+
+    /**
+     * NPC 목록 GUI 클릭 처리
+     */
+    private void handleNpcListClick(Player player, InventoryClickEvent event, NpcListGUI gui) {
+        int slot = event.getRawSlot();
+        ClickType click = event.getClick();
+
+        // 페이지네이션 처리
+        if (slot == com.myserver.wildcore.gui.PaginatedGui.SLOT_PREV_PAGE) {
+            if (gui.getCurrentPage() > 0) {
+                gui.previousPage();
+            }
+            return;
+        }
+        if (slot == com.myserver.wildcore.gui.PaginatedGui.SLOT_NEXT_PAGE) {
+            if (gui.getCurrentPage() < gui.getTotalPages() - 1) {
+                gui.nextPage();
+            }
+            return;
+        }
+        // 정보 아이콘 클릭: 필터 초기화 (전체 목록으로)
+        if (slot == com.myserver.wildcore.gui.PaginatedGui.SLOT_INFO) {
+            if (gui.getFilterType() != null) {
+                new NpcListGUI(plugin, player).open();
+            }
+            return;
+        }
+        // 네비게이션 바 영역 무시
+        if (slot >= 45 && slot <= 53) {
+            return;
+        }
+
+        // 배경 클릭 무시
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
+
+        // NPC 아이템 클릭
+        if (slot >= 0 && slot < com.myserver.wildcore.gui.PaginatedGui.ITEMS_PER_PAGE) {
+            String npcId = gui.getNpcIdAtSlot(slot);
+            if (npcId == null)
+                return;
+
+            com.myserver.wildcore.npc.NpcData npcData = gui.getNpcDataAtSlot(slot);
+            if (npcData == null)
+                return;
+
+            if (click.isLeftClick() && !click.isShiftClick()) {
+                // 좌클릭: 텔레포트
+                if (npcData.getLocation() != null) {
+                    player.teleport(npcData.getLocation());
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§aNPC 위치로 이동했습니다.");
+                } else {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§cNPC 위치를 찾을 수 없습니다.");
+                }
+            } else if (click.isRightClick() && !click.isShiftClick()) {
+                // 우클릭: 이름 변경
+                player.closeInventory();
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§e새 NPC 이름을 입력하세요. (색상 코드 & 사용 가능)");
+                pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.NPC_RENAME, npcId));
+            } else if (click.isShiftClick() && click.isRightClick()) {
+                // Shift+우클릭: 삭제
+                if (plugin.getNpcManager().removeNpc(npcId)) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§cNPC가 삭제되었습니다.");
+                    gui.refresh();
+                }
+            }
         }
     }
 

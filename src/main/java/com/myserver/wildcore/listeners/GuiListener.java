@@ -6,6 +6,9 @@ import com.myserver.wildcore.gui.EnchantGUI;
 import com.myserver.wildcore.gui.PaginatedGui;
 import com.myserver.wildcore.gui.StockGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
+import com.myserver.wildcore.gui.BankMainGUI;
+import com.myserver.wildcore.gui.BankProductListGUI;
+import com.myserver.wildcore.gui.BankDepositGUI;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -56,12 +59,21 @@ public class GuiListener implements Listener {
         }
 
         // 내 정보 GUI 처리
-        if (event.getInventory().getHolder() instanceof PlayerInfoGUI) {
+        if (event.getInventory().getHolder() instanceof PlayerInfoGUI playerInfoGUI) {
             event.setCancelled(true);
 
-            // 주식 정보 버튼 클릭 (슬롯 13)
-            if (event.getRawSlot() == 13) {
+            int slot = event.getRawSlot();
+
+            // 주식 정보 버튼 클릭
+            if (playerInfoGUI.isStockSlot(slot)) {
                 new com.myserver.wildcore.gui.MyStockGUI(plugin, player).open();
+                return;
+            }
+
+            // 은행 계좌 버튼 클릭
+            if (playerInfoGUI.isBankSlot(slot)) {
+                new BankMainGUI(plugin, player).open();
+                return;
             }
             return;
         }
@@ -69,6 +81,27 @@ public class GuiListener implements Listener {
         if (event.getInventory().getHolder() instanceof com.myserver.wildcore.gui.MyStockGUI myStockGUI) {
             event.setCancelled(true);
             handleMyStockClick(player, event, myStockGUI);
+            return;
+        }
+
+        // 은행 메인 GUI 처리
+        if (event.getInventory().getHolder() instanceof BankMainGUI bankMainGUI) {
+            event.setCancelled(true);
+            handleBankMainClick(player, event, bankMainGUI);
+            return;
+        }
+
+        // 은행 상품 목록 GUI 처리
+        if (event.getInventory().getHolder() instanceof BankProductListGUI productListGUI) {
+            event.setCancelled(true);
+            handleBankProductListClick(player, event, productListGUI);
+            return;
+        }
+
+        // 은행 입금 GUI 처리
+        if (event.getInventory().getHolder() instanceof BankDepositGUI depositGUI) {
+            event.setCancelled(true);
+            handleBankDepositClick(player, event, depositGUI);
             return;
         }
     }
@@ -278,6 +311,163 @@ public class GuiListener implements Listener {
             if (stockId != null) {
                 // 주식 거래소 오픈
                 new StockGUI(plugin, player).open();
+            }
+        }
+    }
+
+    // =====================
+    // 은행 GUI 핸들러
+    // =====================
+
+    /**
+     * 은행 메인 GUI 클릭 처리
+     */
+    private void handleBankMainClick(Player player, InventoryClickEvent event, BankMainGUI bankMainGUI) {
+        int slot = event.getRawSlot();
+        ClickType click = event.getClick();
+
+        // 배경 클릭 무시
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
+        if (clicked.getType() == Material.YELLOW_STAINED_GLASS_PANE)
+            return;
+
+        // 새 상품 가입 버튼 클릭
+        if (bankMainGUI.isNewProductSlot(slot)) {
+            new BankProductListGUI(plugin, player).open();
+            return;
+        }
+
+        // 계좌 영역 클릭
+        if (bankMainGUI.isAccountSlot(slot)) {
+            String accountId = bankMainGUI.getAccountIdAtSlot(slot);
+            if (accountId == null)
+                return;
+
+            var account = plugin.getBankManager().getAccount(player.getUniqueId(), accountId);
+            if (account == null)
+                return;
+
+            var product = plugin.getConfigManager().getBankProduct(account.getProductId());
+            if (product == null)
+                return;
+
+            if (product.isSavings()) {
+                // 자유 예금: 입금/출금/해지
+                if (click.isLeftClick() && !click.isShiftClick()) {
+                    // 입금 GUI 열기
+                    new BankDepositGUI(plugin, player, product.getId(), accountId).open();
+                } else if (click.isRightClick() && !click.isShiftClick()) {
+                    // 출금 (10000원 고정, 후에 GUI로 개선 가능)
+                    plugin.getBankManager().withdraw(player, accountId, 10000);
+                    bankMainGUI.refresh();
+                } else if (click.isShiftClick() && click.isRightClick()) {
+                    // 계좌 해지
+                    plugin.getBankManager().closeAccount(player, accountId, false);
+                    bankMainGUI.refresh();
+                }
+            } else if (product.isTermDeposit()) {
+                // 정기 적금
+                if (account.isMatured()) {
+                    // 만기 도달: 수령
+                    plugin.getBankManager().closeAccount(player, accountId, false);
+                    bankMainGUI.refresh();
+                } else if (click.isRightClick()) {
+                    // 중도 해지 시도
+                    if (click.isShiftClick()) {
+                        // Shift+우클릭: 강제 중도 해지
+                        plugin.getBankManager().closeAccount(player, accountId, true);
+                        bankMainGUI.refresh();
+                    } else {
+                        // 우클릭: 경고 메시지
+                        plugin.getBankManager().closeAccount(player, accountId, false);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 은행 상품 목록 GUI 클릭 처리
+     */
+    private void handleBankProductListClick(Player player, InventoryClickEvent event,
+            BankProductListGUI productListGUI) {
+        int slot = event.getRawSlot();
+
+        // 네비게이션 처리
+        if (handlePaginationNavigation(slot, productListGUI)) {
+            return;
+        }
+
+        // 배경 클릭 무시
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType() == Material.AIR)
+            return;
+        if (clicked.getType() == Material.LIGHT_GRAY_STAINED_GLASS_PANE)
+            return;
+        if (clicked.getType() == Material.BARRIER)
+            return;
+
+        // 아이템 영역(0~44) 클릭 확인
+        if (slot >= 0 && slot < PaginatedGui.ITEMS_PER_PAGE) {
+            String productId = productListGUI.getProductIdAtSlot(slot);
+            if (productId != null) {
+                // 입금 금액 선택 GUI 열기 (새 계좌 개설)
+                new BankDepositGUI(plugin, player, productId, null).open();
+            }
+        }
+    }
+
+    /**
+     * 은행 입금 GUI 클릭 처리
+     */
+    private void handleBankDepositClick(Player player, InventoryClickEvent event, BankDepositGUI depositGUI) {
+        int slot = event.getRawSlot();
+
+        // 뷰로가기
+        if (depositGUI.isBackSlot(slot)) {
+            if (depositGUI.getAccountId() == null) {
+                // 새 계좌 개설 중이었으므로 상품 목록으로
+                new BankProductListGUI(plugin, player).open();
+            } else {
+                // 기존 계좌 입금 중이었으므로 메인으로
+                new BankMainGUI(plugin, player).open();
+            }
+            return;
+        }
+
+        // 직접 입력 버튼 (TODO: 채팅 입력 구현 필요)
+        if (depositGUI.isCustomSlot(slot)) {
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "&7입금할 금액을 채팅으로 입력해주세요. (취소: 'cancel')");
+            // ChatListener에서 처리할 수 있도록 상태 저장 필요
+            // 지금은 기본 금액 버튼만 지원
+            return;
+        }
+
+        // 금액 버튼 클릭
+        double amount = depositGUI.getAmountAtSlot(slot);
+        if (amount > 0) {
+            String productId = depositGUI.getProductId();
+            String accountId = depositGUI.getAccountId();
+
+            if (accountId == null) {
+                // 새 계좌 개설
+                String newAccountId = plugin.getBankManager().createAccount(player, productId, amount);
+                if (newAccountId != null) {
+                    player.closeInventory();
+                    new BankMainGUI(plugin, player).open();
+                }
+            } else {
+                // 기존 계좌 입금
+                if (plugin.getBankManager().deposit(player, accountId, amount)) {
+                    player.closeInventory();
+                    new BankMainGUI(plugin, player).open();
+                }
             }
         }
     }

@@ -4,6 +4,7 @@ import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.ShopConfig;
 import com.myserver.wildcore.gui.EnchantGUI;
 import com.myserver.wildcore.gui.StockGUI;
+import com.myserver.wildcore.gui.BankMainGUI;
 import com.myserver.wildcore.gui.shop.ShopAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
 import com.myserver.wildcore.npc.NpcType;
@@ -45,6 +46,7 @@ public class NpcInteractListener implements Listener {
             case SHOP -> handleShopNpc(player, entity);
             case ENCHANT -> handleEnchantNpc(player);
             case STOCK -> handleStockNpc(player);
+            case BANK -> handleBankNpc(player);
             case WARP -> handleWarpNpc(player, entity);
         }
     }
@@ -123,5 +125,19 @@ public class NpcInteractListener implements Listener {
         player.teleport(world.getSpawnLocation());
         player.sendMessage(plugin.getConfigManager().getPrefix() + "§a" + worldName + " 월드로 이동했습니다.");
         plugin.debug("월드 이동 (NPC 클릭): " + player.getName() + " -> " + worldName);
+    }
+
+    /**
+     * 은행 NPC 처리
+     */
+    private void handleBankNpc(Player player) {
+        // 권한 확인
+        if (!player.hasPermission("wildcore.bank.use")) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§c은행을 사용할 권한이 없습니다.");
+            return;
+        }
+
+        new BankMainGUI(plugin, player).open();
+        plugin.debug("은행 GUI 열림 (NPC 클릭): " + player.getName());
     }
 }
