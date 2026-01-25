@@ -57,6 +57,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "bank" -> handleBank(sender, args);
             case "npc" -> handleNpc(sender, args);
             case "give" -> handleGive(sender, args);
+            case "drop" -> handleDrop(sender, args);
             case "admin" -> handleAdmin(sender, args);
             case "debug" -> debugCommand.execute(sender, args);
             case "help" -> sendHelp(sender);
@@ -379,6 +380,69 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     }
 
     /**
+     * 아이템 드롭 명령어 (주로 MythicMobs나 콘솔에서 사용)
+     * 사용법: /wildcore drop <월드명> <x> <y> <z> <아이템ID> [수량]
+     */
+    private void handleDrop(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("wildcore.admin")) {
+            sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("no_permission"));
+            return;
+        }
+
+        if (args.length < 6) {
+            sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§c사용법: /wildcore drop <월드> <x> <y> <z> <아이템ID> [수량]");
+            return;
+        }
+
+        try {
+            String worldName = args[1];
+            double x = Double.parseDouble(args[2]);
+            double y = Double.parseDouble(args[3]);
+            double z = Double.parseDouble(args[4]);
+            String itemId = args[5];
+            int amount = args.length >= 7 ? parseInt(args[6], 1) : 1;
+
+            org.bukkit.World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                        "§c월드를 찾을 수 없습니다: " + worldName);
+                return;
+            }
+
+            CustomItemConfig itemConfig = plugin.getConfigManager().getCustomItem(itemId);
+            if (itemConfig == null) {
+                sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                        "§c아이템을 찾을 수 없습니다: " + itemId);
+                sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                        "§7사용 가능한 아이템: " + String.join(", ",
+                                plugin.getConfigManager().getCustomItems().keySet()));
+                return;
+            }
+
+            ItemStack item = ItemUtil.createCustomItem(plugin, itemId, amount);
+            if (item == null) {
+                sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                        "§c아이템 생성에 실패했습니다.");
+                return;
+            }
+
+            org.bukkit.Location loc = new org.bukkit.Location(world, x, y, z);
+            world.dropItemNaturally(loc, item);
+
+            // 디버그용 로그 (관리자에게만 표시)
+            sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§a아이템 드롭 완료: " + itemConfig.getDisplayName() + " §7x" + amount +
+                    " §7at " + worldName + " (" + x + ", " + y + ", " + z + ")");
+
+        } catch (NumberFormatException e) {
+            sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§c좌표나 수량은 숫자여야 합니다.");
+        }
+    }
+
+    /**
      * 관리자 GUI 명령어
      */
     private void handleAdmin(CommandSender sender, String[] args) {
@@ -455,6 +519,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/wildcore bank §7- 은행 열기");
         sender.sendMessage("§e/wildcore npc §7- NPC 관리 GUI");
         sender.sendMessage("§e/wildcore give <플레이어> <아이템ID> [수량] §7- 아이템 지급");
+        sender.sendMessage("§e/wildcore drop <월드> <x> <y> <z> <아이템ID> [수량] §7- 아이템 드롭");
         sender.sendMessage("§e/wildcore admin <stock|enchant|npc> §7- 관리자 GUI");
         sender.sendMessage("§e/wildcore help §7- 도움말 보기");
         sender.sendMessage("§8§m                                        ");
@@ -477,7 +542,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             completions.addAll(
-                    Arrays.asList("reload", "stock", "enchant", "shop", "bank", "npc", "give", "admin", "debug",
+                    Arrays.asList("reload", "stock", "enchant", "shop", "bank", "npc", "give", "drop", "admin", "debug",
                             "help"));
         } else if (args[0].equalsIgnoreCase("debug")) {
             // debug 명령어는 DebugCommand에 위임 (모든 인자 길이에서)
@@ -488,6 +553,11 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                 completions.addAll(Bukkit.getOnlinePlayers().stream()
                         .map(Player::getName)
                         .collect(Collectors.toList()));
+            } else if (args[0].equalsIgnoreCase("drop")) {
+                // 월드 목록
+                completions.addAll(Bukkit.getWorlds().stream()
+                        .map(org.bukkit.World::getName)
+                        .collect(Collectors.toList()));
             } else if (args[0].equalsIgnoreCase("admin")) {
                 completions.addAll(Arrays.asList("stock", "enchant", "npc"));
             } else if (args[0].equalsIgnoreCase("shop")) {
@@ -497,6 +567,11 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             if (args[0].equalsIgnoreCase("give")) {
                 // 커스텀 아이템 목록
                 completions.addAll(plugin.getConfigManager().getCustomItems().keySet());
+            } else if (args[0].equalsIgnoreCase("drop")) {
+                // x 좌표 제안
+                if (sender instanceof Player player) {
+                    completions.add(String.valueOf((int) player.getLocation().getX()));
+                }
             } else if (args[0].equalsIgnoreCase("shop")) {
                 String subCmd = args[1].toLowerCase();
                 if (subCmd.equals("remove") || subCmd.equals("delete") ||
@@ -506,6 +581,19 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                     completions.addAll(plugin.getConfigManager().getShops().keySet());
                 }
             }
+        } else if (args.length == 4 && args[0].equalsIgnoreCase("drop")) {
+            // y 좌표 제안
+            if (sender instanceof Player player) {
+                completions.add(String.valueOf((int) player.getLocation().getY()));
+            }
+        } else if (args.length == 5 && args[0].equalsIgnoreCase("drop")) {
+            // z 좌표 제안
+            if (sender instanceof Player player) {
+                completions.add(String.valueOf((int) player.getLocation().getZ()));
+            }
+        } else if (args.length == 6 && args[0].equalsIgnoreCase("drop")) {
+            // 커스텀 아이템 목록
+            completions.addAll(plugin.getConfigManager().getCustomItems().keySet());
         }
 
         // 입력값으로 필터링
