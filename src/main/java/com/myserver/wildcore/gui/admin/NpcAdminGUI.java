@@ -69,9 +69,17 @@ public class NpcAdminGUI implements InventoryHolder {
                         "",
                         "§7/wildcore shop create <이름> <표시이름> [타입]")));
 
+        inventory.setItem(26, createItem(Material.COMPASS, "§b[ 이동 NPC 생성 ]",
+                List.of("",
+                        "§7클릭하면 현재 위치에",
+                        "§7이동 NPC를 생성합니다.",
+                        "",
+                        "§e클릭하여 생성")));
+
         // === 현재 NPC 목록 (슬롯 28-34) ===
         Map<UUID, NpcData> enchantNpcs = plugin.getNpcManager().getNpcsByType(NpcType.ENCHANT);
         Map<UUID, NpcData> stockNpcs = plugin.getNpcManager().getNpcsByType(NpcType.STOCK);
+        Map<UUID, NpcData> warpNpcs = plugin.getNpcManager().getNpcsByType(NpcType.WARP);
 
         inventory.setItem(29, createItem(Material.PAPER, "§d[ 강화 NPC 목록 ]",
                 List.of("",
@@ -85,6 +93,13 @@ public class NpcAdminGUI implements InventoryHolder {
                         "§7현재 생성된 주식 NPC: §f" + stockNpcs.size() + "개",
                         "",
                         "§c우클릭하면 모든 주식 NPC가",
+                        "§c제거됩니다!")));
+
+        inventory.setItem(31, createItem(Material.PAPER, "§b[ 이동 NPC 목록 ]",
+                List.of("",
+                        "§7현재 생성된 이동 NPC: §f" + warpNpcs.size() + "개",
+                        "",
+                        "§c우클릭하면 모든 이동 NPC가",
                         "§c제거됩니다!")));
 
         // === 액션 버튼 (슬롯 45-53) ===
@@ -131,6 +146,21 @@ public class NpcAdminGUI implements InventoryHolder {
     }
 
     /**
+     * 이동 NPC 생성
+     */
+    public void spawnWarpNpc(String worldName) {
+        plugin.getNpcManager().spawnNpc(
+                NpcType.WARP,
+                player.getLocation(),
+                "§b[ §3이동 도우미 §b]",
+                worldName,
+                false);
+        plugin.getConfigManager().addNpcLocation(NpcType.WARP, player.getLocation());
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§a이동 NPC가 생성되었습니다. (목적지: " + worldName + ")");
+        updateInventory();
+    }
+
+    /**
      * 특정 타입의 모든 NPC 제거
      */
     public void removeAllNpcs(NpcType type) {
@@ -147,6 +177,7 @@ public class NpcAdminGUI implements InventoryHolder {
     public void removeAllNonShopNpcs() {
         removeAllNpcs(NpcType.ENCHANT);
         removeAllNpcs(NpcType.STOCK);
+        removeAllNpcs(NpcType.WARP);
         player.sendMessage(plugin.getConfigManager().getPrefix() +
                 "§c모든 강화/주식 NPC가 제거되었습니다.");
     }

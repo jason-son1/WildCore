@@ -495,6 +495,13 @@ public class AdminGuiListener implements Listener {
                     player.sendMessage(plugin.getConfigManager().getPrefix() + "§c주식 생성에 실패했습니다.");
                 }
             }
+            case NEW_WARP_WORLD_NAME -> {
+                // 월드 존재 여부 확인 (경고만 표시하고 생성은 허용)
+                if (org.bukkit.Bukkit.getWorld(message) == null) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c주의: 해당 이름의 월드가 현재 로드되어 있지 않습니다.");
+                }
+                new NpcAdminGUI(plugin, player).spawnWarpNpc(message);
+            }
             case NEW_ENCHANT_ID -> {
                 if (plugin.getConfigManager().createNewEnchant(message)) {
                     player.sendMessage(plugin.getConfigManager().getPrefix() + "§a새 인챈트가 생성되었습니다: " + message);
@@ -605,6 +612,7 @@ public class AdminGuiListener implements Listener {
         ENCHANT_COST,
         ENCHANT_ITEMS,
         NEW_STOCK_ID,
+        NEW_WARP_WORLD_NAME, // 이동 NPC 월드 이름 입력
         NEW_ENCHANT_ID,
         ENCHANT_BUILDER_LEVEL,
         ENCHANT_BUILDER_COST,
@@ -836,9 +844,24 @@ public class AdminGuiListener implements Listener {
             return;
         }
 
+        // 이동 NPC 생성
+        if (slot == 26) {
+            player.closeInventory();
+            player.sendMessage(
+                    plugin.getConfigManager().getPrefix() + "§e이동할 월드 이름을 입력하세요. (예: world, spawn, minigame)");
+            pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.NEW_WARP_WORLD_NAME, null));
+            return;
+        }
+
         // 강화 NPC 목록 (우클릭: 전체 삭제)
         if (slot == 29 && click.isRightClick()) {
             gui.removeAllNpcs(NpcType.ENCHANT);
+            return;
+        }
+
+        // 이동 NPC 목록 (우클릭: 전체 삭제)
+        if (slot == 31 && click.isRightClick()) {
+            gui.removeAllNpcs(NpcType.WARP);
             return;
         }
 

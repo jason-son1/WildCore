@@ -13,7 +13,10 @@ public enum NpcType {
     ENCHANT("enchant", "강화소"),
 
     /** 주식 NPC - 클릭 시 StockGUI 오픈 */
-    STOCK("stock", "주식거래소");
+    STOCK("stock", "주식거래소"),
+
+    /** 이동 NPC - 클릭 시 지정된 월드로 이동 */
+    WARP("warp", "이동 도우미");
 
     private final String id;
     private final String displayName;

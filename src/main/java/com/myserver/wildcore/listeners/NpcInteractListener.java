@@ -45,6 +45,7 @@ public class NpcInteractListener implements Listener {
             case SHOP -> handleShopNpc(player, entity);
             case ENCHANT -> handleEnchantNpc(player);
             case STOCK -> handleStockNpc(player);
+            case WARP -> handleWarpNpc(player, entity);
         }
     }
 
@@ -101,5 +102,26 @@ public class NpcInteractListener implements Listener {
 
         new StockGUI(plugin, player).open();
         plugin.debug("주식 GUI 열림 (NPC 클릭): " + player.getName());
+    }
+
+    /**
+     * 이동 NPC 처리
+     */
+    private void handleWarpNpc(Player player, Entity entity) {
+        String worldName = NpcTagUtil.getTargetId(entity);
+        if (worldName == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§c이동 정보를 찾을 수 없습니다.");
+            return;
+        }
+
+        org.bukkit.World world = org.bukkit.Bukkit.getWorld(worldName);
+        if (world == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§c월드를 찾을 수 없습니다: " + worldName);
+            return;
+        }
+
+        player.teleport(world.getSpawnLocation());
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§a" + worldName + " 월드로 이동했습니다.");
+        plugin.debug("월드 이동 (NPC 클릭): " + player.getName() + " -> " + worldName);
     }
 }
