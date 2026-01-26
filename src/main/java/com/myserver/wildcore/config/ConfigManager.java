@@ -38,6 +38,7 @@ public class ConfigManager {
     private FileConfiguration locationsConfig;
     private FileConfiguration banksConfig;
     private FileConfiguration buffBlocksConfig;
+    private FileConfiguration miningDropsConfig;
     private FileConfiguration messagesConfig;
 
     // 파일 객체들
@@ -49,6 +50,7 @@ public class ConfigManager {
     private File locationsFile;
     private File banksFile;
     private File buffBlocksFile;
+    private File miningDropsFile;
     private File messagesFile;
 
     // 캐시된 데이터
@@ -58,6 +60,7 @@ public class ConfigManager {
     private Map<String, ShopConfig> shops = new HashMap<>();
     private Map<String, BankProductConfig> bankProducts = new HashMap<>();
     private Map<String, BuffBlockConfig> buffBlocks = new HashMap<>();
+    private Map<org.bukkit.Material, MiningDropData> miningDrops = new HashMap<>();
     private Map<String, String> messages = new HashMap<>();
 
     // 수정된 설정 캐시 (실시간 편집용)
@@ -93,6 +96,7 @@ public class ConfigManager {
         saveDefaultFile("messages.yml");
         saveDefaultFile("banks.yml");
         saveDefaultFile("buff_blocks.yml");
+        saveDefaultFile("mining_drops.yml");
 
         // 파일 로드
         configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -103,6 +107,7 @@ public class ConfigManager {
         locationsFile = new File(plugin.getDataFolder(), "locations.yml");
         banksFile = new File(plugin.getDataFolder(), "banks.yml");
         buffBlocksFile = new File(plugin.getDataFolder(), "buff_blocks.yml");
+        miningDropsFile = new File(plugin.getDataFolder(), "mining_drops.yml");
         messagesFile = new File(plugin.getDataFolder(), "messages.yml");
 
         config = YamlConfiguration.loadConfiguration(configFile);
@@ -113,6 +118,7 @@ public class ConfigManager {
         locationsConfig = YamlConfiguration.loadConfiguration(locationsFile);
         banksConfig = YamlConfiguration.loadConfiguration(banksFile);
         buffBlocksConfig = YamlConfiguration.loadConfiguration(buffBlocksFile);
+        miningDropsConfig = YamlConfiguration.loadConfiguration(miningDropsFile);
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
 
         // 데이터 파싱
@@ -123,6 +129,7 @@ public class ConfigManager {
         loadShops();
         loadBankProducts();
         loadBuffBlocks();
+        loadMiningDrops();
 
         // 수정 캐시 초기화
         clearModifiedCaches();
@@ -304,6 +311,45 @@ public class ConfigManager {
             }
         }
         plugin.getLogger().info("버프 블록 " + buffBlocks.size() + "개 로드됨");
+    }
+
+    /**
+     * 마이닝 드랍 설정 로드
+     */
+    private void loadMiningDrops() {
+        miningDrops.clear();
+        if (miningDropsConfig.isConfigurationSection("drops")) {
+            for (String key : miningDropsConfig.getConfigurationSection("drops").getKeys(false)) {
+                String path = "drops." + key;
+                if (!miningDropsConfig.getBoolean(path + ".enabled", true)) {
+                    continue;
+                }
+
+                org.bukkit.Material material = org.bukkit.Material.getMaterial(key);
+                if (material == null) {
+                    plugin.getLogger().warning("Invalid material in mining_drops.yml: " + key);
+                    continue;
+                }
+
+                List<MiningReward> rewards = new ArrayList<>();
+                if (miningDropsConfig.isList(path + ".rewards")) {
+                    for (Map<?, ?> rewardMap : miningDropsConfig.getMapList(path + ".rewards")) {
+                        String itemId = (String) rewardMap.get("itemId");
+                        double chance = 0;
+                        if (rewardMap.get("chance") instanceof Number) {
+                            chance = ((Number) rewardMap.get("chance")).doubleValue();
+                        }
+                        int minAmount = (int) rewardMap.get("minAmount");
+                        int maxAmount = (int) rewardMap.get("maxAmount");
+                        rewards.add(new MiningReward(itemId, chance, minAmount, maxAmount));
+                    }
+                }
+
+                MiningDropData data = new MiningDropData(material, true, rewards);
+                miningDrops.put(material, data);
+            }
+        }
+        plugin.getLogger().info("마이닝 드랍 설정 " + miningDrops.size() + "개 로드됨");
     }
 
     /**
@@ -680,7 +726,9 @@ public class ConfigManager {
     public String getMessage(String key, Map<String, String> replacements) {
         String message = getMessage(key);
         for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            message = message.replace("%" + entry.getKey() + "%", entry.getValue());
+            String value = entry.getValue();
+            message = message.replace("%" + entry.getKey() + "%", value);
+            message = message.replace("{" + entry.getKey() + "}", value);
         }
         return message;
     }
@@ -799,6 +847,59 @@ public class ConfigManager {
 
     public FileConfiguration getShopsConfig() {
         return shopsConfig;
+    }
+
+    public FileConfiguration getMiningDropsConfig() {
+        return miningDropsConfig;
+    }
+
+    public Map<org.bukkit.Material, MiningDropData> getMiningDrops() {
+        return miningDrops;
+    }
+
+    public MiningDropData getMiningDropData(org.bukkit.Material material) {
+        return miningDrops.get(material);
+    }
+
+    public void setMiningDropData(org.bukkit.Material material, MiningDropData data) {
+        miningDrops.put(material, data);
+    }
+
+    public void removeMiningDropData(org.bukkit.Material material) {
+        miningDrops.remove(material);
+    }
+
+    /**
+     * 마이닝 드랍 설정 저장
+     */
+    public void saveMiningDropsConfig() {
+        // 기존 설정 초기화
+        miningDropsConfig.set("drops", null);
+
+        for (Map.Entry<org.bukkit.Material, MiningDropData> entry : miningDrops.entrySet()) {
+            String path = "drops." + entry.getKey().name();
+            MiningDropData data = entry.getValue();
+
+            miningDropsConfig.set(path + ".enabled", data.isEnabled());
+
+            List<Map<String, Object>> rewardsList = new ArrayList<>();
+            for (MiningReward reward : data.getRewards()) {
+                Map<String, Object> rewardMap = new HashMap<>();
+                rewardMap.put("itemId", reward.getItemId());
+                rewardMap.put("chance", reward.getChance());
+                rewardMap.put("minAmount", reward.getMinAmount());
+                rewardMap.put("maxAmount", reward.getMaxAmount());
+                rewardsList.add(rewardMap);
+            }
+            miningDropsConfig.set(path + ".rewards", rewardsList);
+        }
+
+        try {
+            miningDropsConfig.save(miningDropsFile);
+            plugin.getLogger().info("마이닝 드랍 설정이 저장되었습니다.");
+        } catch (IOException e) {
+            plugin.getLogger().severe("마이닝 드랍 설정 저장 실패: " + e.getMessage());
+        }
     }
 
     // =====================

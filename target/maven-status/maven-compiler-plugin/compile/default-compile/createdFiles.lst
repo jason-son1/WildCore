@@ -8,12 +8,15 @@ com\myserver\wildcore\managers\NpcManager.class
 com\myserver\wildcore\util\ItemGroupUtil.class
 com\myserver\wildcore\listeners\CustomItemProtectListener.class
 com\myserver\wildcore\util\EnchantNameUtil.class
+com\myserver\wildcore\managers\MiningDropManager.class
 com\myserver\wildcore\gui\EnchantProcessGUI$1.class
 com\myserver\wildcore\gui\admin\EnchantBuilderGUI.class
 com\myserver\wildcore\WildCore.class
 com\myserver\wildcore\gui\BankProductListGUI.class
 com\myserver\wildcore\gui\admin\AdminGuiListener$ChatInputRequest.class
+com\myserver\wildcore\gui\admin\MiningBlockListGUI.class
 com\myserver\wildcore\managers\NpcManager$1.class
+com\myserver\wildcore\gui\admin\MiningRewardGUI.class
 com\myserver\wildcore\gui\shop\ShopEditorGUI.class
 com\myserver\wildcore\npc\NpcData.class
 com\myserver\wildcore\gui\EnchantProcessGUI$2.class
@@ -31,6 +34,7 @@ com\myserver\wildcore\gui\admin\EnchantTypeSelectorGUI.class
 com\myserver\wildcore\managers\StockManager$1.class
 com\myserver\wildcore\gui\admin\StockAdminGUI.class
 com\myserver\wildcore\tasks\ActionBarMoneyTask.class
+com\myserver\wildcore\config\MiningReward.class
 com\myserver\wildcore\gui\BankDepositGUI.class
 com\myserver\wildcore\gui\admin\AdminGuiListener$InputType.class
 com\myserver\wildcore\commands\MainCommand.class
@@ -39,6 +43,7 @@ com\myserver\wildcore\managers\EnchantManager$EnchantResult.class
 com\myserver\wildcore\managers\BankManager.class
 com\myserver\wildcore\config\BankProductConfig.class
 com\myserver\wildcore\config\ShopItemConfig.class
+com\myserver\wildcore\config\MiningDropData.class
 com\myserver\wildcore\gui\admin\StockEditGUI.class
 com\myserver\wildcore\util\NpcTagUtil.class
 com\myserver\wildcore\gui\admin\EnchantTargetGUI.class

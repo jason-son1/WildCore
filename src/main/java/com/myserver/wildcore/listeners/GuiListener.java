@@ -64,15 +64,8 @@ public class GuiListener implements Listener {
 
             int slot = event.getRawSlot();
 
-            // 주식 정보 버튼 클릭
-            if (playerInfoGUI.isStockSlot(slot)) {
-                new com.myserver.wildcore.gui.MyStockGUI(plugin, player).open();
-                return;
-            }
-
-            // 은행 계좌 버튼 클릭
-            if (playerInfoGUI.isBankSlot(slot)) {
-                new BankMainGUI(plugin, player).open();
+            // 주식/은행 정보 버튼 클릭 (상호작용 없음)
+            if (playerInfoGUI.isStockSlot(slot) || playerInfoGUI.isBankSlot(slot)) {
                 return;
             }
             return;

@@ -26,6 +26,9 @@ permissions:
   wildcore.admin:
     description: 관리자 권한
     default: op
+  wildcore.admin.money:
+    description: 돈 관리 권한
+    default: op
   wildcore.use:
     description: 플러그인 기본 사용 권한
     default: true

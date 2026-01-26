@@ -1,0 +1,15 @@
+drops:
+  DIAMOND_ORE:
+    enabled: true
+    rewards:
+      - itemId: "legendary_sword"
+        chance: 0.5
+        minAmount: 1
+        maxAmount: 1
+  STONE:
+    enabled: true
+    rewards:
+      - itemId: "gold_coin"
+        chance: 1.0
+        minAmount: 1
+        maxAmount: 1

@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 /**
@@ -42,7 +43,7 @@ public class BlockListener implements Listener {
         // 권한 확인
         if (!player.hasPermission("wildcore.enchant")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             event.setCancelled(true);
             return;
         }
@@ -52,5 +53,26 @@ public class BlockListener implements Listener {
 
         // 커스텀 인챈트 GUI 열기
         new EnchantGUI(plugin, player).open();
+    }
+
+    /**
+     * 블록 파괴 시 커스텀 드랍 처리
+     */
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (event.isCancelled())
+            return;
+
+        Player player = event.getPlayer();
+
+        // 크리에이티브 모드나 실크터치는 제외하는지 여부는 기획에 따라 다름.
+        // 여기서는 일단 모두 동작하게 하거나, 필요시 필터링.
+        // 기획서에는 별도 언급 없으나 보통 크리에이티브는 제외
+        if (player.getGameMode() == org.bukkit.GameMode.CREATIVE) {
+            return;
+        }
+
+        plugin.getMiningDropManager().processBlockBreak(player, event.getBlock().getType(),
+                event.getBlock().getLocation());
     }
 }

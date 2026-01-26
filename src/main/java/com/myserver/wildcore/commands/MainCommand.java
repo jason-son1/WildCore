@@ -7,10 +7,12 @@ import com.myserver.wildcore.gui.EnchantGUI;
 import com.myserver.wildcore.gui.StockGUI;
 import com.myserver.wildcore.gui.BankMainGUI;
 import com.myserver.wildcore.gui.admin.EnchantAdminGUI;
+import com.myserver.wildcore.gui.admin.MiningBlockListGUI;
 import com.myserver.wildcore.gui.admin.NpcAdminGUI;
 import com.myserver.wildcore.gui.admin.StockAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
+import com.myserver.wildcore.gui.shop.ShopListGUI; // Import added
 import com.myserver.wildcore.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -59,6 +61,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "give" -> handleGive(sender, args);
             case "drop" -> handleDrop(sender, args);
             case "admin" -> handleAdmin(sender, args);
+            case "money" -> handleMoney(sender, args);
             case "debug" -> debugCommand.execute(sender, args);
             case "help" -> sendHelp(sender);
             default -> {
@@ -76,7 +79,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleShop(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("player_only"));
+                    plugin.getConfigManager().getMessage("general.player_only"));
             return;
         }
 
@@ -131,7 +134,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleShopRemove(Player player, String[] args) {
         if (!player.hasPermission("wildcore.admin.shop")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -172,7 +175,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleShopTeleport(Player player, String[] args) {
         if (!player.hasPermission("wildcore.admin.shop")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -218,13 +221,12 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleShopAdmin(Player player, String[] args) {
         if (!player.hasPermission("wildcore.admin.shop")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
         if (args.length < 3) {
-            player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§c사용법: /wc shop admin <ID>");
+            new ShopListGUI(plugin, player).open();
             return;
         }
 
@@ -265,7 +267,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
         plugin.reload();
         sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                plugin.getConfigManager().getMessage("config_reloaded"));
+                plugin.getConfigManager().getMessage("general.reload_success"));
     }
 
     /**
@@ -274,13 +276,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleStock(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("player_only"));
+                    plugin.getConfigManager().getMessage("general.player_only"));
             return;
         }
 
         if (!player.hasPermission("wildcore.stock")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -293,13 +295,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleEnchant(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("player_only"));
+                    plugin.getConfigManager().getMessage("general.player_only"));
             return;
         }
 
         if (!player.hasPermission("wildcore.enchant")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -312,13 +314,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleBank(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("player_only"));
+                    plugin.getConfigManager().getMessage("general.player_only"));
             return;
         }
 
         if (!player.hasPermission("wildcore.bank.use")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -331,7 +333,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleGive(CommandSender sender, String[] args) {
         if (!sender.hasPermission("wildcore.admin")) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -376,7 +378,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         replacements.put("item", itemConfig.getDisplayName());
         replacements.put("amount", String.valueOf(amount));
         sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                plugin.getConfigManager().getMessage("item_given", replacements));
+                plugin.getConfigManager().getMessage("general.item_given", replacements));
     }
 
     /**
@@ -386,7 +388,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleDrop(CommandSender sender, String[] args) {
         if (!sender.hasPermission("wildcore.admin")) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -466,13 +468,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleAdmin(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("player_only"));
+                    plugin.getConfigManager().getMessage("general.player_only"));
             return;
         }
 
         if (!player.hasPermission("wildcore.admin")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -486,6 +488,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "stock" -> new StockAdminGUI(plugin, player).open();
             case "enchant" -> new EnchantAdminGUI(plugin, player).open();
             case "npc" -> new NpcAdminGUI(plugin, player).open();
+            case "mining" -> new MiningBlockListGUI(plugin, player).open();
             default -> sendAdminHelp(player);
         }
     }
@@ -496,13 +499,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleNpc(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("player_only"));
+                    plugin.getConfigManager().getMessage("general.player_only"));
             return;
         }
 
         if (!player.hasPermission("wildcore.admin.npc")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -618,6 +621,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         player.sendMessage("§e/wildcore admin stock §7- 주식 관리 GUI");
         player.sendMessage("§e/wildcore admin enchant §7- 인챈트 관리 GUI");
         player.sendMessage("§e/wildcore admin npc §7- NPC 관리 GUI");
+        player.sendMessage("§e/wildcore admin mining §7- 채굴 드랍 관리 GUI");
         player.sendMessage("§8§m                                        ");
     }
 
@@ -636,8 +640,121 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/wildcore npc §7- NPC 관리 GUI");
         sender.sendMessage("§e/wildcore give <플레이어> <아이템ID> [수량] §7- 아이템 지급");
         sender.sendMessage("§e/wildcore drop <월드> <x> <y> <z> <아이템ID> [수량] §7- 아이템 드롭");
-        sender.sendMessage("§e/wildcore admin <stock|enchant|npc> §7- 관리자 GUI");
+        sender.sendMessage("§e/wildcore admin <stock|enchant|npc|mining> §7- 관리자 GUI");
+        sender.sendMessage("§e/wildcore money <give|take|set|check> <플레이어> [금액] §7- 돈 관리");
         sender.sendMessage("§e/wildcore help §7- 도움말 보기");
+        sender.sendMessage("§8§m                                        ");
+    }
+
+    /**
+     * 돈 관리 명령어
+     */
+    private void handleMoney(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("wildcore.admin.money")) {
+            sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("no_permission"));
+            return;
+        }
+
+        if (args.length < 3) {
+            sendMoneyHelp(sender);
+            return;
+        }
+
+        String subCmd = args[1].toLowerCase();
+        String targetName = args[2];
+        org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+
+        if (target == null || (!target.hasPlayedBefore() && !target.isOnline())) {
+            sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c플레이어를 찾을 수 없습니다: " + targetName);
+            return;
+        }
+
+        if (subCmd.equals("check") || subCmd.equals("balance")) {
+            double balance = plugin.getEconomy().getBalance(target);
+            String msg = plugin.getConfigManager().getMessage("money.balance")
+                    .replace("{player}", target.getName())
+                    .replace("{amount}", String.format("%,.0f", balance));
+            sender.sendMessage(plugin.getConfigManager().getPrefix() + msg);
+            return;
+        }
+
+        if (args.length < 4) {
+            sendMoneyHelp(sender);
+            return;
+        }
+
+        double amount;
+        try {
+            amount = Double.parseDouble(args[3]);
+            if (amount < 0) {
+                sender.sendMessage(plugin.getConfigManager().getPrefix()
+                        + plugin.getConfigManager().getMessage("money.fail_amount"));
+                return;
+            }
+        } catch (NumberFormatException e) {
+            sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c금액은 숫자여야 합니다.");
+            return;
+        }
+
+        switch (subCmd) {
+            case "give" -> {
+                plugin.getEconomy().depositPlayer(target, amount);
+                String msg = plugin.getConfigManager().getMessage("money.give")
+                        .replace("{player}", target.getName())
+                        .replace("{amount}", String.format("%,.0f", amount));
+                sender.sendMessage(plugin.getConfigManager().getPrefix() + msg);
+
+                if (target.isOnline()) {
+                    String targetMsg = plugin.getConfigManager().getMessage("money.received")
+                            .replace("{amount}", String.format("%,.0f", amount));
+                    ((Player) target).sendMessage(plugin.getConfigManager().getPrefix() + targetMsg);
+                }
+            }
+            case "take" -> {
+                plugin.getEconomy().withdrawPlayer(target, amount);
+                String msg = plugin.getConfigManager().getMessage("money.take")
+                        .replace("{player}", target.getName())
+                        .replace("{amount}", String.format("%,.0f", amount));
+                sender.sendMessage(plugin.getConfigManager().getPrefix() + msg);
+
+                if (target.isOnline()) {
+                    String targetMsg = plugin.getConfigManager().getMessage("money.taken")
+                            .replace("{amount}", String.format("%,.0f", amount));
+                    ((Player) target).sendMessage(plugin.getConfigManager().getPrefix() + targetMsg);
+                }
+            }
+            case "set" -> {
+                double current = plugin.getEconomy().getBalance(target);
+                if (current > amount) {
+                    plugin.getEconomy().withdrawPlayer(target, current - amount);
+                } else {
+                    plugin.getEconomy().depositPlayer(target, amount - current);
+                }
+
+                String msg = plugin.getConfigManager().getMessage("money.set")
+                        .replace("{player}", target.getName())
+                        .replace("{amount}", String.format("%,.0f", amount));
+                sender.sendMessage(plugin.getConfigManager().getPrefix() + msg);
+
+                if (target.isOnline()) {
+                    String targetMsg = plugin.getConfigManager().getMessage("money.changed")
+                            .replace("{amount}", String.format("%,.0f", amount));
+                    ((Player) target).sendMessage(plugin.getConfigManager().getPrefix() + targetMsg);
+                }
+            }
+            default -> sendMoneyHelp(sender);
+        }
+    }
+
+    private void sendMoneyHelp(CommandSender sender) {
+        sender.sendMessage("§8§m                                        ");
+        sender.sendMessage(plugin.getConfigManager().getPrefix() + "§6돈 관리 명령어");
+        sender.sendMessage("§8§m                                        ");
+        sender.sendMessage("§e/wildcore money give <플레이어> <금액> §7- 돈 지급");
+        sender.sendMessage("§e/wildcore money take <플레이어> <금액> §7- 돈 차감");
+        sender.sendMessage("§e/wildcore money set <플레이어> <금액> §7- 돈 설정");
+        sender.sendMessage("§e/wildcore money check <플레이어> §7- 잔액 확인");
         sender.sendMessage("§8§m                                        ");
     }
 
@@ -659,6 +776,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             completions.addAll(
                     Arrays.asList("reload", "stock", "enchant", "shop", "bank", "npc", "give", "drop", "admin", "debug",
+                            "money",
                             "help"));
         } else if (args[0].equalsIgnoreCase("debug")) {
             // debug 명령어는 DebugCommand에 위임 (모든 인자 길이에서)
@@ -675,11 +793,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                         .map(org.bukkit.World::getName)
                         .collect(Collectors.toList()));
             } else if (args[0].equalsIgnoreCase("admin")) {
-                completions.addAll(Arrays.asList("stock", "enchant", "npc"));
+                completions.addAll(Arrays.asList("stock", "enchant", "npc", "mining"));
             } else if (args[0].equalsIgnoreCase("shop")) {
                 completions.addAll(Arrays.asList("create", "remove", "list", "tp", "open", "admin"));
             } else if (args[0].equalsIgnoreCase("npc")) {
                 completions.addAll(Arrays.asList("list", "tp", "remove", "respawn", "validate", "gui"));
+            } else if (args[0].equalsIgnoreCase("money")) {
+                completions.addAll(Arrays.asList("give", "take", "set", "check"));
             }
         } else if (args.length == 3) {
             if (args[0].equalsIgnoreCase("give")) {
@@ -706,6 +826,11 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                     subCmd.equals("respawn")) {
                 completions.addAll(plugin.getNpcManager().getAllNpcs().keySet());
             }
+        } else if (args[0].equalsIgnoreCase("money")) {
+            // 플레이어 목록
+            completions.addAll(Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .collect(Collectors.toList()));
         } else if (args.length == 4 && args[0].equalsIgnoreCase("drop")) {
             // y 좌표 제안
             if (sender instanceof Player player) {

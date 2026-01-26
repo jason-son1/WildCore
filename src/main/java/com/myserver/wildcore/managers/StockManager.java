@@ -185,7 +185,7 @@ public class StockManager {
      * 주식 가격 변동 알림 전송
      */
     private void broadcastPriceUpdate() {
-        plugin.getServer().broadcastMessage(plugin.getConfigManager().getMessage("stock_price_update_header"));
+        plugin.getServer().broadcastMessage(plugin.getConfigManager().getMessage("stock.price_update_header"));
 
         List<StockConfig> stocks = plugin.getConfigManager().getAllStocksSorted();
         for (StockConfig stock : stocks) {
@@ -195,10 +195,10 @@ public class StockManager {
             replacements.put("change", getFormattedChange(stock.getId()));
 
             plugin.getServer()
-                    .broadcastMessage(plugin.getConfigManager().getMessage("stock_price_update_entry", replacements));
+                    .broadcastMessage(plugin.getConfigManager().getMessage("stock.price_update_entry", replacements));
         }
 
-        plugin.getServer().broadcastMessage(plugin.getConfigManager().getMessage("stock_price_update_footer"));
+        plugin.getServer().broadcastMessage(plugin.getConfigManager().getMessage("stock.price_update_footer"));
     }
 
     /**
@@ -240,7 +240,7 @@ public class StockManager {
             Map<String, String> replacements = new HashMap<>();
             replacements.put("amount", priceFormat.format(totalCost));
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("insufficient_funds", replacements));
+                    plugin.getConfigManager().getMessage("stock.no_money", replacements));
             plugin.getConfigManager().playSound(player, "error");
             return false;
         }
@@ -258,7 +258,7 @@ public class StockManager {
         replacements.put("amount", String.valueOf(amount));
         replacements.put("total", priceFormat.format(totalCost));
         player.sendMessage(plugin.getConfigManager().getPrefix() +
-                plugin.getConfigManager().getMessage("stock_buy_success", replacements));
+                plugin.getConfigManager().getMessage("stock.buy_success", replacements));
         plugin.getConfigManager().playSound(player, "buy");
 
         saveAllData();
@@ -278,7 +278,7 @@ public class StockManager {
 
         if (data == null || data.getAmount() < amount) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("stock_insufficient"));
+                    plugin.getConfigManager().getMessage("stock.no_stocks"));
             plugin.getConfigManager().playSound(player, "error");
             return false;
         }
@@ -301,7 +301,7 @@ public class StockManager {
         replacements.put("amount", String.valueOf(amount));
         replacements.put("total", priceFormat.format(totalEarnings));
         player.sendMessage(plugin.getConfigManager().getPrefix() +
-                plugin.getConfigManager().getMessage("stock_sell_success", replacements));
+                plugin.getConfigManager().getMessage("stock.sell_success", replacements));
         plugin.getConfigManager().playSound(player, "sell");
 
         saveAllData();

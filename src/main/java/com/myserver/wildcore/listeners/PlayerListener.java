@@ -51,7 +51,7 @@ public class PlayerListener implements Listener {
                     event.getDrops().clear();
 
                     player.sendMessage(plugin.getConfigManager().getPrefix() +
-                            plugin.getConfigManager().getMessage("save_ticket_used"));
+                            plugin.getConfigManager().getMessage("general.save_ticket_used"));
                     break;
                 }
             }
@@ -95,7 +95,7 @@ public class PlayerListener implements Listener {
             item.setAmount(item.getAmount() - 1);
 
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("warp_ticket_used"));
+                    plugin.getConfigManager().getMessage("general.warp_ticket_used"));
 
             // EssentialsX의 spawn 명령어 실행
             plugin.getServer().dispatchCommand(

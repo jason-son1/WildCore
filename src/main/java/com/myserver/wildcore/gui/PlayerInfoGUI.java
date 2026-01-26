@@ -152,7 +152,7 @@ public class PlayerInfoGUI implements InventoryHolder {
         }
 
         stockLore.add("");
-        stockLore.add("§e클릭하여 상세 확인");
+        // stockLore.add("§e클릭하여 상세 확인");
 
         inventory.setItem(SLOT_STOCK, ItemUtil.createItem(Material.DIAMOND, "§d§l주식 정보",
                 stockLore, 1, null, 0, false, plugin));
@@ -205,7 +205,7 @@ public class PlayerInfoGUI implements InventoryHolder {
         }
 
         bankLore.add("");
-        bankLore.add("§e클릭하여 은행 열기");
+        // bankLore.add("§e클릭하여 은행 열기");
 
         inventory.setItem(SLOT_BANK, ItemUtil.createItem(Material.GOLD_INGOT, "§6§l은행 계좌",
                 bankLore, 1, null, 0, false, plugin));

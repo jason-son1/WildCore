@@ -16,6 +16,7 @@ import com.myserver.wildcore.managers.NpcManager;
 import com.myserver.wildcore.managers.ShopManager;
 import com.myserver.wildcore.managers.StockManager;
 import com.myserver.wildcore.managers.BankManager;
+import com.myserver.wildcore.managers.MiningDropManager;
 import com.myserver.wildcore.placeholder.WildCorePlaceholder;
 import com.myserver.wildcore.tasks.ActionBarMoneyTask;
 import net.milkbowl.vault.economy.Economy;
@@ -40,6 +41,7 @@ public class WildCore extends JavaPlugin {
     private NpcManager npcManager;
     private ShopManager shopManager;
     private BankManager bankManager;
+    private MiningDropManager miningDropManager;
     private AdminGuiListener adminGuiListener;
     private ActionBarMoneyTask actionBarMoneyTask;
 
@@ -63,7 +65,9 @@ public class WildCore extends JavaPlugin {
         enchantManager = new EnchantManager(this);
         npcManager = new NpcManager(this);
         shopManager = new ShopManager(this);
+        shopManager = new ShopManager(this);
         bankManager = new BankManager(this);
+        miningDropManager = new MiningDropManager(this);
         adminGuiListener = new AdminGuiListener(this);
 
         // 주식 스케줄러 시작
@@ -216,5 +220,9 @@ public class WildCore extends JavaPlugin {
 
     public BankManager getBankManager() {
         return bankManager;
+    }
+
+    public MiningDropManager getMiningDropManager() {
+        return miningDropManager;
     }
 }

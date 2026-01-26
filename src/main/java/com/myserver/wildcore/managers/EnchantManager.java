@@ -58,7 +58,7 @@ public class EnchantManager {
         if (!isValidTarget(item, enchant)) {
             Map<String, String> replacements = new HashMap<>();
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("enchant_invalid_item", replacements));
+                    plugin.getConfigManager().getMessage("enchant.invalid_target", replacements));
             return new EnchantProcess(enchant, EnchantResult.INVALID);
         }
 
@@ -67,7 +67,7 @@ public class EnchantManager {
             Map<String, String> replacements = new HashMap<>();
             replacements.put("amount", String.format("%,.0f", enchant.getCostMoney()));
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("insufficient_funds", replacements));
+                    plugin.getConfigManager().getMessage("enchant.no_money", replacements));
             return new EnchantProcess(enchant, EnchantResult.INSUFFICIENT_FUNDS);
         }
 
@@ -117,13 +117,13 @@ public class EnchantManager {
             playFailEffect(player);
             Map<String, String> replacements = new HashMap<>();
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("enchant_fail", replacements));
+                    plugin.getConfigManager().getMessage("enchant.fail", replacements));
         } else if (result == EnchantResult.DESTROY) {
             item.setAmount(0);
             playDestroyEffect(player);
             Map<String, String> replacements = new HashMap<>();
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("enchant_destroy", replacements));
+                    plugin.getConfigManager().getMessage("enchant.destroy", replacements));
         }
 
         return result;
@@ -194,7 +194,7 @@ public class EnchantManager {
                     replacements.put("item", displayName);
                     replacements.put("amount", String.valueOf(amount));
                     player.sendMessage(plugin.getConfigManager().getPrefix() +
-                            plugin.getConfigManager().getMessage("insufficient_items", replacements));
+                            plugin.getConfigManager().getMessage("enchant.no_materials", replacements));
                     return false;
                 }
             } else {
@@ -204,7 +204,7 @@ public class EnchantManager {
                     replacements.put("item", parts[0]);
                     replacements.put("amount", String.valueOf(amount));
                     player.sendMessage(plugin.getConfigManager().getPrefix() +
-                            plugin.getConfigManager().getMessage("insufficient_items", replacements));
+                            plugin.getConfigManager().getMessage("enchant.no_materials", replacements));
                     return false;
                 }
             }
@@ -298,7 +298,7 @@ public class EnchantManager {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("enchant", enchant.getDisplayName());
         player.sendMessage(plugin.getConfigManager().getPrefix() +
-                plugin.getConfigManager().getMessage("enchant_success", replacements));
+                plugin.getConfigManager().getMessage("enchant.success", replacements));
 
         return EnchantResult.SUCCESS;
     }

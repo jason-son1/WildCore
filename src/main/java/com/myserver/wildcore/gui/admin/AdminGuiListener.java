@@ -7,6 +7,7 @@ import com.myserver.wildcore.config.StockConfig;
 import com.myserver.wildcore.gui.shop.ShopAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopEditorGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
+import com.myserver.wildcore.gui.shop.ShopListGUI; // Import added
 import com.myserver.wildcore.npc.NpcType;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -115,6 +116,27 @@ public class AdminGuiListener implements Listener {
         if (event.getInventory().getHolder() instanceof NpcListGUI npcListGUI) {
             event.setCancelled(true);
             handleNpcListClick(player, event, npcListGUI);
+            return;
+        }
+
+        // 채굴 블록 목록 GUI
+        if (event.getInventory().getHolder() instanceof MiningBlockListGUI miningBlockListGUI) {
+            event.setCancelled(true);
+            handleMiningBlockListClick(player, event, miningBlockListGUI);
+            return;
+        }
+
+        // 채굴 보상 GUI
+        if (event.getInventory().getHolder() instanceof MiningRewardGUI miningRewardGUI) {
+            event.setCancelled(true);
+            handleMiningRewardClick(player, event, miningRewardGUI);
+            return;
+        }
+
+        // 상점 목록 GUI (NEW)
+        if (event.getInventory().getHolder() instanceof ShopListGUI shopListGUI) {
+            event.setCancelled(true);
+            handleShopListClick(player, event, shopListGUI);
             return;
         }
     }
@@ -397,6 +419,109 @@ public class AdminGuiListener implements Listener {
         }
     }
 
+    /**
+     * 채굴 블록 목록 GUI 클릭 처리
+     */
+    private void handleMiningBlockListClick(Player player, InventoryClickEvent event, MiningBlockListGUI gui) {
+        int slot = event.getRawSlot();
+        if (slot == 47) { // 블록 추가
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e추가할 블록의 이름(Material)을 입력하세요.");
+            pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.MINING_ADD_BLOCK, null));
+            return;
+        }
+
+        // 페이지 네비게이션은 PaginatedGui에서 처리하지 않으므로 여기서 처리하거나,
+        // PaginatedGui가 클릭 이벤트를 처리하도록 설계되어 있는지 확인 필요.
+        // 보통 PaginatedGui 구현체에서 네비게이션을 처리하지 않고 Listener에서 처리함.
+        if (slot == 45) {
+            gui.previousPage();
+            return;
+        }
+        if (slot == 53) {
+            gui.nextPage();
+            return;
+        }
+
+        Material material = gui.getItemAtSlot(slot);
+        if (material != null) {
+            if (event.isRightClick()) {
+                plugin.getConfigManager().removeMiningDropData(material);
+                plugin.getConfigManager().saveMiningDropsConfig();
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§c블록 설정이 삭제되었습니다.");
+                gui.refresh();
+            } else {
+                new MiningRewardGUI(plugin, player, material).open();
+            }
+        }
+    }
+
+    /**
+     * 채굴 보상 GUI 클릭 처리
+     */
+    private void handleMiningRewardClick(Player player, InventoryClickEvent event, MiningRewardGUI gui) {
+        int slot = event.getRawSlot();
+
+        // 뒤로가기
+        if (slot == 48) {
+            new MiningBlockListGUI(plugin, player).open();
+            return;
+        }
+
+        // 보상 추가
+        if (slot == 50) {
+            player.closeInventory();
+            // 아이템 목록 GUI 대신 간단하게 ID 입력으로 구현 (시간/복잡도 고려)
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e추가할 커스텀 아이템 ID를 입력하세요.");
+            pendingInputs.put(player.getUniqueId(),
+                    new ChatInputRequest(InputType.MINING_ADD_REWARD, gui.getTargetBlock().name()));
+            return;
+        }
+
+        if (slot == 45) {
+            gui.previousPage();
+            return;
+        }
+        if (slot == 53) {
+            gui.nextPage();
+            return;
+        }
+
+        com.myserver.wildcore.config.MiningReward reward = gui.getItemAtSlot(slot);
+        if (reward != null) {
+            String targetId = gui.getTargetBlock().name() + ":" + reward.getItemId();
+
+            if (event.isRightClick()) {
+                // 삭제
+                plugin.getMiningDropManager().removeReward(gui.getTargetBlock(), reward);
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§c보상이 삭제되었습니다.");
+                gui.refresh();
+                return;
+            }
+
+            if (event.isShiftClick()) {
+                if (event.isLeftClick()) {
+                    // 최소 수량
+                    player.closeInventory();
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§e최소 수량을 입력하세요.");
+                    pendingInputs.put(player.getUniqueId(),
+                            new ChatInputRequest(InputType.MINING_REWARD_MIN, targetId));
+                } else {
+                    // 최대 수량 (Shift+Right)
+                    player.closeInventory();
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§e최대 수량을 입력하세요.");
+                    pendingInputs.put(player.getUniqueId(),
+                            new ChatInputRequest(InputType.MINING_REWARD_MAX, targetId));
+                }
+            } else {
+                // 확률 (Left Click)
+                player.closeInventory();
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§e확률(%)을 입력하세요.");
+                pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.MINING_REWARD_CHANCE, targetId));
+            }
+        }
+    }
+
     // === 헬퍼 메서드 ===
 
     private void adjustStockPrice(String stockId, double delta, Player player, StockEditGUI gui) {
@@ -634,6 +759,99 @@ public class AdminGuiListener implements Listener {
                     player.sendMessage(plugin.getConfigManager().getPrefix() + "§cNPC를 찾을 수 없습니다.");
                 }
             }
+            // === 채굴 드랍 관련 ===
+            case MINING_ADD_BLOCK -> {
+                try {
+                    Material material = Material.valueOf(message.toUpperCase().replace(" ", "_"));
+                    plugin.getMiningDropManager().addBlock(material);
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§a블록이 추가되었습니다: " + material.name());
+                    new MiningBlockListGUI(plugin, player).open();
+                } catch (IllegalArgumentException e) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c유효하지 않은 블록 이름입니다.");
+                }
+            }
+            case MINING_ADD_REWARD -> {
+                // message = itemId
+                Material material = Material.valueOf(request.targetId);
+                // 아이템 유효성 검사 (ConfigManager에 로드된 커스텀 아이템인지)
+                if (plugin.getConfigManager().getCustomItem(message) == null) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c존재하지 않는 커스텀 아이템 ID입니다.");
+                    new MiningRewardGUI(plugin, player, material).open();
+                    return;
+                }
+
+                // 새 보상 추가 (기본값 설정)
+                com.myserver.wildcore.config.MiningReward newReward = new com.myserver.wildcore.config.MiningReward(
+                        message, 10.0, 1, 1);
+                plugin.getMiningDropManager().addReward(material, newReward);
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§a보상이 추가되었습니다.");
+                new MiningRewardGUI(plugin, player, material).open();
+            }
+            case MINING_REWARD_CHANCE -> {
+                try {
+                    double chance = Double.parseDouble(message.replace(",", ""));
+                    String[] parts = request.targetId.split(":");
+                    Material material = Material.valueOf(parts[0]);
+                    String itemId = parts[1];
+
+                    com.myserver.wildcore.config.MiningReward reward = plugin.getMiningDropManager().getReward(material,
+                            itemId);
+                    if (reward != null) {
+                        reward.setChance(chance);
+                        plugin.getMiningDropManager().saveConfig();
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§a확률이 수정되었습니다: " + chance + "%");
+                        new MiningRewardGUI(plugin, player, material).open();
+                    }
+                } catch (NumberFormatException e) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c올바른 숫자를 입력하세요.");
+                }
+            }
+            case MINING_REWARD_MIN -> {
+                try {
+                    int amount = Integer.parseInt(message.replace(",", ""));
+                    String[] parts = request.targetId.split(":");
+                    Material material = Material.valueOf(parts[0]);
+                    String itemId = parts[1];
+
+                    com.myserver.wildcore.config.MiningReward reward = plugin.getMiningDropManager().getReward(material,
+                            itemId);
+                    if (reward != null) {
+                        reward.setMinAmount(amount);
+                        // Max가 Min보다 작으면 자동으로 맞춤
+                        if (reward.getMaxAmount() < amount) {
+                            reward.setMaxAmount(amount);
+                        }
+                        plugin.getMiningDropManager().saveConfig();
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§a최소 수량이 수정되었습니다: " + amount);
+                        new MiningRewardGUI(plugin, player, material).open();
+                    }
+                } catch (NumberFormatException e) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c올바른 정수를 입력하세요.");
+                }
+            }
+            case MINING_REWARD_MAX -> {
+                try {
+                    int amount = Integer.parseInt(message.replace(",", ""));
+                    String[] parts = request.targetId.split(":");
+                    Material material = Material.valueOf(parts[0]);
+                    String itemId = parts[1];
+
+                    com.myserver.wildcore.config.MiningReward reward = plugin.getMiningDropManager().getReward(material,
+                            itemId);
+                    if (reward != null) {
+                        reward.setMaxAmount(amount);
+                        // Min이 Max보다 크면 자동으로 맞춤
+                        if (reward.getMinAmount() > amount) {
+                            reward.setMinAmount(amount);
+                        }
+                        plugin.getMiningDropManager().saveConfig();
+                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§a최대 수량이 수정되었습니다: " + amount);
+                        new MiningRewardGUI(plugin, player, material).open();
+                    }
+                } catch (NumberFormatException e) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c올바른 정수를 입력하세요.");
+                }
+            }
         }
     }
 
@@ -660,7 +878,13 @@ public class AdminGuiListener implements Listener {
         SHOP_SELL_PRICE,
         NEW_SHOP_ID,
         // NPC 관련
-        NPC_RENAME
+        NPC_RENAME,
+        // 채굴 드랍 관련
+        MINING_ADD_BLOCK,
+        MINING_REWARD_CHANCE,
+        MINING_REWARD_MIN,
+        MINING_REWARD_MAX,
+        MINING_ADD_REWARD
     }
 
     // 빌더 GUI 참조 저장
@@ -1146,6 +1370,55 @@ public class AdminGuiListener implements Listener {
                     // 커서 아이템 소모
                     player.setItemOnCursor(null);
                 }
+            }
+        }
+    }
+
+    /**
+     * 상점 목록 GUI 클릭 처리
+     */
+    private void handleShopListClick(Player player, InventoryClickEvent event, ShopListGUI gui) {
+        int slot = event.getRawSlot();
+        ClickType click = event.getClick();
+
+        // 페이지네이션
+        if (slot == com.myserver.wildcore.gui.PaginatedGui.SLOT_PREV_PAGE) {
+            if (gui.getCurrentPage() > 0) {
+                gui.previousPage();
+            }
+            return;
+        }
+        if (slot == com.myserver.wildcore.gui.PaginatedGui.SLOT_NEXT_PAGE) {
+            if (gui.getCurrentPage() < gui.getTotalPages() - 1) {
+                gui.nextPage();
+            }
+            return;
+        }
+
+        // 새 상점 생성 (49번 슬롯)
+        if (slot == 49) {
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e새 상점의 ID를 입력하세요. (영문/숫자)");
+            pendingInputs.put(player.getUniqueId(), new ChatInputRequest(InputType.NEW_SHOP_ID, null));
+            return;
+        }
+
+        // 아이템 영역
+        ShopConfig shop = gui.getItemAtSlot(slot);
+        if (shop != null) {
+            if (click.isShiftClick() && click.isLeftClick()) {
+                // Shift+Left: Teleport
+                if (shop.getLocation() != null) {
+                    player.teleport(shop.getLocation());
+                    player.sendMessage(
+                            plugin.getConfigManager().getPrefix() + "§a상점으로 이동했습니다: " + shop.getDisplayName());
+                }
+            } else if (click.isRightClick()) {
+                // Right: Open Shop (User View)
+                new ShopGUI(plugin, player, shop).open();
+            } else {
+                // Left / Default: Open Admin GUI
+                new ShopAdminGUI(plugin, player, shop).open();
             }
         }
     }

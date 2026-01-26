@@ -49,6 +49,10 @@ general:
   reload_success: "&a설정이 리로드되었습니다."
   no_permission: "&c권한이 없습니다."
   invalid_command: "&c잘못된 명령어입니다. /wildcore help를 입력하세요."
+  player_only: "&c이 명령어는 플레이어만 사용할 수 있습니다."
+  item_given: "&a{player}님에게 {item} {amount}개를 지급했습니다."
+  save_ticket_used: "&a인벤토리 세이브권이 사용되었습니다! 아이템이 보존됩니다."
+  warp_ticket_used: "&a워프권이 사용되었습니다! 스폰으로 이동합니다."
 
 # 은행 관련 메시지
 bank:
@@ -67,3 +71,14 @@ bank:
   early_withdrawal_applied: "&c중도 해지로 &6%penalty%%&c의 페널티가 적용되었습니다."
   matured: "&6%product% 적금이 만기되었습니다! 이자를 수령하세요!"
   no_accounts: "&7보유 중인 계좌가 없습니다."
+
+# 돈 관련 메시지
+money:
+  balance: "&a{player}님의 잔액: &6{amount}원"
+  give: "&a{player}님에게 &6{amount}원&a을 지급했습니다."
+  take: "&a{player}님의 계좌에서 &6{amount}원&a을 차감했습니다."
+  set: "&a{player}님의 잔액을 &6{amount}원&a으로 설정했습니다."
+  received: "&a관리자가 &6{amount}원&a을 지급했습니다."
+  taken: "&a관리자가 &6{amount}원&a을 차감했습니다."
+  changed: "&a관리자가 잔액을 &6{amount}원&a으로 설정했습니다."
+  fail_amount: "&c금액은 양수여야 합니다."
