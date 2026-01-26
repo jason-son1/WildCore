@@ -18,6 +18,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 
 /**
@@ -35,6 +37,8 @@ public class ConfigManager {
     private FileConfiguration shopsConfig;
     private FileConfiguration locationsConfig;
     private FileConfiguration banksConfig;
+    private FileConfiguration buffBlocksConfig;
+    private FileConfiguration messagesConfig;
 
     // 파일 객체들
     private File configFile;
@@ -44,6 +48,8 @@ public class ConfigManager {
     private File shopsFile;
     private File locationsFile;
     private File banksFile;
+    private File buffBlocksFile;
+    private File messagesFile;
 
     // 캐시된 데이터
     private Map<String, StockConfig> stocks = new HashMap<>();
@@ -51,6 +57,7 @@ public class ConfigManager {
     private Map<String, CustomItemConfig> customItems = new HashMap<>();
     private Map<String, ShopConfig> shops = new HashMap<>();
     private Map<String, BankProductConfig> bankProducts = new HashMap<>();
+    private Map<String, BuffBlockConfig> buffBlocks = new HashMap<>();
     private Map<String, String> messages = new HashMap<>();
 
     // 수정된 설정 캐시 (실시간 편집용)
@@ -63,6 +70,10 @@ public class ConfigManager {
     private Map<String, Double> modifiedEnchantDestroy = new HashMap<>();
     private Map<String, Double> modifiedEnchantCost = new HashMap<>();
     private Map<String, List<String>> modifiedEnchantItems = new HashMap<>();
+    private Map<String, Boolean> modifiedEnchantUnsafeMode = new HashMap<>(); // [NEW]
+    private Map<String, Boolean> modifiedEnchantIgnoreConflicts = new HashMap<>(); // [NEW]
+    private Map<String, Set<String>> modifiedEnchantTargetGroups = new HashMap<>(); // [NEW]
+    private Map<String, Set<String>> modifiedEnchantTargetWhitelist = new HashMap<>(); // [NEW]
 
     public ConfigManager(WildCore plugin) {
         this.plugin = plugin;
@@ -81,6 +92,7 @@ public class ConfigManager {
         saveDefaultFile("locations.yml");
         saveDefaultFile("messages.yml");
         saveDefaultFile("banks.yml");
+        saveDefaultFile("buff_blocks.yml");
 
         // 파일 로드
         configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -90,6 +102,8 @@ public class ConfigManager {
         shopsFile = new File(plugin.getDataFolder(), "shops.yml");
         locationsFile = new File(plugin.getDataFolder(), "locations.yml");
         banksFile = new File(plugin.getDataFolder(), "banks.yml");
+        buffBlocksFile = new File(plugin.getDataFolder(), "buff_blocks.yml");
+        messagesFile = new File(plugin.getDataFolder(), "messages.yml");
 
         config = YamlConfiguration.loadConfiguration(configFile);
         stocksConfig = YamlConfiguration.loadConfiguration(stocksFile);
@@ -98,6 +112,8 @@ public class ConfigManager {
         shopsConfig = YamlConfiguration.loadConfiguration(shopsFile);
         locationsConfig = YamlConfiguration.loadConfiguration(locationsFile);
         banksConfig = YamlConfiguration.loadConfiguration(banksFile);
+        buffBlocksConfig = YamlConfiguration.loadConfiguration(buffBlocksFile);
+        messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
 
         // 데이터 파싱
         loadMessages();
@@ -106,6 +122,7 @@ public class ConfigManager {
         loadCustomItems();
         loadShops();
         loadBankProducts();
+        loadBuffBlocks();
 
         // 수정 캐시 초기화
         clearModifiedCaches();
@@ -123,6 +140,10 @@ public class ConfigManager {
         modifiedEnchantDestroy.clear();
         modifiedEnchantCost.clear();
         modifiedEnchantItems.clear();
+        modifiedEnchantUnsafeMode.clear();
+        modifiedEnchantIgnoreConflicts.clear();
+        modifiedEnchantTargetGroups.clear();
+        modifiedEnchantTargetWhitelist.clear();
     }
 
     /**
@@ -140,9 +161,10 @@ public class ConfigManager {
      */
     private void loadMessages() {
         messages.clear();
-        if (config.isConfigurationSection("messages")) {
-            for (String key : config.getConfigurationSection("messages").getKeys(false)) {
-                messages.put(key, colorize(config.getString("messages." + key)));
+        // messages.yml의 모든 키를 가져옴 (nested 포함)
+        for (String key : messagesConfig.getKeys(true)) {
+            if (messagesConfig.isString(key)) {
+                messages.put(key, colorize(messagesConfig.getString(key)));
             }
         }
     }
@@ -256,6 +278,35 @@ public class ConfigManager {
     }
 
     /**
+     * 버프 블록 설정 로드
+     */
+    private void loadBuffBlocks() {
+        buffBlocks.clear();
+        if (buffBlocksConfig.isConfigurationSection("buffs")) {
+            for (String key : buffBlocksConfig.getConfigurationSection("buffs").getKeys(false)) {
+                String path = "buffs." + key;
+
+                String worldName = buffBlocksConfig.getString(path + ".world");
+                String blockType = buffBlocksConfig.getString(path + ".block");
+
+                List<BuffBlockConfig.BuffEffect> effects = new ArrayList<>();
+                if (buffBlocksConfig.isList(path + ".effects")) {
+                    for (Map<?, ?> effectMap : buffBlocksConfig.getMapList(path + ".effects")) {
+                        String type = (String) effectMap.get("type");
+                        int duration = (int) effectMap.get("duration");
+                        int amplifier = (int) effectMap.get("amplifier");
+                        effects.add(new BuffBlockConfig.BuffEffect(type, duration, amplifier));
+                    }
+                }
+
+                BuffBlockConfig config = new BuffBlockConfig(key, worldName, blockType, effects);
+                buffBlocks.put(key, config);
+            }
+        }
+        plugin.getLogger().info("버프 블록 " + buffBlocks.size() + "개 로드됨");
+    }
+
+    /**
      * 색상 코드 변환
      */
     public String colorize(String text) {
@@ -358,6 +409,66 @@ public class ConfigManager {
     }
 
     /**
+     * 인챈트 Unsafe 모드 설정 (메모리)
+     */
+    public void setEnchantUnsafeMode(String enchantId, boolean unsafeMode) {
+        modifiedEnchantUnsafeMode.put(enchantId, unsafeMode);
+    }
+
+    public boolean getEnchantUnsafeMode(String enchantId) {
+        if (modifiedEnchantUnsafeMode.containsKey(enchantId)) {
+            return modifiedEnchantUnsafeMode.get(enchantId);
+        }
+        EnchantConfig enchant = enchants.get(enchantId);
+        return enchant != null && enchant.isUnsafeMode();
+    }
+
+    /**
+     * 인챈트 충돌 무시 설정 (메모리)
+     */
+    public void setEnchantIgnoreConflicts(String enchantId, boolean ignoreConflicts) {
+        modifiedEnchantIgnoreConflicts.put(enchantId, ignoreConflicts);
+    }
+
+    public boolean getEnchantIgnoreConflicts(String enchantId) {
+        if (modifiedEnchantIgnoreConflicts.containsKey(enchantId)) {
+            return modifiedEnchantIgnoreConflicts.get(enchantId);
+        }
+        EnchantConfig enchant = enchants.get(enchantId);
+        return enchant != null && enchant.isIgnoreConflicts();
+    }
+
+    /**
+     * 인챈트 타겟 그룹 설정 (메모리)
+     */
+    public void setEnchantTargetGroups(String enchantId, Set<String> groups) {
+        modifiedEnchantTargetGroups.put(enchantId, groups);
+    }
+
+    public Set<String> getEnchantTargetGroups(String enchantId) {
+        if (modifiedEnchantTargetGroups.containsKey(enchantId)) {
+            return modifiedEnchantTargetGroups.get(enchantId);
+        }
+        EnchantConfig enchant = enchants.get(enchantId);
+        return enchant != null ? new HashSet<>(enchant.getTargetGroups()) : new HashSet<>();
+    }
+
+    /**
+     * 인챈트 타겟 화이트리스트 설정 (메모리)
+     */
+    public void setEnchantTargetWhitelist(String enchantId, Set<String> whitelist) {
+        modifiedEnchantTargetWhitelist.put(enchantId, whitelist);
+    }
+
+    public Set<String> getEnchantTargetWhitelist(String enchantId) {
+        if (modifiedEnchantTargetWhitelist.containsKey(enchantId)) {
+            return modifiedEnchantTargetWhitelist.get(enchantId);
+        }
+        EnchantConfig enchant = enchants.get(enchantId);
+        return enchant != null ? new HashSet<>(enchant.getTargetWhitelist()) : new HashSet<>();
+    }
+
+    /**
      * 주식 설정 파일에 저장
      */
     public void saveStockConfig(String stockId) {
@@ -407,6 +518,19 @@ public class ConfigManager {
         }
         if (modifiedEnchantItems.containsKey(enchantId)) {
             enchantsConfig.set(path + ".cost.items", modifiedEnchantItems.get(enchantId));
+        }
+        if (modifiedEnchantUnsafeMode.containsKey(enchantId)) {
+            enchantsConfig.set(path + ".unsafe_mode", modifiedEnchantUnsafeMode.get(enchantId));
+        }
+        if (modifiedEnchantIgnoreConflicts.containsKey(enchantId)) {
+            enchantsConfig.set(path + ".ignore_conflicts", modifiedEnchantIgnoreConflicts.get(enchantId));
+        }
+        if (modifiedEnchantTargetGroups.containsKey(enchantId)) {
+            enchantsConfig.set(path + ".target_groups", new ArrayList<>(modifiedEnchantTargetGroups.get(enchantId)));
+        }
+        if (modifiedEnchantTargetWhitelist.containsKey(enchantId)) {
+            enchantsConfig.set(path + ".target_whitelist",
+                    new ArrayList<>(modifiedEnchantTargetWhitelist.get(enchantId)));
         }
 
         try {
@@ -546,7 +670,7 @@ public class ConfigManager {
     // =====================
 
     public String getPrefix() {
-        return colorize(config.getString("prefix", "&8[&6WildCore&8] &f"));
+        return messages.getOrDefault("prefix", "&8[&6WildCore&8] &f");
     }
 
     public String getMessage(String key) {
@@ -801,6 +925,62 @@ public class ConfigManager {
         }
     }
 
+    // =====================
+    // 워프 관련 메서드
+    // =====================
+
+    /**
+     * 워프 위치 가져오기
+     */
+    public Location getWarpLocation(String warpName) {
+        if (!locationsConfig.contains("warps." + warpName)) {
+            return null;
+        }
+
+        String path = "warps." + warpName;
+        String worldName = locationsConfig.getString(path + ".world");
+        if (worldName == null)
+            return null;
+
+        World world = Bukkit.getWorld(worldName);
+        if (world == null)
+            return null;
+
+        double x = locationsConfig.getDouble(path + ".x");
+        double y = locationsConfig.getDouble(path + ".y");
+        double z = locationsConfig.getDouble(path + ".z");
+        float yaw = (float) locationsConfig.getDouble(path + ".yaw");
+        float pitch = (float) locationsConfig.getDouble(path + ".pitch");
+
+        return new Location(world, x, y, z, yaw, pitch);
+    }
+
+    /**
+     * 워프 위치 설정
+     */
+    public void setWarpLocation(String warpName, Location location) {
+        String path = "warps." + warpName;
+        locationsConfig.set(path + ".world", location.getWorld().getName());
+        locationsConfig.set(path + ".x", location.getX());
+        locationsConfig.set(path + ".y", location.getY());
+        locationsConfig.set(path + ".z", location.getZ());
+        locationsConfig.set(path + ".yaw", location.getYaw());
+        locationsConfig.set(path + ".pitch", location.getPitch());
+
+        saveLocationsConfig();
+    }
+
+    /**
+     * 위치 설정 파일 저장
+     */
+    private void saveLocationsConfig() {
+        try {
+            locationsConfig.save(locationsFile);
+        } catch (IOException e) {
+            plugin.getLogger().severe("위치 설정 저장 실패: " + e.getMessage());
+        }
+    }
+
     /**
      * 상점 설정 저장 및 리로드
      */
@@ -868,67 +1048,32 @@ public class ConfigManager {
     }
 
     // =====================
-    // NPC 위치 관리 (locations.yml)
+    // NPC 위치 관리 (locations.yml) - Deprecated/Removed
+    // 이제 NPC 위치는 npcs.yml에서 NpcManager에 의해 관리됩니다.
     // =====================
 
     /**
-     * NPC 위치 추가
+     * NPC 위치 추가 (더 이상 사용되지 않음)
      */
+    @Deprecated
     public void addNpcLocation(NpcType type, Location loc) {
-        if (loc == null || loc.getWorld() == null)
-            return;
-        String typePath = type.getId();
-        List<String> locations = locationsConfig.getStringList(typePath + ".locations");
-        String locStr = loc.getWorld().getName() + ":" + loc.getBlockX() + ":" + loc.getBlockY() + ":"
-                + loc.getBlockZ();
-        locations.add(locStr);
-        locationsConfig.set(typePath + ".locations", locations);
-        saveLocationsConfig();
+        // Legacy support removed
     }
 
     /**
-     * NPC 위치 목록 가져오기
+     * NPC 위치 목록 가져오기 (더 이상 사용되지 않음)
      */
+    @Deprecated
     public List<Location> getNpcLocations(NpcType type) {
-        List<Location> result = new ArrayList<>();
-        String typePath = type.getId();
-        List<String> locations = locationsConfig.getStringList(typePath + ".locations");
-        for (String locStr : locations) {
-            String[] parts = locStr.split(":");
-            if (parts.length >= 4) {
-                World world = Bukkit.getWorld(parts[0]);
-                if (world != null) {
-                    try {
-                        int x = Integer.parseInt(parts[1]);
-                        int y = Integer.parseInt(parts[2]);
-                        int z = Integer.parseInt(parts[3]);
-                        result.add(new Location(world, x + 0.5, y, z + 0.5));
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
-            }
-        }
-        return result;
+        return new ArrayList<>();
     }
 
     /**
-     * 특정 타입의 모든 NPC 위치 삭제
+     * 특정 타입의 모든 NPC 위치 삭제 (더 이상 사용되지 않음)
      */
+    @Deprecated
     public void clearNpcLocations(NpcType type) {
-        String typePath = type.getId();
-        locationsConfig.set(typePath + ".locations", new ArrayList<>());
-        saveLocationsConfig();
-    }
-
-    /**
-     * locations.yml 저장
-     */
-    private void saveLocationsConfig() {
-        try {
-            locationsConfig.save(locationsFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("NPC 위치 저장 실패: " + e.getMessage());
-        }
+        // Legacy support removed
     }
 
     /**
@@ -1025,5 +1170,12 @@ public class ConfigManager {
      */
     public FileConfiguration getBanksConfig() {
         return banksConfig;
+    }
+
+    /**
+     * 버프 블록 설정 가져오기
+     */
+    public Map<String, BuffBlockConfig> getBuffBlocks() {
+        return buffBlocks;
     }
 }

@@ -186,28 +186,7 @@ public class NpcManager {
      * 플러그인 시작 시 저장된 NPC 다시 소환
      */
     public void respawnAllNpcs() {
-        int spawned = 0;
-        for (NpcData data : new ArrayList<>(npcCache.values())) {
-            if (data.getLocation() != null) {
-                // 기존 엔티티 제거 (있다면)
-                if (data.getEntityUuid() != null) {
-                    Entity existing = Bukkit.getEntity(data.getEntityUuid());
-                    if (existing != null) {
-                        existing.remove();
-                    }
-                }
-
-                // 새로 소환
-                UUID newUuid = spawnNpcEntity(data);
-                if (newUuid != null) {
-                    data.setEntityUuid(newUuid);
-                    entityToNpcId.put(newUuid, data.getId());
-                    spawned++;
-                }
-            }
-        }
-        plugin.getLogger().info("NPC " + spawned + "개 재소환됨");
-        saveNpcsConfig();
+        validateAndFixNpcs();
     }
 
     /**
@@ -559,8 +538,109 @@ public class NpcManager {
      * 리로드
      */
     public void reload() {
-        removeAllTaggedNpcs();
         loadNpcsConfig();
-        respawnAllNpcs();
+        validateAndFixNpcs();
+    }
+
+    /**
+     * NPC 상태 검사 및 복구
+     * 1. 캐시된 NPC가 월드에 실제로 존재하는지 확인 (없으면 재소환)
+     * 2. 월드에 있는 태그된 NPC가 유효한지 확인 (Ghost NPC 제거)
+     */
+    public void validateAndFixNpcs() {
+        plugin.getLogger().info("NPC 검사 및 복구 시작...");
+        int respawned = 0;
+        int removed = 0;
+
+        // 1. 캐시된 NPC 확인
+        for (NpcData data : npcCache.values()) {
+            if (data.getLocation() == null || data.getLocation().getWorld() == null) {
+                continue;
+            }
+
+            boolean needsRespawn = false;
+
+            if (data.getEntityUuid() == null) {
+                needsRespawn = true;
+            } else {
+                Entity entity = Bukkit.getEntity(data.getEntityUuid());
+                if (entity == null || !entity.isValid() || entity.isDead()) {
+                    needsRespawn = true;
+                } else {
+                    // 위치 확인 (거리가 너무 멀면 재소환)
+                    if (entity.getLocation().distanceSquared(data.getLocation()) > 4.0) { // 2블록 이상
+                        entity.teleport(data.getLocation());
+                    }
+                }
+            }
+
+            if (needsRespawn) {
+                UUID newUuid = spawnNpcEntity(data);
+                if (newUuid != null) {
+                    data.setEntityUuid(newUuid);
+                    entityToNpcId.put(newUuid, data.getId());
+                    respawned++;
+                }
+            }
+        }
+
+        // 2. Ghost NPC 제거 (태그는 있는데 관리되지 않는 엔티티)
+        for (World world : Bukkit.getWorlds()) {
+            for (Entity entity : world.getEntities()) {
+                if (NpcTagUtil.isWildCoreNpc(entity)) {
+                    // 관리되는 NPC인지 확인
+                    if (!entityToNpcId.containsKey(entity.getUniqueId())) {
+                        entity.remove();
+                        removed++;
+                    }
+                }
+            }
+        }
+
+        // 데이터 저장
+        saveNpcsConfig();
+
+        plugin.getLogger().info("NPC 검사 완료: " + respawned + "개 재소환, " + removed + "개 유령 NPC 제거");
+    }
+
+    /**
+     * 특정 NPC 강제 리스폰
+     */
+    public boolean respawnNpc(String id) {
+        NpcData data = npcCache.get(id);
+        if (data == null || data.getLocation() == null) {
+            return false;
+        }
+
+        // 기존 엔티티 제거
+        if (data.getEntityUuid() != null) {
+            Entity existing = Bukkit.getEntity(data.getEntityUuid());
+            if (existing != null) {
+                existing.remove();
+            }
+            entityToNpcId.remove(data.getEntityUuid());
+        }
+
+        // 재소환
+        UUID newUuid = spawnNpcEntity(data);
+        if (newUuid != null) {
+            data.setEntityUuid(newUuid);
+            entityToNpcId.put(newUuid, data.getId());
+            saveNpcsConfig();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * NPC 위치로 텔레포트
+     */
+    public boolean teleportToNpc(Player player, String id) {
+        NpcData data = npcCache.get(id);
+        if (data != null && data.getLocation() != null) {
+            player.teleport(data.getLocation());
+            return true;
+        }
+        return false;
     }
 }

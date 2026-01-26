@@ -406,39 +406,57 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
             org.bukkit.World world = Bukkit.getWorld(worldName);
             if (world == null) {
-                sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                        "§c월드를 찾을 수 없습니다: " + worldName);
+                String errorMsg = "월드를 찾을 수 없습니다: " + worldName;
+                sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
+                Bukkit.getConsoleSender()
+                        .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
                 return;
             }
 
             CustomItemConfig itemConfig = plugin.getConfigManager().getCustomItem(itemId);
             if (itemConfig == null) {
-                sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                        "§c아이템을 찾을 수 없습니다: " + itemId);
+                String errorMsg = "아이템을 찾을 수 없습니다: " + itemId;
+                sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
                 sender.sendMessage(plugin.getConfigManager().getPrefix() +
                         "§7사용 가능한 아이템: " + String.join(", ",
                                 plugin.getConfigManager().getCustomItems().keySet()));
+                Bukkit.getConsoleSender()
+                        .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
                 return;
             }
 
             ItemStack item = ItemUtil.createCustomItem(plugin, itemId, amount);
             if (item == null) {
-                sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                        "§c아이템 생성에 실패했습니다.");
+                String errorMsg = "아이템 생성에 실패했습니다: " + itemId;
+                sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
+                Bukkit.getConsoleSender()
+                        .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
                 return;
             }
 
             org.bukkit.Location loc = new org.bukkit.Location(world, x, y, z);
             world.dropItemNaturally(loc, item);
 
-            // 디버그용 로그 (관리자에게만 표시)
-            sender.sendMessage(plugin.getConfigManager().getPrefix() +
+            // 성공 로그
+            Bukkit.getConsoleSender().sendMessage(plugin.getConfigManager().getPrefix() +
                     "§a아이템 드롭 완료: " + itemConfig.getDisplayName() + " §7x" + amount +
                     " §7at " + worldName + " (" + x + ", " + y + ", " + z + ")");
 
         } catch (NumberFormatException e) {
-            sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§c좌표나 수량은 숫자여야 합니다.");
+            String errorMsg = "좌표나 수량은 숫자여야 합니다.";
+            sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
+            Bukkit.getConsoleSender()
+                    .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
+            e.printStackTrace(); // 숫자 형식 오류도 스택 트레이스 출력
+        } catch (Exception e) {
+            String errorMsg = "아이템 드롭 중 알 수 없는 오류가 발생했습니다: " + e.getMessage();
+            sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
+
+            Bukkit.getConsoleSender().sendMessage("§4========================================");
+            Bukkit.getConsoleSender().sendMessage("§c[WildCore] Drop Command Critical Error!");
+            Bukkit.getConsoleSender().sendMessage("§cMessage: " + e.getMessage());
+            e.printStackTrace();
+            Bukkit.getConsoleSender().sendMessage("§4========================================");
         }
     }
 
@@ -488,8 +506,106 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        // 서브커맨드 없으면 NPC 관리 GUI 열기
-        new NpcAdminGUI(plugin, player).open();
+        if (args.length < 2) {
+            // 서브커맨드 없으면 NPC 관리 GUI 열기
+            new NpcAdminGUI(plugin, player).open();
+            return;
+        }
+
+        String subCmd = args[1].toLowerCase();
+        switch (subCmd) {
+            case "list" -> handleNpcList(player);
+            case "tp", "teleport" -> handleNpcTeleport(player, args);
+            case "remove", "delete" -> handleNpcRemove(player, args);
+            case "respawn" -> handleNpcRespawn(player, args);
+            case "validate", "fix" -> handleNpcValidate(player);
+            case "gui" -> new NpcAdminGUI(plugin, player).open();
+            default -> sendNpcHelp(player);
+        }
+    }
+
+    private void handleNpcList(Player player) {
+        var npcs = plugin.getNpcManager().getAllNpcs();
+        if (npcs.isEmpty()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§7등록된 NPC가 없습니다.");
+            return;
+        }
+
+        player.sendMessage("§8§m                                        ");
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§6NPC 목록");
+        player.sendMessage("§8§m                                        ");
+
+        for (var data : npcs.values()) {
+            String locStr = data.getLocation() != null
+                    ? String.format("§7(%.1f, %.1f, %.1f)", data.getLocation().getX(), data.getLocation().getY(),
+                            data.getLocation().getZ())
+                    : "§c(위치 없음)";
+
+            player.sendMessage("§e" + data.getId() + " §7- " + data.getDisplayName() + " §f["
+                    + data.getType().getDisplayName() + "]");
+            player.sendMessage("  " + locStr);
+        }
+        player.sendMessage("§8§m                                        ");
+    }
+
+    private void handleNpcTeleport(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§c사용법: /wc npc tp <ID>");
+            return;
+        }
+
+        String id = args[2];
+        if (plugin.getNpcManager().teleportToNpc(player, id)) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§aNPC(으)로 이동했습니다: " + id);
+        } else {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cNPC를 찾을 수 없습니다: " + id);
+        }
+    }
+
+    private void handleNpcRemove(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§c사용법: /wc npc remove <ID>");
+            return;
+        }
+
+        String id = args[2];
+        if (plugin.getNpcManager().removeNpc(id)) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cNPC가 삭제되었습니다: " + id);
+        } else {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cNPC를 찾을 수 없습니다: " + id);
+        }
+    }
+
+    private void handleNpcRespawn(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§c사용법: /wc npc respawn <ID>");
+            return;
+        }
+
+        String id = args[2];
+        if (plugin.getNpcManager().respawnNpc(id)) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§aNPC가 리스폰되었습니다: " + id);
+        } else {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cNPC를 찾을 수 없거나 위치가 유효하지 않습니다: " + id);
+        }
+    }
+
+    private void handleNpcValidate(Player player) {
+        plugin.getNpcManager().validateAndFixNpcs();
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§aNPC 상태 검사 및 복구가 완료되었습니다.");
+    }
+
+    private void sendNpcHelp(Player player) {
+        player.sendMessage("§8§m                                        ");
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§6NPC 명령어");
+        player.sendMessage("§8§m                                        ");
+        player.sendMessage("§e/wc npc list §7- NPC 목록");
+        player.sendMessage("§e/wc npc tp <ID> §7- NPC로 이동");
+        player.sendMessage("§e/wc npc remove <ID> §7- NPC 삭제");
+        player.sendMessage("§e/wc npc respawn <ID> §7- NPC 리스폰");
+        player.sendMessage("§e/wc npc validate §7- NPC 상태 검사/복구");
+        player.sendMessage("§e/wc npc gui §7- 관리 GUI 열기");
+        player.sendMessage("§8§m                                        ");
     }
 
     /**
@@ -562,6 +678,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                 completions.addAll(Arrays.asList("stock", "enchant", "npc"));
             } else if (args[0].equalsIgnoreCase("shop")) {
                 completions.addAll(Arrays.asList("create", "remove", "list", "tp", "open", "admin"));
+            } else if (args[0].equalsIgnoreCase("npc")) {
+                completions.addAll(Arrays.asList("list", "tp", "remove", "respawn", "validate", "gui"));
             }
         } else if (args.length == 3) {
             if (args[0].equalsIgnoreCase("give")) {
@@ -580,6 +698,13 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                     // 상점 ID 목록
                     completions.addAll(plugin.getConfigManager().getShops().keySet());
                 }
+            }
+        } else if (args[0].equalsIgnoreCase("npc")) {
+            String subCmd = args[1].toLowerCase();
+            if (subCmd.equals("tp") || subCmd.equals("teleport") ||
+                    subCmd.equals("remove") || subCmd.equals("delete") ||
+                    subCmd.equals("respawn")) {
+                completions.addAll(plugin.getNpcManager().getAllNpcs().keySet());
             }
         } else if (args.length == 4 && args[0].equalsIgnoreCase("drop")) {
             // y 좌표 제안

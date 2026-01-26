@@ -323,6 +323,28 @@ public class AdminGuiListener implements Listener {
             return;
         }
 
+        // Unsafe Mode (Slot 11)
+        if (slot == 11) {
+            boolean current = plugin.getConfigManager().getEnchantUnsafeMode(enchantId);
+            plugin.getConfigManager().setEnchantUnsafeMode(enchantId, !current);
+            editGUI.refresh();
+            return;
+        }
+
+        // Ignore Conflicts (Slot 12)
+        if (slot == 12) {
+            boolean current = plugin.getConfigManager().getEnchantIgnoreConflicts(enchantId);
+            plugin.getConfigManager().setEnchantIgnoreConflicts(enchantId, !current);
+            editGUI.refresh();
+            return;
+        }
+
+        // Target Settings (Slot 14)
+        if (slot == 14) {
+            new EnchantTargetGUI(plugin, player, enchantId).open();
+            return;
+        }
+
         // 성공 확률 조정
         switch (slot) {
             case 19 -> adjustEnchantProbability(enchantId, "success", -5, player, editGUI);
@@ -822,15 +844,13 @@ public class AdminGuiListener implements Listener {
 
         // 뒤로 가기
         if (slot == 45) {
-            gui.applyToBuilder();
-            gui.getParentBuilder().open();
+            gui.back();
             return;
         }
 
         // 완료
         if (slot == 53) {
-            gui.applyToBuilder();
-            gui.getParentBuilder().open();
+            gui.saveAndClose();
         }
     }
 

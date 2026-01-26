@@ -9,6 +9,7 @@ import com.myserver.wildcore.gui.shop.ShopAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
 import com.myserver.wildcore.npc.NpcType;
 import com.myserver.wildcore.util.NpcTagUtil;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -109,22 +110,36 @@ public class NpcInteractListener implements Listener {
     /**
      * 이동 NPC 처리
      */
+    /**
+     * 이동 NPC 처리
+     */
     private void handleWarpNpc(Player player, Entity entity) {
-        String worldName = NpcTagUtil.getTargetId(entity);
-        if (worldName == null) {
+        String targetId = NpcTagUtil.getTargetId(entity);
+        if (targetId == null) {
             player.sendMessage(plugin.getConfigManager().getPrefix() + "§c이동 정보를 찾을 수 없습니다.");
             return;
         }
 
-        org.bukkit.World world = org.bukkit.Bukkit.getWorld(worldName);
-        if (world == null) {
-            player.sendMessage(plugin.getConfigManager().getPrefix() + "§c월드를 찾을 수 없습니다: " + worldName);
+        // 1. locations.yml에 설정된 워프 위치 확인
+        Location warpLoc = plugin.getConfigManager().getWarpLocation(targetId);
+        if (warpLoc != null) {
+            player.teleport(warpLoc);
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§a" + targetId + " (으)로 이동했습니다.");
+            plugin.debug("워프 이동 (NPC 클릭): " + player.getName() + " -> " + targetId + " (Location: " + warpLoc + ")");
             return;
         }
 
-        player.teleport(world.getSpawnLocation());
-        player.sendMessage(plugin.getConfigManager().getPrefix() + "§a" + worldName + " 월드로 이동했습니다.");
-        plugin.debug("월드 이동 (NPC 클릭): " + player.getName() + " -> " + worldName);
+        // 2. 월드 이름으로 확인 (기존 방식 호환)
+        org.bukkit.World world = org.bukkit.Bukkit.getWorld(targetId);
+        if (world != null) {
+            player.teleport(world.getSpawnLocation());
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§a" + targetId + " 월드로 이동했습니다.");
+            plugin.debug("월드 이동 (NPC 클릭): " + player.getName() + " -> " + targetId);
+            return;
+        }
+
+        // 3. 둘 다 없음
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§c워프 지점 또는 월드를 찾을 수 없습니다: " + targetId);
     }
 
     /**

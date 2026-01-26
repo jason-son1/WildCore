@@ -45,7 +45,9 @@ com\myserver\wildcore\gui\admin\EnchantTargetGUI.class
 com\myserver\wildcore\placeholder\WildCorePlaceholder.class
 com\myserver\wildcore\config\EnchantConfig.class
 com\myserver\wildcore\gui\PaginatedGui.class
+com\myserver\wildcore\config\BuffBlockConfig.class
 com\myserver\wildcore\gui\admin\NpcAdminGUI.class
+com\myserver\wildcore\listeners\BuffBlockListener.class
 com\myserver\wildcore\gui\PlayerInfoGUI.class
 com\myserver\wildcore\gui\admin\EnchantEditGUI.class
 com\myserver\wildcore\listeners\NpcInteractListener$1.class
@@ -61,6 +63,7 @@ com\myserver\wildcore\gui\admin\NpcListGUI.class
 com\myserver\wildcore\commands\DebugCommand.class
 com\myserver\wildcore\config\PlayerBankAccount.class
 com\myserver\wildcore\listeners\ChatListener.class
+com\myserver\wildcore\config\BuffBlockConfig$BuffEffect.class
 com\myserver\wildcore\managers\ShopManager.class
 com\myserver\wildcore\listeners\CustomItemProtectListener$1.class
 com\myserver\wildcore\managers\EnchantManager$EnchantProcess.class

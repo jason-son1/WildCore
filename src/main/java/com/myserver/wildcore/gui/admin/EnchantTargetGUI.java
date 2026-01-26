@@ -25,18 +25,35 @@ public class EnchantTargetGUI implements InventoryHolder {
     private final WildCore plugin;
     private final Player player;
     private final EnchantBuilderGUI parentBuilder;
+    private final String editEnchantId; // null if builder mode
     private Inventory inventory;
 
     // 선택된 그룹과 아이템
     private Set<String> selectedGroups;
     private Set<String> selectedItems;
 
+    // 빌더 모드 생성자
     public EnchantTargetGUI(WildCore plugin, Player player, EnchantBuilderGUI parentBuilder) {
         this.plugin = plugin;
         this.player = player;
         this.parentBuilder = parentBuilder;
+        this.editEnchantId = null;
         this.selectedGroups = new HashSet<>(parentBuilder.getTargetGroups());
         this.selectedItems = new HashSet<>(parentBuilder.getTargetWhitelist());
+        createInventory();
+    }
+
+    // 편집 모드 생성자
+    public EnchantTargetGUI(WildCore plugin, Player player, String enchantId) {
+        this.plugin = plugin;
+        this.player = player;
+        this.parentBuilder = null;
+        this.editEnchantId = enchantId;
+
+        // ConfigManager에서 현재 설정 로드 (메모리 캐시 포함)
+        this.selectedGroups = new HashSet<>(plugin.getConfigManager().getEnchantTargetGroups(enchantId));
+        this.selectedItems = new HashSet<>(plugin.getConfigManager().getEnchantTargetWhitelist(enchantId));
+
         createInventory();
     }
 
@@ -99,7 +116,7 @@ public class EnchantTargetGUI implements InventoryHolder {
 
         // === 액션 버튼 (슬롯 45-53) ===
         inventory.setItem(45, createItem(Material.ARROW, "§7[ 뒤로 가기 ]",
-                List.of("", "§7인챈트 설정으로 돌아갑니다.")));
+                List.of("", "§7설정을 취소하고 돌아갑니다.")));
         inventory.setItem(49, createItem(Material.TNT, "§c[ 전체 초기화 ]",
                 List.of("", "§7모든 선택을 초기화합니다.")));
         inventory.setItem(53, createItem(Material.EMERALD, "§a[ 완료 ]",
@@ -231,15 +248,33 @@ public class EnchantTargetGUI implements InventoryHolder {
     }
 
     /**
-     * 설정을 부모 빌더에 적용
+     * 설정 저장 및 적용
      */
-    public void applyToBuilder() {
-        parentBuilder.setTargetGroups(selectedGroups);
-        parentBuilder.setTargetWhitelist(selectedItems);
+    public void saveAndClose() {
+        if (editEnchantId != null) {
+            // 편집 모드: ConfigManager에 직접 저장 (메모리 상)
+            plugin.getConfigManager().setEnchantTargetGroups(editEnchantId, selectedGroups);
+            plugin.getConfigManager().setEnchantTargetWhitelist(editEnchantId, selectedItems);
+            // 편집 GUI로 돌아감
+            new EnchantEditGUI(plugin, player, editEnchantId).open();
+        } else if (parentBuilder != null) {
+            // 빌더 모드: 부모 빌더에 저장
+            parentBuilder.setTargetGroups(selectedGroups);
+            parentBuilder.setTargetWhitelist(selectedItems);
+            // 빌더 GUI로 돌아감
+            parentBuilder.open();
+        }
     }
 
-    public EnchantBuilderGUI getParentBuilder() {
-        return parentBuilder;
+    /**
+     * 뒤로 가기 (저장 안 함)
+     */
+    public void back() {
+        if (editEnchantId != null) {
+            new EnchantEditGUI(plugin, player, editEnchantId).open();
+        } else if (parentBuilder != null) {
+            parentBuilder.open();
+        }
     }
 
     private ItemStack createItem(Material material, String name, List<String> lore) {

@@ -10,6 +10,7 @@ import com.myserver.wildcore.listeners.GuiListener;
 import com.myserver.wildcore.listeners.NpcDamageListener;
 import com.myserver.wildcore.listeners.NpcInteractListener;
 import com.myserver.wildcore.listeners.PlayerListener;
+import com.myserver.wildcore.listeners.BuffBlockListener;
 import com.myserver.wildcore.managers.EnchantManager;
 import com.myserver.wildcore.managers.NpcManager;
 import com.myserver.wildcore.managers.ShopManager;
@@ -151,6 +152,7 @@ public class WildCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new NpcDamageListener(this), this);
         getServer().getPluginManager().registerEvents(adminGuiListener, this);
         getServer().getPluginManager().registerEvents(new ChatListener(this, adminGuiListener), this);
+        getServer().getPluginManager().registerEvents(new BuffBlockListener(this), this);
     }
 
     /**

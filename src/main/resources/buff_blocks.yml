@@ -1,0 +1,15 @@
+buffs:
+  speed_path:
+    world: "world"
+    block: "DIAMOND_BLOCK"
+    effects:
+      - type: "SPEED"
+        duration: 40 # 2 seconds
+        amplifier: 1
+  jump_pad:
+    world: "world"
+    block: "SLIME_BLOCK"
+    effects:
+      - type: "JUMP"
+        duration: 40
+        amplifier: 3

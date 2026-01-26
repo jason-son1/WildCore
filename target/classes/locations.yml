@@ -11,3 +11,14 @@ stock:
   # 예시:
   # - world:150:64:250
   locations: []
+
+# 이동 NPC 위치 (월드 스폰 대신 특정 좌표 이동)
+# warps:
+#   spawn:
+#     world: world
+#     x: 100.5
+#     y: 64.0
+#     z: 200.5
+#     yaw: 180.0
+#     pitch: 0.0
+warps: {}

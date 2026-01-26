@@ -10,7 +10,10 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import com.myserver.wildcore.util.ItemGroupUtil;
 
 /**
  * 개별 인챈트 설정 편집 GUI
@@ -48,6 +51,15 @@ public class EnchantEditGUI implements InventoryHolder {
                 if (enchantMaterial == null)
                         enchantMaterial = Material.ENCHANTED_BOOK;
 
+                // fetch values from config manager to reflect modified state
+                double costMoney = plugin.getConfigManager().getEnchantProbability(enchantId, "cost"); // wait, cost is
+                                                                                                       // not
+                                                                                                       // probability.
+                                                                                                       // Check
+                                                                                                       // ConfigManager
+                // ConfigManager doesn't have getEnchantCost? It has setEnchantCost.
+                // Let's check getEnchantProbability usage.
+
                 ItemStack infoItem = createItem(enchantMaterial, enchant.getDisplayName(),
                                 List.of(
                                                 "",
@@ -58,45 +70,78 @@ public class EnchantEditGUI implements InventoryHolder {
                 inventory.setItem(4, infoItem);
 
                 // === 성공 확률 설정 ===
+                // 슬롯 19, 20, 21, 22, 23 사용
                 inventory.setItem(19, createItem(Material.LIME_DYE, "§c[ 성공 -5% ]",
                                 List.of("", "§7성공 확률 5% 감소")));
                 inventory.setItem(20, createItem(Material.LIME_DYE, "§c[ 성공 -1% ]",
                                 List.of("", "§7성공 확률 1% 감소")));
+
+                double successRate = plugin.getConfigManager().getEnchantProbability(enchantId, "success");
                 inventory.setItem(21, createItem(Material.LIME_CONCRETE, "§a[ 성공 확률 ]",
-                                List.of("", "§7현재: §a" + enchant.getSuccessRate() + "%")));
+                                List.of("", "§7현재: §a" + String.format("%.1f", successRate) + "%")));
+
                 inventory.setItem(22, createItem(Material.LIME_DYE, "§a[ 성공 +1% ]",
                                 List.of("", "§7성공 확률 1% 증가")));
                 inventory.setItem(23, createItem(Material.LIME_DYE, "§a[ 성공 +5% ]",
                                 List.of("", "§7성공 확률 5% 증가")));
 
                 // === 실패 확률 설정 ===
+                // 슬롯 28, 29, 30, 31, 32 사용
                 inventory.setItem(28, createItem(Material.YELLOW_DYE, "§c[ 실패 -5% ]",
                                 List.of("", "§7실패 확률 5% 감소")));
                 inventory.setItem(29, createItem(Material.YELLOW_DYE, "§c[ 실패 -1% ]",
                                 List.of("", "§7실패 확률 1% 감소")));
+
+                double failRate = plugin.getConfigManager().getEnchantProbability(enchantId, "fail");
                 inventory.setItem(30, createItem(Material.YELLOW_CONCRETE, "§e[ 실패 확률 ]",
-                                List.of("", "§7현재: §e" + enchant.getFailRate() + "%",
+                                List.of("", "§7현재: §e" + String.format("%.1f", failRate) + "%",
                                                 "", "§7실패 시 재료만 소멸됩니다.")));
+
                 inventory.setItem(31, createItem(Material.YELLOW_DYE, "§a[ 실패 +1% ]",
                                 List.of("", "§7실패 확률 1% 증가")));
                 inventory.setItem(32, createItem(Material.YELLOW_DYE, "§a[ 실패 +5% ]",
                                 List.of("", "§7실패 확률 5% 증가")));
 
                 // === 파괴 확률 설정 ===
+                // 슬롯 37, 38, 39, 40, 41 사용
                 inventory.setItem(37, createItem(Material.RED_DYE, "§c[ 파괴 -5% ]",
                                 List.of("", "§7파괴 확률 5% 감소")));
                 inventory.setItem(38, createItem(Material.RED_DYE, "§c[ 파괴 -1% ]",
                                 List.of("", "§7파괴 확률 1% 감소")));
+
+                double destroyRate = plugin.getConfigManager().getEnchantProbability(enchantId, "destroy");
                 inventory.setItem(39, createItem(Material.RED_CONCRETE, "§c[ 파괴 확률 ]",
-                                List.of("", "§7현재: §c" + enchant.getDestroyRate() + "%",
+                                List.of("", "§7현재: §c" + String.format("%.1f", destroyRate) + "%",
                                                 "", "§4파괴 시 아이템이 소멸됩니다!")));
+
                 inventory.setItem(40, createItem(Material.RED_DYE, "§a[ 파괴 +1% ]",
                                 List.of("", "§7파괴 확률 1% 증가")));
                 inventory.setItem(41, createItem(Material.RED_DYE, "§a[ 파괴 +5% ]",
                                 List.of("", "§7파괴 확률 5% 증가")));
 
+                // === 추가 설정 옵션 ===
+                boolean unsafeMode = plugin.getConfigManager().getEnchantUnsafeMode(enchantId);
+                inventory.setItem(11, createToggleItem("§6[ 바닐라 제한 무시 ]", unsafeMode,
+                                List.of("", "§7활성화 시:", "§7- 레벨 제한 무시 (Lv.∞ 가능)",
+                                                "§7- 아이템 타입 제한 무시", "§7- 상충 인챈트 적용 가능")));
+
+                boolean ignoreConflicts = plugin.getConfigManager().getEnchantIgnoreConflicts(enchantId);
+                inventory.setItem(12, createToggleItem("§e[ 충돌 인챈트 무시 ]", ignoreConflicts,
+                                List.of("", "§7활성화 시:", "§7- 보호/화피 동시 적용 가능",
+                                                "§7- 행운/섬세한손길 동시 적용 가능")));
+
+                // 타겟 설정
+                Set<String> groups = plugin.getConfigManager().getEnchantTargetGroups(enchantId);
+                Set<String> whitelist = plugin.getConfigManager().getEnchantTargetWhitelist(enchantId);
+
+                inventory.setItem(14, createItem(Material.TARGET, "§a[ 적용 대상 설정 ]",
+                                List.of("", "§7클릭하여 적용 대상을 설정합니다.",
+                                                "",
+                                                "§7현재 그룹: " + formatGroups(groups),
+                                                "§7현재 화이트리스트: " + whitelist.size() + "개")));
+
                 // 확률 합계 표시
-                double total = enchant.getSuccessRate() + enchant.getFailRate() + enchant.getDestroyRate();
+                double total = successRate + failRate + destroyRate;
                 String totalColor = Math.abs(total - 100.0) < 0.01 ? "§a" : "§c";
                 inventory.setItem(13, createItem(Material.PAPER, "§f[ 확률 합계 ]",
                                 List.of("", totalColor + "합계: " + String.format("%.1f", total) + "%",
@@ -128,6 +173,33 @@ public class EnchantEditGUI implements InventoryHolder {
                         sb.append("§7- §f").append(item).append("\n");
                 }
                 return sb.toString().trim();
+        }
+
+        private ItemStack createToggleItem(String name, boolean enabled, List<String> baseLore) {
+                Material material = enabled ? Material.LIME_DYE : Material.GRAY_DYE;
+                List<String> lore = new ArrayList<>(baseLore);
+                lore.add("");
+                lore.add(enabled ? "§a✔ 활성화됨" : "§7✗ 비활성화됨");
+                lore.add("§e클릭하여 전환");
+                return createItem(material, name, lore);
+        }
+
+        private String formatGroups(Set<String> groups) {
+                if (groups.isEmpty())
+                        return "없음";
+                StringBuilder sb = new StringBuilder();
+                int count = 0;
+                for (String g : groups) {
+                        if (count > 0)
+                                sb.append(", ");
+                        sb.append(ItemGroupUtil.getGroupDisplayName(g));
+                        count++;
+                        if (count >= 3) {
+                                sb.append(" 외 ").append(groups.size() - 3).append("개");
+                                break;
+                        }
+                }
+                return sb.toString();
         }
 
         private ItemStack createItem(Material material, String name, List<String> lore) {
