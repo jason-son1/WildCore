@@ -11,15 +11,13 @@ import java.util.*;
 public class ItemGroupUtil {
 
     // 무기류
-    private static final Set<Material> WEAPONS = Set.of(
+    private static final Set<Material> WEAPONS = EnumSet.of(
             Material.DIAMOND_SWORD, Material.IRON_SWORD, Material.NETHERITE_SWORD,
             Material.GOLDEN_SWORD, Material.STONE_SWORD, Material.WOODEN_SWORD,
-            Material.DIAMOND_AXE, Material.IRON_AXE, Material.NETHERITE_AXE,
-            Material.GOLDEN_AXE, Material.STONE_AXE, Material.WOODEN_AXE,
             Material.TRIDENT);
 
     // 갑옷류
-    private static final Set<Material> ARMOR = Set.of(
+    private static final Set<Material> ARMOR = EnumSet.of(
             // 헬멧
             Material.DIAMOND_HELMET, Material.IRON_HELMET, Material.NETHERITE_HELMET,
             Material.GOLDEN_HELMET, Material.CHAINMAIL_HELMET, Material.LEATHER_HELMET,
@@ -35,27 +33,30 @@ public class ItemGroupUtil {
             Material.GOLDEN_BOOTS, Material.CHAINMAIL_BOOTS, Material.LEATHER_BOOTS);
 
     // 도구류
-    private static final Set<Material> TOOLS = Set.of(
+    private static final Set<Material> TOOLS = EnumSet.of(
             // 곡괭이
             Material.DIAMOND_PICKAXE, Material.IRON_PICKAXE, Material.NETHERITE_PICKAXE,
             Material.GOLDEN_PICKAXE, Material.STONE_PICKAXE, Material.WOODEN_PICKAXE,
             // 삽
             Material.DIAMOND_SHOVEL, Material.IRON_SHOVEL, Material.NETHERITE_SHOVEL,
             Material.GOLDEN_SHOVEL, Material.STONE_SHOVEL, Material.WOODEN_SHOVEL,
+            // 도끼
+            Material.DIAMOND_AXE, Material.IRON_AXE, Material.NETHERITE_AXE,
+            Material.GOLDEN_AXE, Material.STONE_AXE, Material.WOODEN_AXE,
             // 괭이
             Material.DIAMOND_HOE, Material.IRON_HOE, Material.NETHERITE_HOE,
             Material.GOLDEN_HOE, Material.STONE_HOE, Material.WOODEN_HOE);
 
     // 활류
-    private static final Set<Material> BOWS = Set.of(
+    private static final Set<Material> BOWS = EnumSet.of(
             Material.BOW, Material.CROSSBOW);
 
     // 낚싯대
-    private static final Set<Material> FISHING = Set.of(
+    private static final Set<Material> FISHING = EnumSet.of(
             Material.FISHING_ROD);
 
     // 삼지창
-    private static final Set<Material> TRIDENT_SET = Set.of(
+    private static final Set<Material> TRIDENT_SET = EnumSet.of(
             Material.TRIDENT);
 
     /**
@@ -157,5 +158,50 @@ public class ItemGroupUtil {
             case "ALL" -> Material.NETHER_STAR;
             default -> Material.BARRIER;
         };
+    }
+
+    /**
+     * 인챈트 키를 기반으로 적절한 그룹을 반환합니다.
+     */
+    public static String getEnchantmentGroup(String enchantmentKey) {
+        String key = enchantmentKey.toLowerCase();
+
+        if (key.contains("sharpness") || key.contains("smite") ||
+                key.contains("bane_of_arthropods") || key.contains("knockback") ||
+                key.contains("fire_aspect") || key.contains("sweeping") ||
+                key.contains("looting")) {
+            return "WEAPON";
+        }
+
+        if (key.contains("protection") || key.contains("thorns") ||
+                key.contains("respiration") || key.contains("aqua_affinity") ||
+                key.contains("feather_falling") || key.contains("depth_strider") ||
+                key.contains("frost_walker") || key.contains("soul_speed") ||
+                key.contains("swift_sneak")) {
+            return "ARMOR";
+        }
+
+        if (key.contains("efficiency") || key.contains("silk_touch") ||
+                key.contains("fortune") || key.contains("unbreaking")) {
+            return "TOOL";
+        }
+
+        if (key.contains("power") || key.contains("punch") ||
+                key.contains("flame") || key.contains("infinity") ||
+                key.contains("multishot") || key.contains("quick_charge") ||
+                key.contains("piercing")) {
+            return "BOW";
+        }
+
+        if (key.contains("luck_of_the_sea") || key.contains("lure")) {
+            return "FISHING";
+        }
+
+        if (key.contains("loyalty") || key.contains("riptide") ||
+                key.contains("channeling") || key.contains("impaling")) {
+            return "TRIDENT";
+        }
+
+        return "OTHER"; // mending, vanishing_curse, binding_curse etc
     }
 }

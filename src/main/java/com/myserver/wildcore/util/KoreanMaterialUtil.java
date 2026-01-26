@@ -141,6 +141,39 @@ public class KoreanMaterialUtil {
         NAME_MAP.put(Material.CAKE, "케이크");
         NAME_MAP.put(Material.COOKIE, "쿠키");
 
+        // 농작물 및 씨앗
+        NAME_MAP.put(Material.WHEAT, "밀");
+        NAME_MAP.put(Material.WHEAT_SEEDS, "밀 씨앗");
+        NAME_MAP.put(Material.BEETROOT, "비트");
+        NAME_MAP.put(Material.BEETROOT_SEEDS, "비트 씨앗");
+        NAME_MAP.put(Material.BEETROOT_SOUP, "비트 수프");
+        NAME_MAP.put(Material.MELON, "수박");
+        NAME_MAP.put(Material.MELON_SEEDS, "수박 씨앗");
+        NAME_MAP.put(Material.PUMPKIN, "호박");
+        NAME_MAP.put(Material.PUMPKIN_SEEDS, "호박 씨앗");
+        NAME_MAP.put(Material.PUMPKIN_PIE, "호박 파이");
+        NAME_MAP.put(Material.CARVED_PUMPKIN, "조각된 호박");
+        NAME_MAP.put(Material.JACK_O_LANTERN, "잭오랜턴");
+        NAME_MAP.put(Material.SUGAR_CANE, "사탕수수");
+        NAME_MAP.put(Material.SUGAR, "설탕");
+        NAME_MAP.put(Material.COCOA_BEANS, "코코아 콩");
+        NAME_MAP.put(Material.BAMBOO, "대나무");
+        NAME_MAP.put(Material.CACTUS, "선인장");
+        NAME_MAP.put(Material.BROWN_MUSHROOM, "갈색 버섯");
+        NAME_MAP.put(Material.RED_MUSHROOM, "빨간색 버섯");
+        NAME_MAP.put(Material.MUSHROOM_STEW, "버섯 스튜");
+        NAME_MAP.put(Material.RABBIT_STEW, "토끼 스튜");
+        NAME_MAP.put(Material.SUSPICIOUS_STEW, "수상한 스튜");
+        NAME_MAP.put(Material.HONEY_BOTTLE, "꿀이 든 병");
+        NAME_MAP.put(Material.HONEYCOMB, "벌집 조각");
+        NAME_MAP.put(Material.EGG, "달걀");
+        NAME_MAP.put(Material.HAY_BLOCK, "건초 더미");
+        NAME_MAP.put(Material.DRIED_KELP_BLOCK, "말린 켈프 블록");
+        NAME_MAP.put(Material.TORCHFLOWER, "횃불꽃");
+        NAME_MAP.put(Material.TORCHFLOWER_SEEDS, "횃불꽃 씨앗");
+        NAME_MAP.put(Material.PITCHER_PLANT, "벌레잡이풀");
+        NAME_MAP.put(Material.PITCHER_POD, "벌레잡이풀 주머니");
+
         // 블록 - 나무
         NAME_MAP.put(Material.OAK_LOG, "참나무 원목");
         NAME_MAP.put(Material.SPRUCE_LOG, "가문비나무 원목");

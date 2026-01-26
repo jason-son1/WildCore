@@ -9,6 +9,7 @@ import com.myserver.wildcore.gui.shop.ShopGUI;
 import com.myserver.wildcore.gui.BankMainGUI;
 import com.myserver.wildcore.gui.BankProductListGUI;
 import com.myserver.wildcore.gui.BankDepositGUI;
+import com.myserver.wildcore.gui.BankStockInfoGUI; // Import added
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -58,14 +59,23 @@ public class GuiListener implements Listener {
             return;
         }
 
+        // 금융 자산 정보 GUI 처리 (NEW: 아이템 가져오기 방지)
+        if (event.getInventory().getHolder() instanceof BankStockInfoGUI) {
+            event.setCancelled(true);
+            return;
+        }
+
         // 내 정보 GUI 처리
         if (event.getInventory().getHolder() instanceof PlayerInfoGUI playerInfoGUI) {
             event.setCancelled(true);
 
             int slot = event.getRawSlot();
 
-            // 주식/은행 정보 버튼 클릭 (상호작용 없음)
+            // 주식/은행 정보 버튼 클릭 (상호작용 없음 -> 상호작용 추가)
             if (playerInfoGUI.isStockSlot(slot) || playerInfoGUI.isBankSlot(slot)) {
+
+                // BankStockInfoGUI 열기
+                new com.myserver.wildcore.gui.BankStockInfoGUI(plugin, player).open();
                 return;
             }
             return;

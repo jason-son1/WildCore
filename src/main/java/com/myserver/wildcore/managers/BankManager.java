@@ -30,7 +30,7 @@ public class BankManager {
     private File dataFile;
     private FileConfiguration dataConfig;
 
-    private final DecimalFormat moneyFormat = new DecimalFormat("#,##0");
+    private final DecimalFormat moneyFormat = new DecimalFormat("#,##0.0");
     private final DecimalFormat percentFormat = new DecimalFormat("0.00");
 
     public BankManager(WildCore plugin) {
@@ -233,7 +233,7 @@ public class BankManager {
     public String createAccount(Player player, String productId, double initialDeposit) {
         BankProductConfig product = plugin.getConfigManager().getBankProduct(productId);
         if (product == null) {
-            sendMessage(player, "bank_product_not_found");
+            sendMessage(player, "bank.product_not_found");
             return null;
         }
 
@@ -241,14 +241,14 @@ public class BankManager {
         if (initialDeposit < product.getMinDeposit()) {
             Map<String, String> replacements = new HashMap<>();
             replacements.put("min", moneyFormat.format(product.getMinDeposit()));
-            sendMessage(player, "bank_min_deposit", replacements);
+            sendMessage(player, "bank.min_deposit", replacements);
             return null;
         }
 
         if (initialDeposit > product.getMaxDeposit()) {
             Map<String, String> replacements = new HashMap<>();
             replacements.put("max", moneyFormat.format(product.getMaxDeposit()));
-            sendMessage(player, "bank_limit_exceeded", replacements);
+            sendMessage(player, "bank.limit_exceeded", replacements);
             return null;
         }
 
@@ -256,7 +256,7 @@ public class BankManager {
         if (!plugin.getEconomy().has(player, initialDeposit)) {
             Map<String, String> replacements = new HashMap<>();
             replacements.put("amount", moneyFormat.format(initialDeposit));
-            sendMessage(player, "insufficient_funds", replacements);
+            sendMessage(player, "bank.no_money", replacements);
             plugin.getConfigManager().playSound(player, "error");
             return null;
         }
@@ -279,7 +279,7 @@ public class BankManager {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("product", product.getDisplayName());
         replacements.put("amount", moneyFormat.format(initialDeposit));
-        sendMessage(player, "bank_account_created", replacements);
+        sendMessage(player, "bank.account_created", replacements);
         plugin.getConfigManager().playSound(player, "buy");
 
         saveAllData();
@@ -292,13 +292,13 @@ public class BankManager {
     public boolean deposit(Player player, String accountId, double amount) {
         PlayerBankAccount account = getAccount(player.getUniqueId(), accountId);
         if (account == null) {
-            sendMessage(player, "bank_account_not_found");
+            sendMessage(player, "bank.account_not_found");
             return false;
         }
 
         BankProductConfig product = plugin.getConfigManager().getBankProduct(account.getProductId());
         if (product == null || !product.isSavings()) {
-            sendMessage(player, "bank_deposit_not_allowed");
+            sendMessage(player, "bank.deposit_not_allowed");
             return false;
         }
 
@@ -306,7 +306,7 @@ public class BankManager {
         if (account.getPrincipal() + amount > product.getMaxDeposit()) {
             Map<String, String> replacements = new HashMap<>();
             replacements.put("max", moneyFormat.format(product.getMaxDeposit()));
-            sendMessage(player, "bank_limit_exceeded", replacements);
+            sendMessage(player, "bank.limit_exceeded", replacements);
             return false;
         }
 
@@ -317,7 +317,7 @@ public class BankManager {
         if (!plugin.getEconomy().has(player, amount)) {
             Map<String, String> replacements = new HashMap<>();
             replacements.put("amount", moneyFormat.format(amount));
-            sendMessage(player, "insufficient_funds", replacements);
+            sendMessage(player, "bank.no_money", replacements);
             plugin.getConfigManager().playSound(player, "error");
             return false;
         }
@@ -329,7 +329,7 @@ public class BankManager {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("product", product.getDisplayName());
         replacements.put("amount", moneyFormat.format(amount));
-        sendMessage(player, "bank_deposit_success", replacements);
+        sendMessage(player, "bank.deposit_success", replacements);
         plugin.getConfigManager().playSound(player, "buy");
 
         saveAllData();
@@ -342,13 +342,13 @@ public class BankManager {
     public boolean withdraw(Player player, String accountId, double amount) {
         PlayerBankAccount account = getAccount(player.getUniqueId(), accountId);
         if (account == null) {
-            sendMessage(player, "bank_account_not_found");
+            sendMessage(player, "bank.account_not_found");
             return false;
         }
 
         BankProductConfig product = plugin.getConfigManager().getBankProduct(account.getProductId());
         if (product == null || !product.isSavings()) {
-            sendMessage(player, "bank_withdraw_not_allowed");
+            sendMessage(player, "bank.withdraw_not_allowed");
             return false;
         }
 
@@ -357,7 +357,7 @@ public class BankManager {
 
         // 잔액 확인
         if (account.getPrincipal() < amount) {
-            sendMessage(player, "bank_insufficient_balance");
+            sendMessage(player, "bank.insufficient_balance");
             plugin.getConfigManager().playSound(player, "error");
             return false;
         }
@@ -370,7 +370,7 @@ public class BankManager {
         replacements.put("product", product.getDisplayName());
         replacements.put("amount", moneyFormat.format(amount));
         replacements.put("interest", moneyFormat.format(interest));
-        sendMessage(player, "bank_withdraw_success", replacements);
+        sendMessage(player, "bank.withdraw_success", replacements);
         plugin.getConfigManager().playSound(player, "sell");
 
         saveAllData();
@@ -385,13 +385,13 @@ public class BankManager {
     public boolean closeAccount(Player player, String accountId, boolean forceEarly) {
         PlayerBankAccount account = getAccount(player.getUniqueId(), accountId);
         if (account == null) {
-            sendMessage(player, "bank_account_not_found");
+            sendMessage(player, "bank.account_not_found");
             return false;
         }
 
         BankProductConfig product = plugin.getConfigManager().getBankProduct(account.getProductId());
         if (product == null) {
-            sendMessage(player, "bank_product_not_found");
+            sendMessage(player, "bank.product_not_found");
             return false;
         }
 
@@ -414,12 +414,12 @@ public class BankManager {
 
                 Map<String, String> replacements = new HashMap<>();
                 replacements.put("penalty", percentFormat.format(product.getEarlyWithdrawalPenalty() * 100));
-                sendMessage(player, "bank_early_withdrawal_applied", replacements);
+                sendMessage(player, "bank.early_withdrawal_applied", replacements);
             } else {
                 // 중도 해지 확인 필요
                 Map<String, String> replacements = new HashMap<>();
                 replacements.put("penalty", percentFormat.format(product.getEarlyWithdrawalPenalty() * 100));
-                sendMessage(player, "bank_early_withdrawal_warning", replacements);
+                sendMessage(player, "bank.early_withdrawal_warning", replacements);
                 return false;
             }
         } else {
@@ -433,7 +433,7 @@ public class BankManager {
         // 메시지 전송
         Map<String, String> replacements = new HashMap<>();
         replacements.put("total", moneyFormat.format(payout));
-        sendMessage(player, "bank_account_closed", replacements);
+        sendMessage(player, "bank.account_closed", replacements);
         plugin.getConfigManager().playSound(player, "sell");
 
         saveAllData();

@@ -7,6 +7,7 @@ import java.util.List;
 public class MiningDropData {
     private Material targetBlock;
     private boolean enabled;
+    private boolean vanillaDrops = true; // [NEW] 바닐라 드랍 여부
     private List<MiningReward> rewards;
 
     public MiningDropData(Material targetBlock, boolean enabled) {
@@ -39,6 +40,14 @@ public class MiningDropData {
 
     public void setRewards(List<MiningReward> rewards) {
         this.rewards = rewards;
+    }
+
+    public boolean isVanillaDrops() {
+        return vanillaDrops;
+    }
+
+    public void setVanillaDrops(boolean vanillaDrops) {
+        this.vanillaDrops = vanillaDrops;
     }
 
     public void addReward(MiningReward reward) {

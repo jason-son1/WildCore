@@ -28,6 +28,7 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\a
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\BankDepositGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\BankMainGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\BankProductListGUI.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\BankStockInfoGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\EnchantGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\EnchantProcessGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\MyStockGUI.java
@@ -36,6 +37,7 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\P
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopAdminGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopEditorGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopGUI.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopListGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\StockGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\listeners\BlockListener.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\listeners\BuffBlockListener.java

@@ -38,7 +38,8 @@ public class ItemUtil {
             material = Material.PAPER;
         }
 
-        return createItem(material, config.getDisplayName(), config.getLore(), amount, itemId, config.getCustomModelData(), config.isGlow(), plugin);
+        return createItem(material, config.getDisplayName(), config.getLore(), amount, itemId,
+                config.getCustomModelData(), config.isGlow(), plugin);
     }
 
     /**
@@ -84,6 +85,9 @@ public class ItemUtil {
     public static Component parse(String legacyText) {
         if (legacyText == null)
             return Component.empty();
+
+        // 색상 코드 변환 (& -> §)
+        legacyText = net.md_5.bungee.api.ChatColor.translateAlternateColorCodes('&', legacyText);
         return LegacyComponentSerializer.legacySection().deserialize(legacyText);
     }
 

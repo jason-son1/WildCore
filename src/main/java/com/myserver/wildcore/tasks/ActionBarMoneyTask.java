@@ -32,7 +32,7 @@ public class ActionBarMoneyTask extends BukkitRunnable {
             }
 
             double balance = plugin.getEconomy().getBalance(player);
-            String formattedBalance = String.format("%,.0f", balance);
+            String formattedBalance = String.format("%,.1f", balance);
 
             String finalMessage = format.replace("%money%", formattedBalance);
             player.sendActionBar(com.myserver.wildcore.util.ItemUtil.parse(finalMessage));

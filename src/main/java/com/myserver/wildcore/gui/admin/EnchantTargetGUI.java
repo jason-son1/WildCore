@@ -234,6 +234,7 @@ public class EnchantTargetGUI implements InventoryHolder {
             selectedItems.remove(itemType);
         } else {
             selectedItems.add(itemType);
+
         }
         updateInventory();
     }
@@ -255,6 +256,9 @@ public class EnchantTargetGUI implements InventoryHolder {
             // 편집 모드: ConfigManager에 직접 저장 (메모리 상)
             plugin.getConfigManager().setEnchantTargetGroups(editEnchantId, selectedGroups);
             plugin.getConfigManager().setEnchantTargetWhitelist(editEnchantId, selectedItems);
+
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§a저장된 그룹: " + selectedGroups);
+
             // 편집 GUI로 돌아감
             new EnchantEditGUI(plugin, player, editEnchantId).open();
         } else if (parentBuilder != null) {

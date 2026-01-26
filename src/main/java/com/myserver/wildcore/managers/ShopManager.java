@@ -219,7 +219,7 @@ public class ShopManager {
         if (response.transactionSuccess()) {
             player.getInventory().addItem(itemStack);
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§a구매 완료! §7(§6-" + String.format("%,.0f", totalCost) + "원§7)");
+                    "§a구매 완료! §7(§6-" + String.format("%,.2f", totalCost) + "원§7)");
             plugin.getConfigManager().playSound(player, "buy");
 
             plugin.debug("상점 구매: " + player.getName() + " - " + item.getId() + " x" + amount +
@@ -259,7 +259,7 @@ public class ShopManager {
         EconomyResponse response = economy.depositPlayer(player, totalPrice);
         if (response.transactionSuccess()) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§a판매 완료! §7(§6+" + String.format("%,.0f", totalPrice) + "원§7)");
+                    "§a판매 완료! §7(§6+" + String.format("%,.2f", totalPrice) + "원§7)");
             plugin.getConfigManager().playSound(player, "sell");
 
             plugin.debug("상점 판매: " + player.getName() + " - " + item.getId() + " x" + amount +

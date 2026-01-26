@@ -64,19 +64,35 @@ public class ShopGUI extends PaginatedGui<ShopItemConfig> {
             }
         }
 
+        // [Change] Config에 설정된 Display Name이 있으면 덮어쓰기
+        if (item.getDisplayName() != null && !item.getDisplayName().isEmpty()) {
+            displayName = item.getDisplayName();
+        }
+
         // Lore 생성
         List<String> lore = new ArrayList<>();
+
+        // [Change] Config에 설정된 Lore가 있거나, 커스텀 아이템인 경우 Lore 추가
+        if (item.getLore() != null && !item.getLore().isEmpty()) {
+            lore.addAll(item.getLore());
+        } else if (item.isCustom()) {
+            var customConfig = plugin.getConfigManager().getCustomItem(item.getId());
+            if (customConfig != null) {
+                lore.addAll(customConfig.getLore());
+            }
+        }
+
         lore.add("");
 
         // 구매/판매 가격
         if (item.canBuy()) {
-            lore.add("§7구매가: §6" + String.format("%,.0f", item.getBuyPrice()) + "원");
+            lore.add("§7구매가: §6" + String.format("%,.2f", item.getBuyPrice()) + "원");
         } else {
             lore.add("§7구매가: §c구매 불가");
         }
 
         if (item.canSell()) {
-            lore.add("§7판매가: §6" + String.format("%,.0f", item.getSellPrice()) + "원");
+            lore.add("§7판매가: §6" + String.format("%,.2f", item.getSellPrice()) + "원");
         } else {
             lore.add("§7판매가: §c판매 불가");
         }
@@ -84,7 +100,7 @@ public class ShopGUI extends PaginatedGui<ShopItemConfig> {
         // 현재 잔액
         lore.add("");
         double balance = plugin.getEconomy().getBalance(player);
-        lore.add("§7보유금: §e" + String.format("%,.0f", balance) + "원");
+        lore.add("§7보유금: §e" + String.format("%,.2f", balance) + "원");
 
         // 보유 수량
         int owned = countOwnedItems(item);
@@ -131,7 +147,7 @@ public class ShopGUI extends PaginatedGui<ShopItemConfig> {
         lore.add("§7상품 수: §e" + totalItems + "개");
         lore.add("");
         double balance = plugin.getEconomy().getBalance(player);
-        lore.add("§7보유금: §6" + String.format("%,.0f", balance) + "원");
+        lore.add("§7보유금: §6" + String.format("%,.2f", balance) + "원");
 
         return createItem(Material.BOOK, "§f[ 상점 정보 ]", lore);
     }

@@ -135,8 +135,8 @@ public class ShopEditorGUI implements InventoryHolder {
                 "§7타입: §f" + item.getType(),
                 "§7ID: §f" + item.getId(),
                 "",
-                "§7구매가: " + (item.canBuy() ? "§6" + String.format("%,.0f", item.getBuyPrice()) + "원" : "§c구매 불가"),
-                "§7판매가: " + (item.canSell() ? "§6" + String.format("%,.0f", item.getSellPrice()) + "원" : "§c판매 불가"),
+                "§7구매가: " + (item.canBuy() ? "§6" + String.format("%,.2f", item.getBuyPrice()) + "원" : "§c구매 불가"),
+                "§7판매가: " + (item.canSell() ? "§6" + String.format("%,.2f", item.getSellPrice()) + "원" : "§c판매 불가"),
                 "",
                 "§e좌클릭: §f가격 설정",
                 "§cShift+우클릭: §f제거");

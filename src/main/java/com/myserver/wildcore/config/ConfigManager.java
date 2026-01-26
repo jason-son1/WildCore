@@ -206,29 +206,200 @@ public class ConfigManager {
     private void loadEnchants() {
         enchants.clear();
         if (enchantsConfig.isConfigurationSection("tiers")) {
+            boolean changed = false;
             for (String key : enchantsConfig.getConfigurationSection("tiers").getKeys(false)) {
                 String path = "tiers." + key;
+
+                // Read basic values first to generate lore
+                List<String> whitelist = enchantsConfig.getStringList(path + ".target_whitelist");
+                List<String> groups = enchantsConfig.getStringList(path + ".target_groups");
+                double costMoney = enchantsConfig.getDouble(path + ".cost.money");
+                List<String> costItems = enchantsConfig.getStringList(path + ".cost.items");
+                double success = enchantsConfig.getDouble(path + ".probability.success");
+                double fail = enchantsConfig.getDouble(path + ".probability.fail");
+                double destroy = enchantsConfig.getDouble(path + ".probability.destroy");
+
+                // Generate Lore
+                List<String> generatedLore = generateEnchantLore(whitelist, groups, success, fail, destroy, costMoney,
+                        costItems);
+
+                // Set generated lore to config
+                enchantsConfig.set(path + ".lore", generatedLore);
+                changed = true;
+
                 EnchantConfig enchant = new EnchantConfig(
                         key,
                         colorize(enchantsConfig.getString(path + ".display_name")),
                         enchantsConfig.getString(path + ".material"),
                         enchantsConfig.getInt(path + ".slot"),
-                        enchantsConfig.getStringList(path + ".target_whitelist"),
-                        enchantsConfig.getStringList(path + ".target_groups"),
+                        whitelist,
+                        groups,
                         enchantsConfig.getString(path + ".result.enchantment"),
                         enchantsConfig.getInt(path + ".result.level"),
-                        enchantsConfig.getDouble(path + ".cost.money"),
-                        enchantsConfig.getStringList(path + ".cost.items"),
-                        enchantsConfig.getDouble(path + ".probability.success"),
-                        enchantsConfig.getDouble(path + ".probability.fail"),
-                        enchantsConfig.getDouble(path + ".probability.destroy"),
-                        colorize(enchantsConfig.getStringList(path + ".lore")),
+                        costMoney,
+                        costItems,
+                        success,
+                        fail,
+                        destroy,
+                        colorize(generatedLore),
                         enchantsConfig.getBoolean(path + ".unsafe_mode", false),
                         enchantsConfig.getBoolean(path + ".ignore_conflicts", false));
                 enchants.put(key, enchant);
             }
+
+            if (changed) {
+                try {
+                    enchantsConfig.save(enchantsFile);
+                } catch (IOException e) {
+                    plugin.getLogger().severe("Failed to save generated lore to enchants.yml: " + e.getMessage());
+                }
+            }
         }
         plugin.getLogger().info("인챈트 " + enchants.size() + "개 로드됨");
+    }
+
+    private List<String> generateEnchantLore(List<String> whitelist, List<String> groups,
+            double success, double fail, double destroy,
+            double costMoney, List<String> costItems) {
+        List<String> lore = new ArrayList<>();
+        lore.add("");
+
+        // Target
+        StringBuilder targetBuilder = new StringBuilder("&7적용 대상: &f");
+        if (!groups.isEmpty()) {
+            List<String> koreanGroups = new ArrayList<>();
+            for (String group : groups) {
+                switch (group.toUpperCase()) {
+                    case "WEAPON" -> koreanGroups.add("무기");
+                    case "ARMOR" -> koreanGroups.add("방어구");
+                    case "TOOL" -> koreanGroups.add("도구");
+                    case "PICKAXE" -> koreanGroups.add("곡괭이");
+                    case "SWORD" -> koreanGroups.add("검");
+                    case "AXE" -> koreanGroups.add("도끼");
+                    case "SHOVEL" -> koreanGroups.add("삽");
+                    case "HOE" -> koreanGroups.add("괭이");
+                    case "BOW" -> koreanGroups.add("활");
+                    default -> koreanGroups.add(group);
+                }
+            }
+            targetBuilder.append(String.join(", ", koreanGroups));
+        } else if (!whitelist.isEmpty()) {
+            targetBuilder.append("지정 아이템");
+        } else {
+            targetBuilder.append("전체");
+        }
+
+        // Simplify whitelist details if mixed with groups (e.g. " (다이아/네더라이트)")
+        // This is a heuristic approximation based on user request example
+        if (!whitelist.isEmpty()) {
+            boolean hasDiamond = false;
+            boolean hasNetherite = false;
+            boolean hasIron = false;
+            boolean hasGold = false;
+
+            for (String mat : whitelist) {
+                if (mat.contains("DIAMOND"))
+                    hasDiamond = true;
+                if (mat.contains("NETHERITE"))
+                    hasNetherite = true;
+                if (mat.contains("IRON"))
+                    hasIron = true;
+                if (mat.contains("GOLD"))
+                    hasGold = true;
+            }
+
+            List<String> types = new ArrayList<>();
+            if (hasDiamond)
+                types.add("다이아");
+            if (hasNetherite)
+                types.add("네더라이트");
+            if (hasIron)
+                types.add("철");
+            if (hasGold)
+                types.add("금");
+            if (!types.isEmpty()) {
+                targetBuilder.append(" (").append(String.join("/", types)).append(")");
+            }
+        }
+        lore.add(targetBuilder.toString());
+
+        // Probability
+        lore.add("&7성공 확률: &a" + (int) success + "%");
+        lore.add("&7실패 확률: &e" + (int) fail + "%");
+        lore.add("&7파괴 확률: &c" + (int) destroy + "%");
+        lore.add("");
+
+        // Cost
+        lore.add(String.format("&7비용: &6%,d원", (long) costMoney));
+
+        // Materials
+        if (!costItems.isEmpty()) {
+            StringBuilder materialsBuilder = new StringBuilder("&7재료: &b");
+            List<String> materialParts = new ArrayList<>();
+            for (String itemStr : costItems) {
+                String[] parts = itemStr.split(":");
+                if (parts.length >= 2) {
+                    String materialName = parts[0];
+                    String amount = parts[parts.length - 1];
+
+                    String koreanName;
+                    if (materialName.equalsIgnoreCase("custom") && parts.length >= 3) {
+                        String customId = parts[1];
+                        CustomItemConfig customItem = getCustomItem(customId);
+                        koreanName = (customItem != null) ? ChatColor.stripColor(customItem.getDisplayName())
+                                : customId;
+                    } else {
+                        org.bukkit.Material mat = org.bukkit.Material.getMaterial(materialName.toUpperCase());
+                        koreanName = (mat != null) ? com.myserver.wildcore.util.KoreanMaterialUtil.getName(mat)
+                                : materialName;
+                    }
+
+                    materialParts.add(koreanName + " x" + amount);
+                }
+            }
+            materialsBuilder.append(String.join(", ", materialParts));
+            lore.add(materialsBuilder.toString());
+        } else {
+            lore.add("&7재료: &b없음");
+        }
+
+        return lore;
+    }
+
+    /**
+     * 디스크에서 인챈트 설정을 다시 읽어오고 로드합니다.
+     */
+    public void reloadEnchantsFromDisk() {
+        if (enchantsFile == null) {
+            enchantsFile = new File(plugin.getDataFolder(), "enchants.yml");
+        }
+        enchantsConfig = YamlConfiguration.loadConfiguration(enchantsFile);
+        loadEnchants();
+        plugin.getLogger().info("인챈트 설정이 디스크에서 리로드되었습니다.");
+    }
+
+    /**
+     * 디스크에서 주식 설정을 다시 읽어오고 로드합니다.
+     */
+    public void reloadStocksFromDisk() {
+        if (stocksFile == null) {
+            stocksFile = new File(plugin.getDataFolder(), "stocks.yml");
+        }
+        stocksConfig = YamlConfiguration.loadConfiguration(stocksFile);
+        loadStocks();
+        plugin.getLogger().info("주식 설정이 디스크에서 리로드되었습니다.");
+    }
+
+    /**
+     * 디스크에서 은행 설정을 다시 읽어오고 로드합니다.
+     */
+    public void reloadBanksFromDisk() {
+        if (banksFile == null) {
+            banksFile = new File(plugin.getDataFolder(), "banks.yml");
+        }
+        banksConfig = YamlConfiguration.loadConfiguration(banksFile);
+        loadBankProducts();
+        plugin.getLogger().info("은행 설정이 디스크에서 리로드되었습니다.");
     }
 
     /**
@@ -346,6 +517,7 @@ public class ConfigManager {
                 }
 
                 MiningDropData data = new MiningDropData(material, true, rewards);
+                data.setVanillaDrops(miningDropsConfig.getBoolean(path + ".vanilla_drops", true)); // [NEW]
                 miningDrops.put(material, data);
             }
         }
@@ -730,7 +902,7 @@ public class ConfigManager {
             message = message.replace("%" + entry.getKey() + "%", value);
             message = message.replace("{" + entry.getKey() + "}", value);
         }
-        return message;
+        return colorize(message); // [FIX] 최종 결과에 색상 코드 적용 (플레이어 닉네임 등 변수에 &코드가 있을 경우를 위해)
     }
 
     public int getStockUpdateInterval() {
@@ -881,6 +1053,7 @@ public class ConfigManager {
             MiningDropData data = entry.getValue();
 
             miningDropsConfig.set(path + ".enabled", data.isEnabled());
+            miningDropsConfig.set(path + ".vanilla_drops", data.isVanillaDrops()); // [NEW]
 
             List<Map<String, Object>> rewardsList = new ArrayList<>();
             for (MiningReward reward : data.getRewards()) {
@@ -945,7 +1118,10 @@ public class ConfigManager {
                                     shopsConfig.getString(itemPath + ".type", "VANILLA"),
                                     shopsConfig.getString(itemPath + ".id", "STONE"),
                                     shopsConfig.getDouble(itemPath + ".buy_price", -1),
-                                    shopsConfig.getDouble(itemPath + ".sell_price", -1));
+                                    shopsConfig.getDouble(itemPath + ".sell_price", -1),
+                                    colorize(shopsConfig.getString(itemPath + ".display_name")), // [NEW] 표시 이름 로드
+                                    colorize(shopsConfig.getStringList(itemPath + ".lore")) // [NEW] 설명 로드
+                            );
                             items.put(slot, item);
                         } catch (NumberFormatException ignored) {
                         }
@@ -963,6 +1139,71 @@ public class ConfigManager {
             }
         }
         plugin.getLogger().info("상점 " + shops.size() + "개 로드됨");
+    }
+
+    /**
+     * 특정 상점 설정 리로드 (디스크에서 새로 읽기)
+     */
+    public ShopConfig reloadShop(String shopId) {
+        // 파일 다시 로드
+        shopsConfig = YamlConfiguration.loadConfiguration(shopsFile);
+
+        String path = "shops." + shopId;
+        if (!shopsConfig.contains(path)) {
+            return null;
+        }
+
+        // 위치 정보 파싱
+        String worldName = shopsConfig.getString(path + ".location.world", "world");
+        double x = shopsConfig.getDouble(path + ".location.x", 0);
+        double y = shopsConfig.getDouble(path + ".location.y", 64);
+        double z = shopsConfig.getDouble(path + ".location.z", 0);
+        float yaw = (float) shopsConfig.getDouble(path + ".location.yaw", 0);
+        Location location = ShopConfig.createLocation(worldName, x, y, z, yaw);
+
+        // 엔티티 UUID 파싱
+        String uuidStr = shopsConfig.getString(path + ".entity_uuid", "");
+        UUID entityUuid = null;
+        if (uuidStr != null && !uuidStr.isEmpty()) {
+            try {
+                entityUuid = UUID.fromString(uuidStr);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        // 아이템 파싱
+        Map<Integer, ShopItemConfig> items = new HashMap<>();
+        if (shopsConfig.isConfigurationSection(path + ".items")) {
+            for (String slotStr : shopsConfig.getConfigurationSection(path + ".items").getKeys(false)) {
+                try {
+                    int slot = Integer.parseInt(slotStr);
+                    String itemPath = path + ".items." + slotStr;
+                    ShopItemConfig item = new ShopItemConfig(
+                            slot,
+                            shopsConfig.getString(itemPath + ".type", "VANILLA"),
+                            shopsConfig.getString(itemPath + ".id", "STONE"),
+                            shopsConfig.getDouble(itemPath + ".buy_price", -1),
+                            shopsConfig.getDouble(itemPath + ".sell_price", -1),
+                            colorize(shopsConfig.getString(itemPath + ".display_name")),
+                            colorize(shopsConfig.getStringList(itemPath + ".lore")));
+                    items.put(slot, item);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        ShopConfig shop = new ShopConfig(
+                shopId,
+                colorize(shopsConfig.getString(path + ".display_name", "&f상점")),
+                shopsConfig.getString(path + ".npc_type", "VILLAGER"),
+                location,
+                entityUuid,
+                items);
+
+        // 캐시 업데이트
+        shops.put(shopId, shop);
+
+        return shop;
     }
 
     /**
@@ -997,6 +1238,8 @@ public class ConfigManager {
             shopsConfig.set(itemPath + ".id", item.getId());
             shopsConfig.set(itemPath + ".buy_price", item.getBuyPrice());
             shopsConfig.set(itemPath + ".sell_price", item.getSellPrice());
+            shopsConfig.set(itemPath + ".display_name", item.getDisplayName()); // [NEW]
+            shopsConfig.set(itemPath + ".lore", item.getLore()); // [NEW]
         }
 
         try {

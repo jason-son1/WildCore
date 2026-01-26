@@ -20,7 +20,9 @@ com\myserver\wildcore\gui\admin\MiningRewardGUI.class
 com\myserver\wildcore\gui\shop\ShopEditorGUI.class
 com\myserver\wildcore\npc\NpcData.class
 com\myserver\wildcore\gui\EnchantProcessGUI$2.class
+com\myserver\wildcore\gui\shop\ShopListGUI.class
 com\myserver\wildcore\gui\admin\AdminGuiListener.class
+com\myserver\wildcore\gui\BankStockInfoGUI.class
 com\myserver\wildcore\util\KoreanMaterialUtil.class
 com\myserver\wildcore\config\ShopConfig.class
 com\myserver\wildcore\gui\StockGUI.class

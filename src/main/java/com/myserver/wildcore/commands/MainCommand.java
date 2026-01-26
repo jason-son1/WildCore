@@ -103,7 +103,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleShopCreate(Player player, String[] args) {
         if (!player.hasPermission("wildcore.admin.shop")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -261,7 +261,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("wildcore.admin")) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -324,6 +324,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        plugin.getConfigManager().reloadBanksFromDisk();
         new BankMainGUI(plugin, player).open();
     }
 
@@ -485,8 +486,14 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
         String adminType = args[1].toLowerCase();
         switch (adminType) {
-            case "stock" -> new StockAdminGUI(plugin, player).open();
-            case "enchant" -> new EnchantAdminGUI(plugin, player).open();
+            case "stock" -> {
+                plugin.getConfigManager().reloadStocksFromDisk();
+                new StockAdminGUI(plugin, player).open();
+            }
+            case "enchant" -> {
+                plugin.getConfigManager().reloadEnchantsFromDisk();
+                new EnchantAdminGUI(plugin, player).open();
+            }
             case "npc" -> new NpcAdminGUI(plugin, player).open();
             case "mining" -> new MiningBlockListGUI(plugin, player).open();
             default -> sendAdminHelp(player);
@@ -652,7 +659,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
     private void handleMoney(CommandSender sender, String[] args) {
         if (!sender.hasPermission("wildcore.admin.money")) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("no_permission"));
+                    plugin.getConfigManager().getMessage("general.no_permission"));
             return;
         }
 
@@ -818,19 +825,19 @@ public class MainCommand implements CommandExecutor, TabCompleter {
                     // 상점 ID 목록
                     completions.addAll(plugin.getConfigManager().getShops().keySet());
                 }
+            } else if (args[0].equalsIgnoreCase("npc")) {
+                String subCmd = args[1].toLowerCase();
+                if (subCmd.equals("tp") || subCmd.equals("teleport") ||
+                        subCmd.equals("remove") || subCmd.equals("delete") ||
+                        subCmd.equals("respawn")) {
+                    completions.addAll(plugin.getNpcManager().getAllNpcs().keySet());
+                }
+            } else if (args[0].equalsIgnoreCase("money")) {
+                // 플레이어 목록
+                completions.addAll(Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .collect(Collectors.toList()));
             }
-        } else if (args[0].equalsIgnoreCase("npc")) {
-            String subCmd = args[1].toLowerCase();
-            if (subCmd.equals("tp") || subCmd.equals("teleport") ||
-                    subCmd.equals("remove") || subCmd.equals("delete") ||
-                    subCmd.equals("respawn")) {
-                completions.addAll(plugin.getNpcManager().getAllNpcs().keySet());
-            }
-        } else if (args[0].equalsIgnoreCase("money")) {
-            // 플레이어 목록
-            completions.addAll(Bukkit.getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .collect(Collectors.toList()));
         } else if (args.length == 4 && args[0].equalsIgnoreCase("drop")) {
             // y 좌표 제안
             if (sender instanceof Player player) {

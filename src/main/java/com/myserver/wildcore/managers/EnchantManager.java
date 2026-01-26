@@ -156,12 +156,20 @@ public class EnchantManager {
 
         // 개별 화이트리스트 확인
         if (enchant.getTargetWhitelist().contains(itemType)) {
+            if (plugin.getConfigManager().isDebugEnabled()) {
+                plugin.getLogger()
+                        .info("[EnchantDebug] " + enchant.getId() + " accepted " + itemType + " (Reason: Whitelist)");
+            }
             return true;
         }
 
         // 그룹 기반 확인
         for (String group : enchant.getTargetGroups()) {
             if (ItemGroupUtil.isInGroup(item.getType(), group)) {
+                if (plugin.getConfigManager().isDebugEnabled()) {
+                    plugin.getLogger().info("[EnchantDebug] " + enchant.getId() + " accepted " + itemType
+                            + " (Reason: Group " + group + ")");
+                }
                 return true;
             }
         }
@@ -339,10 +347,8 @@ public class EnchantManager {
             return available;
         }
 
-        String itemType = item.getType().name();
-
         for (EnchantConfig enchant : plugin.getConfigManager().getEnchants().values()) {
-            if (enchant.getTargetWhitelist().contains(itemType)) {
+            if (isValidTarget(item, enchant)) {
                 available.add(enchant);
             }
         }

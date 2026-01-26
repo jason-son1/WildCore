@@ -6,8 +6,10 @@ import com.myserver.wildcore.config.ShopConfig;
 import com.myserver.wildcore.config.StockConfig;
 import com.myserver.wildcore.gui.shop.ShopAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopEditorGUI;
+import com.myserver.wildcore.gui.shop.ShopEditorGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
 import com.myserver.wildcore.gui.shop.ShopListGUI; // Import added
+import com.myserver.wildcore.gui.PaginatedGui; // Import added
 import com.myserver.wildcore.npc.NpcType;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -294,35 +296,59 @@ public class AdminGuiListener implements Listener {
     /**
      * 인챈트 관리 메인 GUI 클릭 처리
      */
+    /**
+     * 인챈트 관리 메인 GUI 클릭 처리 (페이지네이션 지원)
+     */
     private void handleEnchantAdminClick(Player player, InventoryClickEvent event, EnchantAdminGUI adminGUI) {
         int slot = event.getRawSlot();
         ItemStack clicked = event.getCurrentItem();
+
+        // 네비게이션 처리 (PaginatedGui)
+        if (slot == 53) { // Next Page or Back
+            // EnchantAdminGUI의 53번 슬롯이 '닫기' 버튼인지 '다음 페이지' 버튼인지 구분이 모호할 수 있음.
+            // 하지만 PaginatedGui 로직상 53은 다음 페이지.
+            // EnchantAdminGUI 코드에서 53번 슬롯에 Back 버튼? -> 아님 46번으로 옮김.
+            // 53번은 PaginatedGui가 NextPage로 덮어씀 (Inventory 생성 시).
+            // 하지만 EnchantAdminGUI createInventory 오버라이드에서 super 호출 후 setItem(46, back) 하므로
+            // 53번은 PaginatedGui의 setupNavigationBar에 의해 설정됨.
+            if (adminGUI.getCurrentPage() < adminGUI.getTotalPages() - 1) {
+                adminGUI.nextPage();
+            }
+            return;
+        }
+
+        if (slot == 45) { // Prev Page
+            if (adminGUI.getCurrentPage() > 0) {
+                adminGUI.previousPage();
+            }
+            return;
+        }
+
         if (clicked == null || clicked.getType() == Material.AIR)
             return;
         if (clicked.getType() == Material.BLACK_STAINED_GLASS_PANE)
             return;
+        if (clicked.getType() == Material.GRAY_STAINED_GLASS_PANE)
+            return;
 
-        // 닫기 버튼
-        if (slot == 53) {
+        // 닫기 버튼 (슬롯 46)
+        if (slot == 46) {
             player.closeInventory();
             return;
         }
 
-        // 새 인챈트 추가 - 위저드 GUI로 이동
-        if (slot == 49) {
+        // 새 인챈트 추가 - 위저드 GUI로 이동 (슬롯 50)
+        if (slot == 50) {
             new EnchantTypeSelectorGUI(plugin, player).open();
             return;
         }
 
-        // 인챈트 클릭
-        int[] slots = { 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34 };
-        int index = 0;
-        for (EnchantConfig enchant : plugin.getConfigManager().getEnchants().values()) {
-            if (index < slots.length && slots[index] == slot) {
+        // 인챈트 클릭 (0~44)
+        if (slot >= 0 && slot < PaginatedGui.ITEMS_PER_PAGE) {
+            EnchantConfig enchant = adminGUI.getItemAtSlot(slot); // PaginatedGui 메서드 활용
+            if (enchant != null) {
                 new EnchantEditGUI(plugin, player, enchant.getId()).open();
-                return;
             }
-            index++;
         }
     }
 
@@ -940,7 +966,7 @@ public class AdminGuiListener implements Listener {
         if (gui.isContentSlot(slot)) {
             Enchantment enchant = gui.getEnchantmentAtSlot(slot);
             if (enchant != null) {
-                new EnchantBuilderGUI(plugin, player, enchant).open();
+                new EnchantBuilderGUI(plugin, player, enchant, gui.getCurrentFilter()).open();
             }
         }
     }
@@ -1282,6 +1308,11 @@ public class AdminGuiListener implements Listener {
 
         // 아이템 편집 모드
         if (slot == ShopAdminGUI.getSlotEditItems()) {
+            // 상점 설정 파일 다시 로드 (외부 수정 반영)
+            ShopConfig freshShop = plugin.getConfigManager().reloadShop(shop.getId());
+            if (freshShop != null) {
+                shop = freshShop;
+            }
             new ShopEditorGUI(plugin, player, shop).open();
             return;
         }

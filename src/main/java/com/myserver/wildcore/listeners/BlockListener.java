@@ -1,6 +1,7 @@
 package com.myserver.wildcore.listeners;
 
 import com.myserver.wildcore.WildCore;
+import com.myserver.wildcore.config.MiningDropData; // [NEW]
 import com.myserver.wildcore.gui.EnchantGUI;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -72,7 +73,17 @@ public class BlockListener implements Listener {
             return;
         }
 
-        plugin.getMiningDropManager().processBlockBreak(player, event.getBlock().getType(),
+        Material blockType = event.getBlock().getType();
+        MiningDropData dropData = plugin.getConfigManager().getMiningDropData(blockType);
+
+        if (dropData != null && dropData.isEnabled()) {
+            // 바닐라 드랍 제어
+            if (!dropData.isVanillaDrops()) {
+                event.setDropItems(false);
+            }
+        }
+
+        plugin.getMiningDropManager().processBlockBreak(player, blockType,
                 event.getBlock().getLocation());
     }
 }

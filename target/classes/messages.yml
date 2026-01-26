@@ -71,6 +71,7 @@ bank:
   early_withdrawal_applied: "&c중도 해지로 &6%penalty%%&c의 페널티가 적용되었습니다."
   matured: "&6%product% 적금이 만기되었습니다! 이자를 수령하세요!"
   no_accounts: "&7보유 중인 계좌가 없습니다."
+  no_money: "&c돈이 부족합니다. &7(필요: %amount%원)"
 
 # 돈 관련 메시지
 money:

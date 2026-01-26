@@ -43,8 +43,8 @@ public class StockManager {
     private File dataFile;
     private FileConfiguration dataConfig;
 
-    private final DecimalFormat priceFormat = new DecimalFormat("#,##0.00");
-    private final DecimalFormat changeFormat = new DecimalFormat("+#,##0.00;-#,##0.00");
+    private final DecimalFormat priceFormat = new DecimalFormat("#,##0.0");
+    private final DecimalFormat changeFormat = new DecimalFormat("+#,##0.0;-#,##0.0");
     private final Random random = new Random();
 
     public StockManager(WildCore plugin) {
@@ -256,7 +256,7 @@ public class StockManager {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("stock", stock.getDisplayName());
         replacements.put("amount", String.valueOf(amount));
-        replacements.put("total", priceFormat.format(totalCost));
+        replacements.put("price", priceFormat.format(totalCost));
         player.sendMessage(plugin.getConfigManager().getPrefix() +
                 plugin.getConfigManager().getMessage("stock.buy_success", replacements));
         plugin.getConfigManager().playSound(player, "buy");
@@ -299,7 +299,7 @@ public class StockManager {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("stock", stock.getDisplayName());
         replacements.put("amount", String.valueOf(amount));
-        replacements.put("total", priceFormat.format(totalEarnings));
+        replacements.put("price", priceFormat.format(totalEarnings));
         player.sendMessage(plugin.getConfigManager().getPrefix() +
                 plugin.getConfigManager().getMessage("stock.sell_success", replacements));
         plugin.getConfigManager().playSound(player, "sell");

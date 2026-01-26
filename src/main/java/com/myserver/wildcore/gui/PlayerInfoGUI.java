@@ -118,11 +118,11 @@ public class PlayerInfoGUI implements InventoryHolder {
 
         List<String> moneyLore = new ArrayList<>();
         moneyLore.add("");
-        moneyLore.add("§7보유 현금: §e" + String.format("%,.0f", balance) + "원");
-        moneyLore.add("§7은행 예치금: §6" + String.format("%,.0f", totalBankBalance + totalBankInterest) + "원");
+        moneyLore.add("§7보유 현금: §e" + String.format("%,.1f", balance) + "원");
+        moneyLore.add("§7은행 예치금: §6" + String.format("%,.1f", totalBankBalance + totalBankInterest) + "원");
         moneyLore.add("");
         moneyLore.add("§7─────────────────");
-        moneyLore.add("§f총 자산: §e§l" + String.format("%,.0f", totalAssets) + "원");
+        moneyLore.add("§f총 자산: §e§l" + String.format("%,.1f", totalAssets) + "원");
 
         inventory.setItem(SLOT_MONEY, ItemUtil.createItem(Material.EMERALD, "§e§l자산 정보",
                 moneyLore, 1, null, 0, false, plugin));
@@ -148,7 +148,7 @@ public class PlayerInfoGUI implements InventoryHolder {
             }
             stockLore.add("§7보유 종목: §f" + holdings.size() + "개");
             stockLore.add("§7총 보유량: §f" + stockCount + "주");
-            stockLore.add("§7총 평가액: §a" + String.format("%,.0f", totalValue) + "원");
+            stockLore.add("§7총 평가액: §a" + String.format("%,.1f", totalValue) + "원");
         }
 
         stockLore.add("");
@@ -197,11 +197,11 @@ public class PlayerInfoGUI implements InventoryHolder {
                 bankLore.add("§7  §b정기적금: " + termDepositCount + "개");
             }
             bankLore.add("");
-            bankLore.add("§7예치금 합계: §6" + String.format("%,.0f", totalBalance) + "원");
-            bankLore.add("§7누적 이자: §a+" + String.format("%,.0f", totalInterest) + "원");
+            bankLore.add("§7예치금 합계: §6" + String.format("%,.1f", totalBalance) + "원");
+            bankLore.add("§7누적 이자: §a+" + String.format("%,.1f", totalInterest) + "원");
             bankLore.add("");
             bankLore.add("§7─────────────────");
-            bankLore.add("§f총 은행자산: §6§l" + String.format("%,.0f", totalBalance + totalInterest) + "원");
+            bankLore.add("§f총 은행자산: §6§l" + String.format("%,.1f", totalBalance + totalInterest) + "원");
         }
 
         bankLore.add("");

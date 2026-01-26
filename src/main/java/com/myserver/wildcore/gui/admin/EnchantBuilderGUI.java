@@ -42,10 +42,28 @@ public class EnchantBuilderGUI implements InventoryHolder {
     private List<String> costItems = new ArrayList<>();
 
     public EnchantBuilderGUI(WildCore plugin, Player player, Enchantment enchant) {
+        this(plugin, player, enchant, null);
+    }
+
+    public EnchantBuilderGUI(WildCore plugin, Player player, Enchantment enchant, String initialGroup) {
         this.plugin = plugin;
         this.player = player;
         this.selectedEnchant = enchant;
-        this.targetGroups.add("WEAPON"); // 기본값
+
+        // 초기 그룹 설정 (전달받은 그룹이 없거나 ALL/OTHER인 경우 자동 감지 시도)
+        if (initialGroup == null || "ALL".equals(initialGroup) || "OTHER".equals(initialGroup)) {
+            String detectedGroup = ItemGroupUtil.getEnchantmentGroup(enchant.getKey().getKey());
+            // OTHER가 아닐 경우에만 자동 감지된 그룹 사용
+            if (!"OTHER".equals(detectedGroup)) {
+                this.targetGroups.add(detectedGroup);
+            } else {
+                // 정말 모르겠으면 기본값 WEAPON (기존 동작 유지) 또는 NONE? WEAPON이 안전
+                this.targetGroups.add("WEAPON");
+            }
+        } else {
+            this.targetGroups.add(initialGroup);
+        }
+
         this.costItems.add("DIAMOND:1"); // 기본 재료
         createInventory();
     }
@@ -245,15 +263,7 @@ public class EnchantBuilderGUI implements InventoryHolder {
             return false;
         }
 
-        // 타겟 그룹에서 화이트리스트 자동 생성 (화이트리스트가 비어있으면)
         Set<String> finalWhitelist = new HashSet<>(targetWhitelist);
-        if (finalWhitelist.isEmpty() && !targetGroups.isEmpty()) {
-            for (String group : targetGroups) {
-                for (org.bukkit.Material mat : ItemGroupUtil.getGroupMaterials(group)) {
-                    finalWhitelist.add(mat.name());
-                }
-            }
-        }
 
         // 설정 값 직접 세팅
         String path = "tiers." + enchantId;

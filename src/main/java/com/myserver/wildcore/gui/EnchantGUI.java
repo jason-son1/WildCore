@@ -97,9 +97,9 @@ public class EnchantGUI extends PaginatedGui<EnchantConfig> {
     protected void createInventory(int page) {
         super.createInventory(page);
 
-        // 상단에 현재 손에 든 아이템 정보 표시 (슬롯 4)
+        // 상단에 현재 손에 든 아이템 정보 표시 (슬롯 4 -> 47)
         ItemStack heldItemInfo = createHeldItemInfo();
-        inventory.setItem(4, heldItemInfo);
+        inventory.setItem(47, heldItemInfo);
 
         // 적용 가능한 인챈트가 없는 경우 알림 표시 (슬롯 22)
         if (availableEnchants.isEmpty()) {
