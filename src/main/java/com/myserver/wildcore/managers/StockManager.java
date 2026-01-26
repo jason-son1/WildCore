@@ -175,7 +175,30 @@ public class StockManager {
         // 데이터 저장
         saveAllData();
 
+        // 가격 변동 알림 전송
+        broadcastPriceUpdate();
+
         plugin.debug("주식 가격이 업데이트되었습니다.");
+    }
+
+    /**
+     * 주식 가격 변동 알림 전송
+     */
+    private void broadcastPriceUpdate() {
+        plugin.getServer().broadcastMessage(plugin.getConfigManager().getMessage("stock_price_update_header"));
+
+        List<StockConfig> stocks = plugin.getConfigManager().getAllStocksSorted();
+        for (StockConfig stock : stocks) {
+            Map<String, String> replacements = new HashMap<>();
+            replacements.put("stock", stock.getDisplayName());
+            replacements.put("price", getFormattedPrice(stock.getId()));
+            replacements.put("change", getFormattedChange(stock.getId()));
+
+            plugin.getServer()
+                    .broadcastMessage(plugin.getConfigManager().getMessage("stock_price_update_entry", replacements));
+        }
+
+        plugin.getServer().broadcastMessage(plugin.getConfigManager().getMessage("stock_price_update_footer"));
     }
 
     /**
