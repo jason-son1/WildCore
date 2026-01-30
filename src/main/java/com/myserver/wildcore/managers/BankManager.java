@@ -92,7 +92,7 @@ public class BankManager {
     /**
      * 모든 데이터 저장
      */
-    public void saveAllData() {
+    public synchronized void saveAllData() {
         // 기존 데이터 클리어
         dataConfig.set("players", null);
 
@@ -231,6 +231,12 @@ public class BankManager {
      * @return 생성된 계좌 ID, 실패 시 null
      */
     public String createAccount(Player player, String productId, double initialDeposit) {
+        if (!plugin.getConfigManager().isBankSystemEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("bank_disabled"));
+            return null;
+        }
+
         BankProductConfig product = plugin.getConfigManager().getBankProduct(productId);
         if (product == null) {
             sendMessage(player, "bank.product_not_found");
@@ -290,6 +296,12 @@ public class BankManager {
      * 입금 (자유 예금용)
      */
     public boolean deposit(Player player, String accountId, double amount) {
+        if (!plugin.getConfigManager().isBankSystemEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("bank_disabled"));
+            return false;
+        }
+
         PlayerBankAccount account = getAccount(player.getUniqueId(), accountId);
         if (account == null) {
             sendMessage(player, "bank.account_not_found");
@@ -340,6 +352,12 @@ public class BankManager {
      * 출금 (자유 예금용)
      */
     public boolean withdraw(Player player, String accountId, double amount) {
+        if (!plugin.getConfigManager().isBankSystemEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("bank_disabled"));
+            return false;
+        }
+
         PlayerBankAccount account = getAccount(player.getUniqueId(), accountId);
         if (account == null) {
             sendMessage(player, "bank.account_not_found");
@@ -383,6 +401,12 @@ public class BankManager {
      * @param forceEarly 만기 전 강제 해지 여부 (적금용)
      */
     public boolean closeAccount(Player player, String accountId, boolean forceEarly) {
+        if (!plugin.getConfigManager().isBankSystemEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("bank_disabled"));
+            return false;
+        }
+
         PlayerBankAccount account = getAccount(player.getUniqueId(), accountId);
         if (account == null) {
             sendMessage(player, "bank.account_not_found");

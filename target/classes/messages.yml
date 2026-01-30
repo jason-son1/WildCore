@@ -53,6 +53,7 @@ general:
   item_given: "&a{player}님에게 {item} {amount}개를 지급했습니다."
   save_ticket_used: "&a인벤토리 세이브권이 사용되었습니다! 아이템이 보존됩니다."
   warp_ticket_used: "&a워프권이 사용되었습니다! 스폰으로 이동합니다."
+  warp_delay: "&e3초 후에 이동합니다..."
 
 # 은행 관련 메시지
 bank:

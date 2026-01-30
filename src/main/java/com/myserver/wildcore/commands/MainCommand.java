@@ -286,6 +286,12 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
+        if (!plugin.getConfigManager().isStockSystemEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("stock_disabled"));
+            return;
+        }
+
         new StockGUI(plugin, player).open();
     }
 
@@ -321,6 +327,12 @@ public class MainCommand implements CommandExecutor, TabCompleter {
         if (!player.hasPermission("wildcore.bank.use")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
                     plugin.getConfigManager().getMessage("general.no_permission"));
+            return;
+        }
+
+        if (!plugin.getConfigManager().isBankSystemEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("bank_disabled"));
             return;
         }
 
@@ -384,7 +396,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
     /**
      * 아이템 드롭 명령어 (주로 MythicMobs나 콘솔에서 사용)
-     * 사용법: /wildcore drop <월드명> <x> <y> <z> <아이템ID> [수량]
+     * 사용법: /wildcore drop <월드명> <x> <y> <z> <아이템ID> [수량] [silent]
      */
     private void handleDrop(CommandSender sender, String[] args) {
         if (!sender.hasPermission("wildcore.admin")) {
@@ -395,7 +407,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
         if (args.length < 6) {
             sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§c사용법: /wildcore drop <월드> <x> <y> <z> <아이템ID> [수량]");
+                    "§c사용법: /wildcore drop <월드> <x> <y> <z> <아이템ID> [수량] [silent]");
             return;
         }
 
@@ -405,61 +417,90 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             double y = Double.parseDouble(args[3]);
             double z = Double.parseDouble(args[4]);
             String itemId = args[5];
-            int amount = args.length >= 7 ? parseInt(args[6], 1) : 1;
+
+            // 수량 파싱 (기본 1)
+            int amount = 1;
+            boolean silent = false;
+
+            if (args.length >= 7) {
+                // 7번째 인수가 수량인지 확인
+                try {
+                    amount = Integer.parseInt(args[6]);
+                } catch (NumberFormatException e) {
+                    // 수량이 숫자가 아니면 silent 플래그인지 확인
+                    if (args[6].equalsIgnoreCase("silent") || args[6].equalsIgnoreCase("-s")) {
+                        silent = true;
+                    } else {
+                        throw new NumberFormatException("Invalid amount: " + args[6]);
+                    }
+                }
+            }
+
+            // 8번째 인수 확인 (silent)
+            if (args.length >= 8) {
+                if (args[7].equalsIgnoreCase("silent") || args[7].equalsIgnoreCase("-s")) {
+                    silent = true;
+                }
+            }
 
             org.bukkit.World world = Bukkit.getWorld(worldName);
             if (world == null) {
-                String errorMsg = "월드를 찾을 수 없습니다: " + worldName;
-                sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
-                Bukkit.getConsoleSender()
-                        .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
+                if (!silent) {
+                    String errorMsg = "월드를 찾을 수 없습니다: " + worldName;
+                    sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
+                    Bukkit.getConsoleSender()
+                            .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
+                }
                 return;
             }
 
             CustomItemConfig itemConfig = plugin.getConfigManager().getCustomItem(itemId);
             if (itemConfig == null) {
-                String errorMsg = "아이템을 찾을 수 없습니다: " + itemId;
-                sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
-                sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                        "§7사용 가능한 아이템: " + String.join(", ",
-                                plugin.getConfigManager().getCustomItems().keySet()));
-                Bukkit.getConsoleSender()
-                        .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
+                if (!silent) {
+                    String errorMsg = "아이템을 찾을 수 없습니다: " + itemId;
+                    sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
+                    Bukkit.getConsoleSender()
+                            .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
+                }
                 return;
             }
 
             ItemStack item = ItemUtil.createCustomItem(plugin, itemId, amount);
             if (item == null) {
-                String errorMsg = "아이템 생성에 실패했습니다: " + itemId;
-                sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
-                Bukkit.getConsoleSender()
-                        .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
+                if (!silent) {
+                    String errorMsg = "아이템 생성에 실패했습니다: " + itemId;
+                    sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
+                    Bukkit.getConsoleSender()
+                            .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
+                }
                 return;
             }
 
             org.bukkit.Location loc = new org.bukkit.Location(world, x, y, z);
             world.dropItemNaturally(loc, item);
 
-            // 성공 로그
-            Bukkit.getConsoleSender().sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§a아이템 드롭 완료: " + itemConfig.getDisplayName() + " §7x" + amount +
-                    " §7at " + worldName + " (" + x + ", " + y + ", " + z + ")");
+            // 성공 로그 (silent가 아닐 때만)
+            if (!silent) {
+                Bukkit.getConsoleSender().sendMessage(plugin.getConfigManager().getPrefix() +
+                        "§a아이템 드롭 완료: " + itemConfig.getDisplayName() + " §7x" + amount +
+                        " §7at " + worldName + " (" + x + ", " + y + ", " + z + ")");
+
+                // 명령어를 실행한 사람이 콘솔이 아니면 실행자에게도 메시지 전송
+                if (sender != Bukkit.getConsoleSender()) {
+                    sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                            "§a아이템 드롭 완료: " + itemConfig.getDisplayName() + " §7x" + amount);
+                }
+            }
 
         } catch (NumberFormatException e) {
-            String errorMsg = "좌표나 수량은 숫자여야 합니다.";
+            String errorMsg = "좌표나 수량은 숫자여야 합니다: " + e.getMessage();
             sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
-            Bukkit.getConsoleSender()
-                    .sendMessage(plugin.getConfigManager().getPrefix() + " §c[Drop Error] " + errorMsg);
-            e.printStackTrace(); // 숫자 형식 오류도 스택 트레이스 출력
+            // 숫자 형식 오류는 silent 여부와 관계없이 중요할 수 있으므로 콘솔 출력 (선택사항, MythicMobs 스팸이 우려되면 제거
+            // 가능하지만 디버깅 위해 유지 추천)
         } catch (Exception e) {
             String errorMsg = "아이템 드롭 중 알 수 없는 오류가 발생했습니다: " + e.getMessage();
             sender.sendMessage(plugin.getConfigManager().getPrefix() + "§c" + errorMsg);
-
-            Bukkit.getConsoleSender().sendMessage("§4========================================");
-            Bukkit.getConsoleSender().sendMessage("§c[WildCore] Drop Command Critical Error!");
-            Bukkit.getConsoleSender().sendMessage("§cMessage: " + e.getMessage());
             e.printStackTrace();
-            Bukkit.getConsoleSender().sendMessage("§4========================================");
         }
     }
 

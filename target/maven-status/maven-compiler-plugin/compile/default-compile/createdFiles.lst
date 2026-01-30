@@ -39,6 +39,7 @@ com\myserver\wildcore\tasks\ActionBarMoneyTask.class
 com\myserver\wildcore\config\MiningReward.class
 com\myserver\wildcore\gui\BankDepositGUI.class
 com\myserver\wildcore\gui\admin\AdminGuiListener$InputType.class
+com\myserver\wildcore\listeners\PlayerListener$1.class
 com\myserver\wildcore\commands\MainCommand.class
 com\myserver\wildcore\listeners\PlayerListener.class
 com\myserver\wildcore\managers\EnchantManager$EnchantResult.class

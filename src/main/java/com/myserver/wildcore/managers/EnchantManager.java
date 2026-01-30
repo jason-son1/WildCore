@@ -147,14 +147,13 @@ public class EnchantManager {
             return false;
         }
 
-        // Unsafe 모드일 경우 모든 아이템 허용
-        if (enchant.isUnsafeMode()) {
-            return true;
-        }
+        // [수정] unsafeMode 체크 로직 제거
+        // unsafeMode여도 GUI에 띄울 때는 올바른 아이템인지 검사하도록 변경
+        // (unsafeMode는 applyEnchantment에서 레벨 제한 등을 뚫는 용도로만 사용됨)
 
         String itemType = item.getType().name();
 
-        // 개별 화이트리스트 확인
+        // 1. 개별 화이트리스트 확인
         if (enchant.getTargetWhitelist().contains(itemType)) {
             if (plugin.getConfigManager().isDebugEnabled()) {
                 plugin.getLogger()
@@ -163,7 +162,7 @@ public class EnchantManager {
             return true;
         }
 
-        // 그룹 기반 확인
+        // 2. 그룹 기반 확인 (config의 targetGroups 사용)
         for (String group : enchant.getTargetGroups()) {
             if (ItemGroupUtil.isInGroup(item.getType(), group)) {
                 if (plugin.getConfigManager().isDebugEnabled()) {

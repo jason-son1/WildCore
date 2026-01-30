@@ -14,14 +14,17 @@ public class CustomItemConfig {
     private final boolean glow;
     private final List<String> lore;
 
+    private final List<String> functions;
+
     public CustomItemConfig(String id, String material, String displayName,
-            int customModelData, boolean glow, List<String> lore) {
+            int customModelData, boolean glow, List<String> lore, List<String> functions) {
         this.id = id;
         this.material = material;
         this.displayName = displayName;
         this.customModelData = customModelData;
         this.glow = glow;
         this.lore = lore;
+        this.functions = functions;
     }
 
     public String getId() {
@@ -46,5 +49,9 @@ public class CustomItemConfig {
 
     public List<String> getLore() {
         return lore;
+    }
+
+    public List<String> getFunctions() {
+        return functions;
     }
 }

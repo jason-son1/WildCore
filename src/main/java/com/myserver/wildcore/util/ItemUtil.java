@@ -140,4 +140,29 @@ public class ItemUtil {
 
         return pdc.get(key, PersistentDataType.STRING);
     }
+
+    /**
+     * 아이템의 기능 목록 가져오기
+     */
+    public static List<String> getFunctions(WildCore plugin, ItemStack item) {
+        String itemId = getCustomItemId(plugin, item);
+        if (itemId == null) {
+            return new ArrayList<>();
+        }
+
+        CustomItemConfig config = plugin.getConfigManager().getCustomItem(itemId);
+        if (config == null) {
+            return new ArrayList<>();
+        }
+
+        return config.getFunctions();
+    }
+
+    /**
+     * 아이템이 특정 기능을 가지고 있는지 확인
+     */
+    public static boolean hasFunction(WildCore plugin, ItemStack item, String function) {
+        List<String> functions = getFunctions(plugin, item);
+        return functions != null && functions.contains(function);
+    }
 }

@@ -1,7 +1,7 @@
 package com.myserver.wildcore.listeners;
 
 import com.myserver.wildcore.WildCore;
-import com.myserver.wildcore.config.CustomItemConfig;
+
 import com.myserver.wildcore.util.ItemUtil;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -13,6 +13,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import com.myserver.wildcore.gui.PlayerInfoGUI;
 
 import java.util.Random;
@@ -41,36 +42,30 @@ public class PlayerListener implements Listener {
         Player player = event.getEntity();
 
         // 인벤토리 세이브권 확인
-        CustomItemConfig saveTicket = plugin.getConfigManager().getCustomItem("inventory_save_ticket");
-        if (saveTicket != null) {
-            for (ItemStack item : player.getInventory().getContents()) {
-                if (ItemUtil.isCustomItem(plugin, item, "inventory_save_ticket")) {
-                    // 세이브권 사용
-                    item.setAmount(item.getAmount() - 1);
-                    event.setKeepInventory(true);
-                    event.getDrops().clear();
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (ItemUtil.hasFunction(plugin, item, "inventory_save")) {
+                // 세이브권 사용
+                item.setAmount(item.getAmount() - 1);
+                event.setKeepInventory(true);
+                event.getDrops().clear();
 
-                    player.sendMessage(plugin.getConfigManager().getPrefix() +
-                            plugin.getConfigManager().getMessage("general.save_ticket_used"));
-                    break;
-                }
+                player.sendMessage(plugin.getConfigManager().getPrefix() +
+                        plugin.getConfigManager().getMessage("general.save_ticket_used"));
+                break;
             }
         }
 
         // 경험치 보존권 확인
-        CustomItemConfig expTicket = plugin.getConfigManager().getCustomItem("exp_save_ticket");
-        if (expTicket != null) {
-            for (ItemStack item : player.getInventory().getContents()) {
-                if (ItemUtil.isCustomItem(plugin, item, "exp_save_ticket")) {
-                    // 경험치 보존권 사용
-                    item.setAmount(item.getAmount() - 1);
-                    event.setKeepLevel(true);
-                    event.setDroppedExp(0);
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (ItemUtil.hasFunction(plugin, item, "exp_save")) {
+                // 경험치 보존권 사용
+                item.setAmount(item.getAmount() - 1);
+                event.setKeepLevel(true);
+                event.setDroppedExp(0);
 
-                    player.sendMessage(plugin.getConfigManager().getPrefix() +
-                            "§a경험치 보존권이 사용되었습니다! 경험치가 보존됩니다.");
-                    break;
-                }
+                player.sendMessage(plugin.getConfigManager().getPrefix() +
+                        "§a경험치 보존권이 사용되었습니다! 경험치가 보존됩니다.");
+                break;
             }
         }
     }
@@ -90,54 +85,96 @@ public class PlayerListener implements Listener {
             return;
 
         // 스폰 워프권 확인 (EssentialsX /spawn 명령어 사용)
-        if (ItemUtil.isCustomItem(plugin, item, "spawn_warp_ticket")) {
+        if (ItemUtil.hasFunction(plugin, item, "spawn_warp")) {
             event.setCancelled(true);
-            item.setAmount(item.getAmount() - 1);
 
-            player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("general.warp_ticket_used"));
+            scheduleWarp(player, item, () -> {
+                // mv spawn 명령어 실행
+                plugin.getServer().dispatchCommand(
+                        plugin.getServer().getConsoleSender(),
+                        "mv spawn " + player.getName());
 
-            // EssentialsX의 spawn 명령어 실행
-            plugin.getServer().dispatchCommand(
-                    plugin.getServer().getConsoleSender(),
-                    "spawn " + player.getName());
+                player.sendMessage(plugin.getConfigManager().getPrefix() +
+                        plugin.getConfigManager().getMessage("general.warp_ticket_used"));
+            });
             return;
         }
 
         // 홈 워프권 확인 (EssentialsX /home 명령어 사용)
-        if (ItemUtil.isCustomItem(plugin, item, "home_warp_ticket")) {
+        if (ItemUtil.hasFunction(plugin, item, "home_warp")) {
             event.setCancelled(true);
 
-            // EssentialsX의 home 명령어 실행 (콘솔에서 실행하여 권한 무시)
-            // 홈이 설정되어 있지 않으면 EssentialsX가 알아서 메시지를 보냄
-            boolean success = player.performCommand("home");
+            scheduleWarp(player, item, () -> {
+                // EssentialsX의 home 명령어 실행 (콘솔에서 실행하여 권한 무시)
+                boolean success = player.performCommand("home");
 
-            if (success) {
-                item.setAmount(item.getAmount() - 1);
-                player.sendMessage(plugin.getConfigManager().getPrefix() +
-                        "§e홈 워프권이 사용되었습니다! 홈으로 이동합니다.");
-            }
-            // 홈이 없는 경우에는 아이템을 소모하지 않음 (EssentialsX가 에러 메시지 출력)
+                if (success) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() +
+                            "§e홈 워프권이 사용되었습니다! 홈으로 이동합니다.");
+                } else {
+                    // 실패 시 아이템 복구 (소모 처리는 scheduleWarp에서 하므로 다시 줘야 함)
+                    // 하지만 scheduleWarp 로직을 수정하여 runnable 안에서 성공 여부를 반환하도록 하기는 복잡함
+                    // 따라서 편의상 성공한 것으로 간주하고 소모하거나
+                    // 또는 scheduleWarp를 단순히 실행만 하도록 하고, 내부에서 소모 처리를 하도록 변경 필요
+
+                    // 여기서는 scheduleWarp가 아이템을 소모시키므로, 실패 시 다시 지급
+                    player.getInventory().addItem(ItemUtil.createCustomItem(plugin, "home_warp_ticket", 1));
+                }
+            });
             return;
         }
 
         // 랜덤 워프권 확인
-        if (ItemUtil.isCustomItem(plugin, item, "random_warp_ticket")) {
+        if (ItemUtil.hasFunction(plugin, item, "random_warp")) {
             event.setCancelled(true);
-            item.setAmount(item.getAmount() - 1);
 
-            Location randomLoc = getRandomSafeLocation(player.getWorld());
-            if (randomLoc != null) {
-                player.teleport(randomLoc);
-                player.sendMessage(plugin.getConfigManager().getPrefix() +
-                        "§d랜덤 워프권이 사용되었습니다! 랜덤한 위치로 이동했습니다.");
-            } else {
-                player.sendMessage(plugin.getConfigManager().getPrefix() +
-                        "§c안전한 위치를 찾지 못했습니다. 다시 시도해주세요.");
-                // 아이템 반환
-                player.getInventory().addItem(ItemUtil.createCustomItem(plugin, "random_warp_ticket", 1));
-            }
+            scheduleWarp(player, item, () -> {
+                Location randomLoc = getRandomSafeLocation(player.getWorld());
+                if (randomLoc != null) {
+                    player.teleport(randomLoc);
+                    player.sendMessage(plugin.getConfigManager().getPrefix() +
+                            "§d랜덤 워프권이 사용되었습니다! 랜덤한 위치로 이동했습니다.");
+                } else {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() +
+                            "§c안전한 위치를 찾지 못했습니다. 다시 시도해주세요.");
+                    // 실패 시 아이템 복구
+                    player.getInventory().addItem(ItemUtil.createCustomItem(plugin, "random_warp_ticket", 1));
+                }
+            });
+            return;
         }
+    }
+
+    /**
+     * 워프 스케줄링 (3초 딜레이)
+     */
+    private void scheduleWarp(Player player, ItemStack item, Runnable callback) {
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§e3초 후에 이동합니다. 움직이지 마세요!");
+
+        Location startLoc = player.getLocation();
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // 플레이어가 접속 중인지 확인
+                if (!player.isOnline())
+                    return;
+
+                // 움직였는지 확인 (간단하게 블록 위치로)
+                if (startLoc.getBlockX() != player.getLocation().getBlockX() ||
+                        startLoc.getBlockY() != player.getLocation().getBlockY() ||
+                        startLoc.getBlockZ() != player.getLocation().getBlockZ()) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§c움직여서 이동이 취소되었습니다.");
+                    return;
+                }
+
+                // 아이템 소모
+                item.setAmount(item.getAmount() - 1);
+
+                // 콜백 실행
+                callback.run();
+            }
+        }.runTaskLater(plugin, 60L); // 3초 딜레이
     }
 
     /**

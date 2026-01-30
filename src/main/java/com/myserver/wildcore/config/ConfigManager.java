@@ -63,6 +63,9 @@ public class ConfigManager {
     private Map<org.bukkit.Material, MiningDropData> miningDrops = new HashMap<>();
     private Map<String, String> messages = new HashMap<>();
 
+    // 저장 동기화를 위한 락 객체
+    private final Object saveLock = new Object();
+
     // 수정된 설정 캐시 (실시간 편집용)
     private Map<String, Double> modifiedStockVolatility = new HashMap<>();
     private Map<String, Double> modifiedStockMinPrice = new HashMap<>();
@@ -410,16 +413,26 @@ public class ConfigManager {
         if (itemsConfig.isConfigurationSection("items")) {
             for (String key : itemsConfig.getConfigurationSection("items").getKeys(false)) {
                 String path = "items." + key;
+                // Parse function(s)
+                List<String> functions = new ArrayList<>();
+                if (itemsConfig.isList(path + ".function")) {
+                    functions.addAll(itemsConfig.getStringList(path + ".function"));
+                } else if (itemsConfig.isString(path + ".function")) {
+                    functions.add(itemsConfig.getString(path + ".function"));
+                }
+
                 CustomItemConfig item = new CustomItemConfig(
                         key,
                         itemsConfig.getString(path + ".material"),
                         colorize(itemsConfig.getString(path + ".display_name")),
                         itemsConfig.getInt(path + ".custom_model_data", 0),
                         itemsConfig.getBoolean(path + ".glow", false),
-                        colorize(itemsConfig.getStringList(path + ".lore")));
+                        colorize(itemsConfig.getStringList(path + ".lore")),
+                        functions);
                 customItems.put(key, item);
             }
         }
+
         plugin.getLogger().info("커스텀 아이템 " + customItems.size() + "개 로드됨");
     }
 
@@ -690,28 +703,32 @@ public class ConfigManager {
      * 주식 설정 파일에 저장
      */
     public void saveStockConfig(String stockId) {
-        String path = "stocks." + stockId;
+        synchronized (saveLock) {
+            // 디스크에서 최신 데이터를 다시 읽어와 수동 수정 사항 보존
+            stocksConfig = YamlConfiguration.loadConfiguration(stocksFile);
+            String path = "stocks." + stockId;
 
-        // 수정된 값들 저장
-        if (modifiedStockVolatility.containsKey(stockId)) {
-            stocksConfig.set(path + ".volatility", modifiedStockVolatility.get(stockId));
-        }
-        if (modifiedStockMinPrice.containsKey(stockId)) {
-            stocksConfig.set(path + ".min_price", modifiedStockMinPrice.get(stockId));
-        }
-        if (modifiedStockBasePrice.containsKey(stockId)) {
-            stocksConfig.set(path + ".base_price", modifiedStockBasePrice.get(stockId));
-        }
-        if (modifiedStockMaxPrice.containsKey(stockId)) {
-            stocksConfig.set(path + ".max_price", modifiedStockMaxPrice.get(stockId));
-        }
+            // 수정된 값들 저장
+            if (modifiedStockVolatility.containsKey(stockId)) {
+                stocksConfig.set(path + ".volatility", modifiedStockVolatility.get(stockId));
+            }
+            if (modifiedStockMinPrice.containsKey(stockId)) {
+                stocksConfig.set(path + ".min_price", modifiedStockMinPrice.get(stockId));
+            }
+            if (modifiedStockBasePrice.containsKey(stockId)) {
+                stocksConfig.set(path + ".base_price", modifiedStockBasePrice.get(stockId));
+            }
+            if (modifiedStockMaxPrice.containsKey(stockId)) {
+                stocksConfig.set(path + ".max_price", modifiedStockMaxPrice.get(stockId));
+            }
 
-        try {
-            stocksConfig.save(stocksFile);
-            loadStocks(); // 리로드
-            plugin.getLogger().info("주식 설정 저장됨: " + stockId);
-        } catch (IOException e) {
-            plugin.getLogger().severe("주식 설정 저장 실패: " + e.getMessage());
+            try {
+                stocksConfig.save(stocksFile);
+                loadStocks(); // 메모리 리로드
+                plugin.getLogger().info("주식 설정 저장됨: " + stockId);
+            } catch (IOException e) {
+                plugin.getLogger().severe("주식 설정 저장 실패: " + e.getMessage());
+            }
         }
     }
 
@@ -719,44 +736,49 @@ public class ConfigManager {
      * 인챈트 설정 파일에 저장
      */
     public void saveEnchantConfig(String enchantId) {
-        String path = "tiers." + enchantId;
+        synchronized (saveLock) {
+            // 디스크에서 최신 데이터를 다시 읽어와 수동 수정 사항 보존
+            enchantsConfig = YamlConfiguration.loadConfiguration(enchantsFile);
+            String path = "tiers." + enchantId;
 
-        // 수정된 값들 저장
-        if (modifiedEnchantSuccess.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".probability.success", modifiedEnchantSuccess.get(enchantId));
-        }
-        if (modifiedEnchantFail.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".probability.fail", modifiedEnchantFail.get(enchantId));
-        }
-        if (modifiedEnchantDestroy.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".probability.destroy", modifiedEnchantDestroy.get(enchantId));
-        }
-        if (modifiedEnchantCost.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".cost.money", modifiedEnchantCost.get(enchantId));
-        }
-        if (modifiedEnchantItems.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".cost.items", modifiedEnchantItems.get(enchantId));
-        }
-        if (modifiedEnchantUnsafeMode.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".unsafe_mode", modifiedEnchantUnsafeMode.get(enchantId));
-        }
-        if (modifiedEnchantIgnoreConflicts.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".ignore_conflicts", modifiedEnchantIgnoreConflicts.get(enchantId));
-        }
-        if (modifiedEnchantTargetGroups.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".target_groups", new ArrayList<>(modifiedEnchantTargetGroups.get(enchantId)));
-        }
-        if (modifiedEnchantTargetWhitelist.containsKey(enchantId)) {
-            enchantsConfig.set(path + ".target_whitelist",
-                    new ArrayList<>(modifiedEnchantTargetWhitelist.get(enchantId)));
-        }
+            // 수정된 값들 저장
+            if (modifiedEnchantSuccess.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".probability.success", modifiedEnchantSuccess.get(enchantId));
+            }
+            if (modifiedEnchantFail.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".probability.fail", modifiedEnchantFail.get(enchantId));
+            }
+            if (modifiedEnchantDestroy.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".probability.destroy", modifiedEnchantDestroy.get(enchantId));
+            }
+            if (modifiedEnchantCost.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".cost.money", modifiedEnchantCost.get(enchantId));
+            }
+            if (modifiedEnchantItems.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".cost.items", modifiedEnchantItems.get(enchantId));
+            }
+            if (modifiedEnchantUnsafeMode.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".unsafe_mode", modifiedEnchantUnsafeMode.get(enchantId));
+            }
+            if (modifiedEnchantIgnoreConflicts.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".ignore_conflicts", modifiedEnchantIgnoreConflicts.get(enchantId));
+            }
+            if (modifiedEnchantTargetGroups.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".target_groups",
+                        new ArrayList<>(modifiedEnchantTargetGroups.get(enchantId)));
+            }
+            if (modifiedEnchantTargetWhitelist.containsKey(enchantId)) {
+                enchantsConfig.set(path + ".target_whitelist",
+                        new ArrayList<>(modifiedEnchantTargetWhitelist.get(enchantId)));
+            }
 
-        try {
-            enchantsConfig.save(enchantsFile);
-            loadEnchants(); // 리로드
-            plugin.getLogger().info("인챈트 설정 저장됨: " + enchantId);
-        } catch (IOException e) {
-            plugin.getLogger().severe("인챈트 설정 저장 실패: " + e.getMessage());
+            try {
+                enchantsConfig.save(enchantsFile);
+                loadEnchants(); // 메모리 리로드
+                plugin.getLogger().info("인챈트 설정 저장됨: " + enchantId);
+            } catch (IOException e) {
+                plugin.getLogger().severe("인챈트 설정 저장 실패: " + e.getMessage());
+            }
         }
     }
 
@@ -1045,33 +1067,37 @@ public class ConfigManager {
      * 마이닝 드랍 설정 저장
      */
     public void saveMiningDropsConfig() {
-        // 기존 설정 초기화
-        miningDropsConfig.set("drops", null);
+        synchronized (saveLock) {
+            // 마이닝 드랍은 전체 구조가 동적일 수 있으므로 덮어쓰기 위험이 있음
+            // 하지만 현재 구조상 메모리 데이터를 기반으로 전체를 새로 쓰므로,
+            // 최대한 락을 통해 멀티 스레드 접근만 막습니다.
+            miningDropsConfig.set("drops", null);
 
-        for (Map.Entry<org.bukkit.Material, MiningDropData> entry : miningDrops.entrySet()) {
-            String path = "drops." + entry.getKey().name();
-            MiningDropData data = entry.getValue();
+            for (Map.Entry<org.bukkit.Material, MiningDropData> entry : miningDrops.entrySet()) {
+                String path = "drops." + entry.getKey().name();
+                MiningDropData data = entry.getValue();
 
-            miningDropsConfig.set(path + ".enabled", data.isEnabled());
-            miningDropsConfig.set(path + ".vanilla_drops", data.isVanillaDrops()); // [NEW]
+                miningDropsConfig.set(path + ".enabled", data.isEnabled());
+                miningDropsConfig.set(path + ".vanilla_drops", data.isVanillaDrops()); // [NEW]
 
-            List<Map<String, Object>> rewardsList = new ArrayList<>();
-            for (MiningReward reward : data.getRewards()) {
-                Map<String, Object> rewardMap = new HashMap<>();
-                rewardMap.put("itemId", reward.getItemId());
-                rewardMap.put("chance", reward.getChance());
-                rewardMap.put("minAmount", reward.getMinAmount());
-                rewardMap.put("maxAmount", reward.getMaxAmount());
-                rewardsList.add(rewardMap);
+                List<Map<String, Object>> rewardsList = new ArrayList<>();
+                for (MiningReward reward : data.getRewards()) {
+                    Map<String, Object> rewardMap = new HashMap<>();
+                    rewardMap.put("itemId", reward.getItemId());
+                    rewardMap.put("chance", reward.getChance());
+                    rewardMap.put("minAmount", reward.getMinAmount());
+                    rewardMap.put("maxAmount", reward.getMaxAmount());
+                    rewardsList.add(rewardMap);
+                }
+                miningDropsConfig.set(path + ".rewards", rewardsList);
             }
-            miningDropsConfig.set(path + ".rewards", rewardsList);
-        }
 
-        try {
-            miningDropsConfig.save(miningDropsFile);
-            plugin.getLogger().info("마이닝 드랍 설정이 저장되었습니다.");
-        } catch (IOException e) {
-            plugin.getLogger().severe("마이닝 드랍 설정 저장 실패: " + e.getMessage());
+            try {
+                miningDropsConfig.save(miningDropsFile);
+                plugin.getLogger().info("마이닝 드랍 설정이 저장되었습니다.");
+            } catch (IOException e) {
+                plugin.getLogger().severe("마이닝 드랍 설정 저장 실패: " + e.getMessage());
+            }
         }
     }
 
@@ -1210,46 +1236,50 @@ public class ConfigManager {
      * 상점 설정 저장
      */
     public boolean saveShop(ShopConfig shop) {
-        String path = "shops." + shop.getId();
+        synchronized (saveLock) {
+            // 디스크에서 최신 설정을 다시 읽어옵니다.
+            shopsConfig = YamlConfiguration.loadConfiguration(shopsFile);
+            String path = "shops." + shop.getId();
 
-        shopsConfig.set(path + ".display_name", shop.getDisplayName());
-        shopsConfig.set(path + ".npc_type", shop.getNpcType());
+            shopsConfig.set(path + ".display_name", shop.getDisplayName());
+            shopsConfig.set(path + ".npc_type", shop.getNpcType());
 
-        // 위치 저장
-        if (shop.getLocation() != null) {
-            Location loc = shop.getLocation();
-            shopsConfig.set(path + ".location.world", loc.getWorld() != null ? loc.getWorld().getName() : "world");
-            shopsConfig.set(path + ".location.x", loc.getX());
-            shopsConfig.set(path + ".location.y", loc.getY());
-            shopsConfig.set(path + ".location.z", loc.getZ());
-            shopsConfig.set(path + ".location.yaw", loc.getYaw());
-        }
+            // 위치 저장
+            if (shop.getLocation() != null) {
+                Location loc = shop.getLocation();
+                shopsConfig.set(path + ".location.world", loc.getWorld() != null ? loc.getWorld().getName() : "world");
+                shopsConfig.set(path + ".location.x", loc.getX());
+                shopsConfig.set(path + ".location.y", loc.getY());
+                shopsConfig.set(path + ".location.z", loc.getZ());
+                shopsConfig.set(path + ".location.yaw", loc.getYaw());
+            }
 
-        // UUID 저장
-        shopsConfig.set(path + ".entity_uuid",
-                shop.getEntityUuid() != null ? shop.getEntityUuid().toString() : "");
+            // UUID 저장
+            shopsConfig.set(path + ".entity_uuid",
+                    shop.getEntityUuid() != null ? shop.getEntityUuid().toString() : "");
 
-        // 아이템 저장
-        shopsConfig.set(path + ".items", null); // 기존 아이템 삭제
-        for (Map.Entry<Integer, ShopItemConfig> entry : shop.getItems().entrySet()) {
-            String itemPath = path + ".items." + entry.getKey();
-            ShopItemConfig item = entry.getValue();
-            shopsConfig.set(itemPath + ".type", item.getType());
-            shopsConfig.set(itemPath + ".id", item.getId());
-            shopsConfig.set(itemPath + ".buy_price", item.getBuyPrice());
-            shopsConfig.set(itemPath + ".sell_price", item.getSellPrice());
-            shopsConfig.set(itemPath + ".display_name", item.getDisplayName()); // [NEW]
-            shopsConfig.set(itemPath + ".lore", item.getLore()); // [NEW]
-        }
+            // 아이템 저장
+            shopsConfig.set(path + ".items", null); // 기존 해당 상점 아이템만 삭제
+            for (Map.Entry<Integer, ShopItemConfig> entry : shop.getItems().entrySet()) {
+                String itemPath = path + ".items." + entry.getKey();
+                ShopItemConfig item = entry.getValue();
+                shopsConfig.set(itemPath + ".type", item.getType());
+                shopsConfig.set(itemPath + ".id", item.getId());
+                shopsConfig.set(itemPath + ".buy_price", item.getBuyPrice());
+                shopsConfig.set(itemPath + ".sell_price", item.getSellPrice());
+                shopsConfig.set(itemPath + ".display_name", item.getDisplayName()); // [NEW]
+                shopsConfig.set(itemPath + ".lore", item.getLore()); // [NEW]
+            }
 
-        try {
-            shopsConfig.save(shopsFile);
-            shops.put(shop.getId(), shop);
-            plugin.getLogger().info("상점 저장됨: " + shop.getId());
-            return true;
-        } catch (IOException e) {
-            plugin.getLogger().severe("상점 저장 실패: " + e.getMessage());
-            return false;
+            try {
+                shopsConfig.save(shopsFile);
+                shops.put(shop.getId(), shop); // 캐시 업데이트
+                plugin.getLogger().info("상점 저장됨: " + shop.getId());
+                return true;
+            } catch (IOException e) {
+                plugin.getLogger().severe("상점 저장 실패: " + e.getMessage());
+                return false;
+            }
         }
     }
 
@@ -1519,6 +1549,20 @@ public class ConfigManager {
     /**
      * 버프 블록 설정 가져오기
      */
+    /**
+     * 주식 시스템 활성화 여부
+     */
+    public boolean isStockSystemEnabled() {
+        return stocksConfig.getBoolean("enabled", true);
+    }
+
+    /**
+     * 은행 시스템 활성화 여부
+     */
+    public boolean isBankSystemEnabled() {
+        return banksConfig.getBoolean("enabled", true);
+    }
+
     public Map<String, BuffBlockConfig> getBuffBlocks() {
         return buffBlocks;
     }

@@ -142,6 +142,10 @@ public class StockManager {
      * 스케줄러 시작
      */
     public void startScheduler() {
+        if (!plugin.getConfigManager().isStockSystemEnabled()) {
+            return;
+        }
+
         int interval = plugin.getConfigManager().getStockUpdateInterval() * 20; // 초 -> 틱 변환
 
         schedulerTask = new BukkitRunnable() {
@@ -168,6 +172,10 @@ public class StockManager {
      * 모든 주식 가격 업데이트
      */
     public void updateAllPrices() {
+        if (!plugin.getConfigManager().isStockSystemEnabled()) {
+            return;
+        }
+
         for (StockConfig stock : plugin.getConfigManager().getStocks().values()) {
             updatePrice(stock);
         }
@@ -228,6 +236,12 @@ public class StockManager {
      * 주식 매수
      */
     public boolean buyStock(Player player, String stockId, int amount) {
+        if (!plugin.getConfigManager().isStockSystemEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("stock_disabled"));
+            return false;
+        }
+
         StockConfig stock = plugin.getConfigManager().getStock(stockId);
         if (stock == null)
             return false;
@@ -269,6 +283,12 @@ public class StockManager {
      * 주식 매도
      */
     public boolean sellStock(Player player, String stockId, int amount) {
+        if (!plugin.getConfigManager().isStockSystemEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("stock_disabled"));
+            return false;
+        }
+
         StockConfig stock = plugin.getConfigManager().getStock(stockId);
         if (stock == null)
             return false;
@@ -311,7 +331,7 @@ public class StockManager {
     /**
      * 모든 데이터 저장
      */
-    public void saveAllData() {
+    public synchronized void saveAllData() {
         // 가격 저장
         for (Map.Entry<String, Double> entry : currentPrices.entrySet()) {
             dataConfig.set("prices." + entry.getKey(), entry.getValue());
