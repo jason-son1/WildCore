@@ -74,6 +74,7 @@ public class DebugCommand {
             case "saveall" -> handleSaveAll(sender);
             case "toggledebug" -> handleToggleDebug(sender);
             case "status" -> handleStatus(sender);
+            case "check" -> handleCheck(sender, args);
 
             default -> sendDebugHelp(sender);
         }
@@ -656,7 +657,7 @@ public class DebugCommand {
                     // 플레이어
                     "playerinfo",
                     // 시스템
-                    "forcereload", "saveall", "toggledebug", "status"));
+                    "forcereload", "saveall", "toggledebug", "status", "check"));
         } else if (args.length >= 3) {
             String sub = args[1].toLowerCase();
 
@@ -788,6 +789,81 @@ public class DebugCommand {
         return completions.stream()
                 .filter(s -> s.toLowerCase().startsWith(input))
                 .toList();
+    }
+
+    private void handleCheck(CommandSender sender, String[] args) {
+        // /wildcore debug check [player]
+        Player target;
+        if (args.length >= 3) {
+            target = Bukkit.getPlayer(args[2]);
+            if (target == null) {
+                sender.sendMessage("§c플레이어를 찾을 수 없습니다: " + args[2]);
+                return;
+            }
+        } else if (sender instanceof Player) {
+            target = (Player) sender;
+        } else {
+            sender.sendMessage("§c플레이어를 지정하세요.");
+            return;
+        }
+
+        sender.sendMessage("§8§m                                        ");
+        sender.sendMessage("§6[ 시스템 점검: " + target.getName() + " ]");
+        sender.sendMessage("§8§m                                        ");
+
+        // 1. 권한 확인
+        sender.sendMessage("§e1. 권한 확인");
+        checkPermission(sender, target, "wildcore.use");
+        checkPermission(sender, target, "wildcore.stock");
+        checkPermission(sender, target, "wildcore.enchant");
+        checkPermission(sender, target, "wildcore.bank.use");
+        checkPermission(sender, target, "wildcore.bank.use");
+        checkPermission(sender, target, "wildcore.admin");
+        checkPermission(sender, target, "wildcore.actionbar.money");
+
+        // 2. 시스템 활성화 확인
+        sender.sendMessage("");
+        sender.sendMessage("§e2. 시스템 설정");
+        boolean stockEnabled = plugin.getConfigManager().isStockSystemEnabled();
+        sender.sendMessage("  §7주식 시스템: " + (stockEnabled ? "§a활성화" : "§c비활성화"));
+        boolean bankEnabled = plugin.getConfigManager().isBankSystemEnabled();
+        sender.sendMessage("  §7은행 시스템: " + (bankEnabled ? "§a활성화" : "§c비활성화"));
+
+        // 3. GUI 초기화 테스트
+        sender.sendMessage("");
+        sender.sendMessage("§e3. GUI 초기화 테스트");
+
+        // 주식 GUI
+        try {
+            new com.myserver.wildcore.gui.StockGUI(plugin, target);
+            sender.sendMessage("  §7StockGUI: §a정상 생성됨");
+        } catch (Exception e) {
+            sender.sendMessage("  §7StockGUI: §c오류 발생 (" + e.getMessage() + ")");
+            e.printStackTrace();
+        }
+
+        // 인챈트 GUI
+        try {
+            new com.myserver.wildcore.gui.EnchantGUI(plugin, target);
+            sender.sendMessage("  §7EnchantGUI: §a정상 생성됨");
+        } catch (Exception e) {
+            sender.sendMessage("  §7EnchantGUI: §c오류 발생 (" + e.getMessage() + ")");
+            e.printStackTrace();
+        }
+
+        // 은행 GUI
+        try {
+            new com.myserver.wildcore.gui.BankMainGUI(plugin, target);
+            sender.sendMessage("  §7BankMainGUI: §a정상 생성됨");
+        } catch (Exception e) {
+            sender.sendMessage("  §7BankMainGUI: §c오류 발생 (" + e.getMessage() + ")");
+            e.printStackTrace();
+        }
+    }
+
+    private void checkPermission(CommandSender sender, Player target, String permission) {
+        boolean has = target.hasPermission(permission);
+        sender.sendMessage("  §7" + permission + ": " + (has ? "§aO" : "§cX"));
     }
 
     /**

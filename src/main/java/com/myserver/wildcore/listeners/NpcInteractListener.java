@@ -84,7 +84,7 @@ public class NpcInteractListener implements Listener {
      */
     private void handleEnchantNpc(Player player) {
         // 권한 확인
-        if (!player.hasPermission("wildcore.enchant.use")) {
+        if (!player.hasPermission("wildcore.enchant")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() + "§c강화소를 사용할 권한이 없습니다.");
             return;
         }
@@ -98,7 +98,7 @@ public class NpcInteractListener implements Listener {
      */
     private void handleStockNpc(Player player) {
         // 권한 확인
-        if (!player.hasPermission("wildcore.stock.use")) {
+        if (!player.hasPermission("wildcore.stock")) {
             player.sendMessage(plugin.getConfigManager().getPrefix() + "§c주식거래소를 사용할 권한이 없습니다.");
             return;
         }

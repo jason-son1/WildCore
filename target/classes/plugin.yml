@@ -38,3 +38,18 @@ permissions:
   wildcore.enchant:
     description: 인챈트 시스템 사용 권한
     default: true
+  wildcore.bank.use:
+    description: 은행 시스템 사용 권한
+    default: true
+  wildcore.admin.shop:
+    description: 상점 관리 권한
+    default: op
+  wildcore.admin.npc:
+    description: NPC 관리 권한
+    default: op
+  wildcore.admin.mining:
+    description: 채굴 드랍 관리 권한
+    default: op
+  wildcore.actionbar.money:
+    description: 액션바 돈 표시 권한
+    default: true
