@@ -5,10 +5,12 @@ com\myserver\wildcore\listeners\BlockListener.class
 com\myserver\wildcore\managers\NpcManager.class
 com\myserver\wildcore\util\ItemGroupUtil.class
 com\myserver\wildcore\util\EnchantNameUtil.class
+com\myserver\wildcore\config\RepairConfig.class
 com\myserver\wildcore\gui\EnchantProcessGUI$1.class
 com\myserver\wildcore\gui\admin\EnchantBuilderGUI.class
 com\myserver\wildcore\WildCore.class
 com\myserver\wildcore\gui\BankProductListGUI.class
+com\myserver\wildcore\gui\RepairGUI.class
 com\myserver\wildcore\gui\admin\AdminGuiListener$ChatInputRequest.class
 com\myserver\wildcore\gui\admin\MiningBlockListGUI.class
 com\myserver\wildcore\managers\NpcManager$1.class
@@ -75,9 +77,11 @@ com\myserver\wildcore\gui\admin\EnchantTargetGUI.class
 com\myserver\wildcore\config\EnchantConfig.class
 com\myserver\wildcore\config\BuffBlockConfig.class
 com\myserver\wildcore\gui\PlayerInfoGUI.class
+com\myserver\wildcore\managers\RepairManager.class
 com\myserver\wildcore\config\StockConfig.class
 com\myserver\wildcore\gui\MyStockGUI.class
 com\myserver\wildcore\config\BankProductType.class
+com\myserver\wildcore\gui\EnchantSelectGUI.class
 com\myserver\wildcore\gui\BankMainGUI.class
 com\myserver\wildcore\listeners\NpcDamageListener.class
 com\myserver\wildcore\gui\shop\ShopAdminGUI.class

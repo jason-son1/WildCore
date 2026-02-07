@@ -10,6 +10,8 @@ import com.myserver.wildcore.gui.BankMainGUI;
 import com.myserver.wildcore.gui.BankProductListGUI;
 import com.myserver.wildcore.gui.BankDepositGUI;
 import com.myserver.wildcore.gui.BankStockInfoGUI; // Import added
+import com.myserver.wildcore.gui.EnchantSelectGUI;
+import com.myserver.wildcore.gui.RepairGUI;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -49,6 +51,20 @@ public class GuiListener implements Listener {
         if (event.getInventory().getHolder() instanceof EnchantGUI enchantGUI) {
             event.setCancelled(true);
             handleEnchantClick(player, event, enchantGUI);
+            return;
+        }
+
+        // 강화/수리 선택 GUI 처리
+        if (event.getInventory().getHolder() instanceof EnchantSelectGUI selectGUI) {
+            event.setCancelled(true);
+            handleEnchantSelectClick(player, event, selectGUI);
+            return;
+        }
+
+        // 수리 GUI 처리
+        if (event.getInventory().getHolder() instanceof RepairGUI repairGUI) {
+            event.setCancelled(true);
+            handleRepairClick(player, event, repairGUI);
             return;
         }
 
@@ -470,6 +486,60 @@ public class GuiListener implements Listener {
                 if (plugin.getBankManager().deposit(player, accountId, amount)) {
                     player.closeInventory();
                     new BankMainGUI(plugin, player).open();
+                }
+            }
+        }
+    }
+
+    /**
+     * 강화/수리 선택 GUI 클릭 처리
+     */
+    private void handleEnchantSelectClick(Player player, InventoryClickEvent event, EnchantSelectGUI selectGUI) {
+        int slot = event.getRawSlot();
+
+        // 인챈트 버튼 클릭
+        if (selectGUI.isEnchantSlot(slot)) {
+            new EnchantGUI(plugin, player).open();
+            return;
+        }
+
+        // 수리 버튼 클릭
+        if (selectGUI.isRepairSlot(slot)) {
+            new RepairGUI(plugin, player).open();
+            return;
+        }
+    }
+
+    /**
+     * 수리 GUI 클릭 처리
+     */
+    private void handleRepairClick(Player player, InventoryClickEvent event, RepairGUI repairGUI) {
+        int slot = event.getRawSlot();
+
+        // 뒤로가기/닫기 버튼
+        if (repairGUI.isBackSlot(slot)) {
+            new EnchantSelectGUI(plugin, player).open();
+            return;
+        }
+
+        // 페이지 네비게이션
+        if (slot == PaginatedGui.SLOT_PREV_PAGE) {
+            repairGUI.previousPage();
+            return;
+        }
+        if (slot == PaginatedGui.SLOT_NEXT_PAGE) {
+            repairGUI.nextPage();
+            return;
+        }
+
+        // 수리 옵션 선택
+        if (slot >= 0 && slot < PaginatedGui.ITEMS_PER_PAGE) {
+            String repairId = repairGUI.getRepairIdAtSlot(slot);
+            if (repairId != null) {
+                boolean success = plugin.getRepairManager().tryRepair(player, repairId);
+                if (success) {
+                    // 수리 성공 시 GUI 업데이트
+                    new RepairGUI(plugin, player).open();
                 }
             }
         }

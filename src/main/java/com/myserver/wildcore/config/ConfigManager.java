@@ -41,6 +41,7 @@ public class ConfigManager {
     private FileConfiguration buffBlocksConfig;
     private FileConfiguration miningDropsConfig;
     private FileConfiguration messagesConfig;
+    private FileConfiguration repairConfig;
 
     // 파일 객체들
     private File configFile;
@@ -53,6 +54,7 @@ public class ConfigManager {
     private File buffBlocksFile;
     private File miningDropsFile;
     private File messagesFile;
+    private File repairFile;
 
     // 캐시된 데이터
     private Map<String, StockConfig> stocks = new HashMap<>();
@@ -64,6 +66,7 @@ public class ConfigManager {
     private Map<org.bukkit.Material, MiningDropData> miningDrops = new HashMap<>();
     private Map<String, String> messages = new HashMap<>();
     private Map<String, ClaimItemConfig> claimItemConfigs = new HashMap<>();
+    private Map<String, RepairConfig> repairOptions = new HashMap<>();
 
     // 저장 동기화를 위한 락 객체
     private final Object saveLock = new Object();
@@ -102,6 +105,7 @@ public class ConfigManager {
         saveDefaultFile("banks.yml");
         saveDefaultFile("buff_blocks.yml");
         saveDefaultFile("mining_drops.yml");
+        saveDefaultFile("repair.yml");
 
         // 파일 로드
         configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -114,6 +118,7 @@ public class ConfigManager {
         buffBlocksFile = new File(plugin.getDataFolder(), "buff_blocks.yml");
         miningDropsFile = new File(plugin.getDataFolder(), "mining_drops.yml");
         messagesFile = new File(plugin.getDataFolder(), "messages.yml");
+        repairFile = new File(plugin.getDataFolder(), "repair.yml");
 
         config = YamlConfiguration.loadConfiguration(configFile);
         stocksConfig = YamlConfiguration.loadConfiguration(stocksFile);
@@ -125,6 +130,7 @@ public class ConfigManager {
         buffBlocksConfig = YamlConfiguration.loadConfiguration(buffBlocksFile);
         miningDropsConfig = YamlConfiguration.loadConfiguration(miningDropsFile);
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+        repairConfig = YamlConfiguration.loadConfiguration(repairFile);
 
         // 데이터 파싱
         loadMessages();
@@ -135,6 +141,7 @@ public class ConfigManager {
         loadBankProducts();
         loadBuffBlocks();
         loadMiningDrops();
+        loadRepairOptions();
 
         // 수정 캐시 초기화
         clearModifiedCaches();
@@ -537,6 +544,34 @@ public class ConfigManager {
             }
         }
         plugin.getLogger().info("마이닝 드랍 설정 " + miningDrops.size() + "개 로드됨");
+    }
+
+    /**
+     * 수리 옵션 설정 로드
+     */
+    private void loadRepairOptions() {
+        repairOptions.clear();
+        if (repairConfig.isConfigurationSection("options")) {
+            for (String key : repairConfig.getConfigurationSection("options").getKeys(false)) {
+                String path = "options." + key;
+
+                List<String> whitelistList = repairConfig.getStringList(path + ".target_whitelist");
+                Set<String> whitelist = whitelistList.isEmpty() ? null : new HashSet<>(whitelistList);
+
+                RepairConfig repair = new RepairConfig(
+                        key,
+                        colorize(repairConfig.getString(path + ".display_name", key)),
+                        repairConfig.getString(path + ".material", "ANVIL"),
+                        repairConfig.getDouble(path + ".repair_percentage", 0.5),
+                        repairConfig.getDouble(path + ".cost.money", 1000),
+                        repairConfig.getStringList(path + ".cost.items"),
+                        repairConfig.getStringList(path + ".target_groups"),
+                        whitelist,
+                        colorize(repairConfig.getStringList(path + ".lore")));
+                repairOptions.put(key, repair);
+            }
+        }
+        plugin.getLogger().info("수리 옵션 " + repairOptions.size() + "개 로드됨");
     }
 
     /**
@@ -1027,6 +1062,30 @@ public class ConfigManager {
 
     public int getEnchantGuiSize() {
         return enchantsConfig.getInt("gui.size", 27);
+    }
+
+    // =====================
+    // 수리 설정 관련 메서드
+    // =====================
+
+    public RepairConfig getRepairOption(String id) {
+        return repairOptions.get(id);
+    }
+
+    public Map<String, RepairConfig> getAllRepairOptions() {
+        return repairOptions;
+    }
+
+    public String getRepairGuiTitle() {
+        return colorize(repairConfig.getString("gui.title", "§8[ §e수리소 §8]"));
+    }
+
+    /**
+     * 커스텀 아이템 표시 이름 반환
+     */
+    public String getCustomItemDisplayName(String customId) {
+        CustomItemConfig item = customItems.get(customId);
+        return item != null ? item.getDisplayName() : customId;
     }
 
     public FileConfiguration getStocksConfig() {

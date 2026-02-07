@@ -117,3 +117,15 @@ error:
   insufficient_items: "&c재료 아이템이 부족합니다. &7({item} x{amount})"
   invalid_amount: "&c유효하지 않은 수량입니다."
   player_not_found: "&c해당 플레이어를 찾을 수 없습니다."
+
+# ========================================
+# 수리 관련 메시지 (Repair)
+# ========================================
+repair:
+  success: "&a수리가 완료되었습니다!"
+  no_item: "&c손에 아이템을 들고 있어야 합니다."
+  no_durability: "&c이 아이템은 내구도가 없습니다."
+  already_full: "&a이 아이템은 이미 최대 내구도입니다."
+  invalid_target: "&c이 아이템은 해당 수리 옵션에 적용할 수 없습니다."
+  no_money: "&c비용이 부족합니다. §7(필요: {cost}원)"
+  no_materials: "&c필요한 재료가 부족합니다."

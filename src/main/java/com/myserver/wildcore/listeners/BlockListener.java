@@ -2,7 +2,7 @@ package com.myserver.wildcore.listeners;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.MiningDropData; // [NEW]
-import com.myserver.wildcore.gui.EnchantGUI;
+import com.myserver.wildcore.gui.EnchantSelectGUI;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -53,7 +53,7 @@ public class BlockListener implements Listener {
         event.setCancelled(true);
 
         // 커스텀 인챈트 GUI 열기
-        new EnchantGUI(plugin, player).open();
+        new EnchantSelectGUI(plugin, player).open();
     }
 
     /**

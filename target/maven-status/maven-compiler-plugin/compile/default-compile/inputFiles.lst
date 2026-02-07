@@ -11,6 +11,7 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\confi
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\MiningReward.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\PlayerBankAccount.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\PlayerStockData.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\RepairConfig.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\ShopConfig.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\ShopItemConfig.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\config\StockConfig.java
@@ -32,9 +33,11 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\B
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\BankStockInfoGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\EnchantGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\EnchantProcessGUI.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\EnchantSelectGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\MyStockGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\PaginatedGui.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\PlayerInfoGUI.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\RepairGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopAdminGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopEditorGUI.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\gui\shop\ShopGUI.java
@@ -55,6 +58,7 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\manag
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\EnchantManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\MiningDropManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\NpcManager.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\RepairManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\ShopManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\StockManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\npc\NpcData.java

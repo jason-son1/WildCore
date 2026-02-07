@@ -2,7 +2,7 @@ package com.myserver.wildcore.listeners;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.ShopConfig;
-import com.myserver.wildcore.gui.EnchantGUI;
+import com.myserver.wildcore.gui.EnchantSelectGUI;
 import com.myserver.wildcore.gui.StockGUI;
 import com.myserver.wildcore.gui.BankMainGUI;
 import com.myserver.wildcore.gui.shop.ShopAdminGUI;
@@ -89,8 +89,8 @@ public class NpcInteractListener implements Listener {
             return;
         }
 
-        new EnchantGUI(plugin, player).open();
-        plugin.debug("강화 GUI 열림 (NPC 클릭): " + player.getName());
+        new EnchantSelectGUI(plugin, player).open();
+        plugin.debug("강화소 선택 GUI 열림 (NPC 클릭): " + player.getName());
     }
 
     /**
