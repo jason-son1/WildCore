@@ -39,6 +39,12 @@ public class StockManager {
     // 스케줄러 태스크
     private BukkitTask schedulerTask;
 
+    // 다음 가격 업데이트 시각 (밀리초 타임스탬프)
+    private long nextUpdateTime = 0;
+
+    // 업데이트 간격 (초) - startScheduler에서 설정
+    private int updateIntervalSeconds = 0;
+
     // 데이터 파일
     private File dataFile;
     private FileConfiguration dataConfig;
@@ -146,17 +152,23 @@ public class StockManager {
             return;
         }
 
-        int interval = plugin.getConfigManager().getStockUpdateInterval() * 20; // 초 -> 틱 변환
+        updateIntervalSeconds = plugin.getConfigManager().getStockUpdateInterval();
+        int intervalTicks = updateIntervalSeconds * 20; // 초 -> 틱 변환
+
+        // 초기 다음 업데이트 시간 설정
+        nextUpdateTime = System.currentTimeMillis() + (updateIntervalSeconds * 1000L);
 
         schedulerTask = new BukkitRunnable() {
             @Override
             public void run() {
                 updateAllPrices();
+                // 다음 업데이트 시간 갱신
+                nextUpdateTime = System.currentTimeMillis() + (updateIntervalSeconds * 1000L);
             }
-        }.runTaskTimerAsynchronously(plugin, interval, interval);
+        }.runTaskTimerAsynchronously(plugin, intervalTicks, intervalTicks);
 
         plugin.getLogger().info("주식 가격 업데이트 스케줄러 시작 (간격: " +
-                plugin.getConfigManager().getStockUpdateInterval() + "초)");
+                updateIntervalSeconds + "초)");
     }
 
     /**
@@ -477,5 +489,22 @@ public class StockManager {
                 sb.append("§7- ");
         }
         return sb.toString().trim();
+    }
+
+    /**
+     * 다음 가격 변동까지 남은 시간 (밀리초)
+     */
+    public long getTimeUntilNextUpdate() {
+        return Math.max(0, nextUpdateTime - System.currentTimeMillis());
+    }
+
+    /**
+     * 다음 가격 변동까지 남은 시간 (포맷팅된 문자열)
+     */
+    public String getFormattedTimeUntilNextUpdate() {
+        long remaining = getTimeUntilNextUpdate();
+        long minutes = (remaining / 1000) / 60;
+        long seconds = (remaining / 1000) % 60;
+        return String.format("%d분 %02d초", minutes, seconds);
     }
 }

@@ -1,10 +1,33 @@
 # WildCore Messages
 # 플러그인 메시지 설정 파일
-# 색상 코드: &0~&f, &l(굵게), &n(밑줄), &r(초기화)
+# 색상 코드: &0~&f, &l(굵게), &n(밑줄), &o(기울임), &m(취소선), &r(초기화)
+# 변수 형식: {variable} 또는 %variable% 모두 지원
 
 prefix: "&7[&6WildCore&7]&r "
 
-# 상점 관련 메시지
+# ========================================
+# 일반 메시지 (General)
+# ========================================
+general:
+  reload_success: "&a설정이 리로드되었습니다."
+  no_permission: "&c권한이 없습니다."
+  invalid_command: "&c잘못된 명령어입니다. /wildcore help를 입력하세요."
+  player_only: "&c이 명령어는 플레이어만 사용할 수 있습니다."
+  item_given: "&a{player}님에게 {item} {amount}개를 지급했습니다."
+  save_ticket_used: "&a인벤토리 세이브권이 사용되었습니다! 아이템이 보존됩니다."
+  warp_ticket_used: "&a워프권이 사용되었습니다! 스폰으로 이동합니다."
+  warp_delay: "&e3초 후에 이동합니다..."
+
+# ========================================
+# 시스템 비활성화 메시지 (Disabled Systems)
+# ========================================
+stock_disabled: "&c주식 시스템이 현재 비활성화 상태입니다."
+bank_disabled: "&c은행 시스템이 현재 비활성화 상태입니다."
+enchant_disabled: "&c강화 시스템이 현재 비활성화 상태입니다."
+
+# ========================================
+# 상점 관련 메시지 (Shop)
+# ========================================
 shop:
   buy_success: "&a구매 완료! &7(&6-{price}원&7)"
   buy_fail_no_money: "&c잔액이 부족합니다. (필요: &6{price}원&c)"
@@ -16,7 +39,9 @@ shop:
   sell_fail_error: "&c거래에 실패했습니다."
   sell_fail_cannot_sell: "&c이 아이템은 판매할 수 없습니다."
 
-# 인챈트 관련 메시지
+# ========================================
+# 인챈트 관련 메시지 (Enchant)
+# ========================================
 enchant:
   success: "&a강화 성공!"
   fail: "&c강화 실패..."
@@ -24,57 +49,56 @@ enchant:
   no_item: "&c손에 아이템을 들고 있어야 합니다."
   invalid_target: "&c이 아이템에는 이 인챈트를 적용할 수 없습니다."
   no_materials: "&c필요한 재료가 부족합니다."
-  no_money: "&c비용이 부족합니다."
+  no_money: "&c비용이 부족합니다. &7(필요: {cost}원)"
 
-# 주식 관련 메시지
+# ========================================
+# 주식 관련 메시지 (Stock)
+# ========================================
 stock:
   buy_success: "&a{stock} 주식 {amount}주를 구매했습니다. &7(&6-{price}원&7)"
   sell_success: "&a{stock} 주식 {amount}주를 판매했습니다. &7(&6+{price}원&7)"
-  no_money: "&c잔액이 부족합니다."
+  no_money: "&c잔액이 부족합니다. &7(필요: {required}원)"
   no_stocks: "&c보유한 주식이 부족합니다."
+  insufficient: "&c보유 주식이 부족합니다."
   # 주식 가격 업데이트 알림
   price_update_header: "&6&l━━━━━━━━━━ 📈 주식 시세 업데이트 ━━━━━━━━━━"
   price_update_entry: "&7▸ &f{stock}: &6{price}원 &7({change})"
   price_update_footer: "&6&l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# NPC 관련 메시지
+# ========================================
+# 은행 관련 메시지 (Bank)
+# - 변수 형식을 {variable}로 통일
+# ========================================
+bank:
+  account_created: "&a{product} 계좌가 개설되었습니다!"
+  account_closed: "&a계좌가 해지되었습니다. 총 수령액: &6{total}원"
+  account_not_found: "&c계좌를 찾을 수 없습니다."
+  product_not_found: "&c해당 은행 상품을 찾을 수 없습니다."
+  deposit_success: "&a{product}에 &6{amount}원&a을 입금했습니다."
+  deposit_not_allowed: "&c이 계좌는 추가 입금이 불가능합니다."
+  withdraw_success: "&a{product}에서 &6{amount}원&a을 출금했습니다. &7(이자: {interest}원)"
+  withdraw_not_allowed: "&c이 계좌는 출금이 불가능합니다."
+  insufficient_balance: "&c계좌 잔액이 부족합니다."
+  limit_exceeded: "&c입금 한도를 초과했습니다. &7(최대: {max}원)"
+  min_deposit: "&c최소 입금액은 &6{min}원&c입니다."
+  early_withdrawal_warning: "&c중도 해지 시 &6{penalty}%&c의 페널티가 부과됩니다. &7(우클릭으로 확정)"
+  early_withdrawal_applied: "&c중도 해지로 &6{penalty}%&c의 페널티가 적용되었습니다."
+  matured: "&6{product} 적금이 만기되었습니다! 이자를 수령하세요!"
+  no_accounts: "&7보유 중인 계좌가 없습니다."
+  no_money: "&c돈이 부족합니다. &7(필요: {amount}원)"
+
+# ========================================
+# NPC 관련 메시지 (NPC)
+# ========================================
 npc:
   created: "&a{type} NPC가 생성되었습니다."
   removed: "&c{type} NPC가 제거되었습니다."
   not_found: "&c해당 NPC를 찾을 수 없습니다."
   no_permission: "&c이 기능을 사용할 권한이 없습니다."
 
-# 일반 메시지
-general:
-  reload_success: "&a설정이 리로드되었습니다."
-  no_permission: "&c권한이 없습니다."
-  invalid_command: "&c잘못된 명령어입니다. /wildcore help를 입력하세요."
-  player_only: "&c이 명령어는 플레이어만 사용할 수 있습니다."
-  item_given: "&a{player}님에게 {item} {amount}개를 지급했습니다."
-  save_ticket_used: "&a인벤토리 세이브권이 사용되었습니다! 아이템이 보존됩니다."
-  warp_ticket_used: "&a워프권이 사용되었습니다! 스폰으로 이동합니다."
-  warp_delay: "&e3초 후에 이동합니다..."
-
-# 은행 관련 메시지
-bank:
-  account_created: "&a%product% 계좌가 개설되었습니다!"
-  account_closed: "&a계좌가 해지되었습니다. 총 수령액: &6%total%원"
-  account_not_found: "&c계좌를 찾을 수 없습니다."
-  product_not_found: "&c해당 은행 상품을 찾을 수 없습니다."
-  deposit_success: "&a%product%에 &6%amount%원&a을 입금했습니다."
-  deposit_not_allowed: "&c이 계좌는 추가 입금이 불가능합니다."
-  withdraw_success: "&a%product%에서 &6%amount%원&a을 출금했습니다. &7(이자: %interest%원)"
-  withdraw_not_allowed: "&c이 계좌는 출금이 불가능합니다."
-  insufficient_balance: "&c계좌 잔액이 부족합니다."
-  limit_exceeded: "&c입금 한도를 초과했습니다. &7(최대: %max%원)"
-  min_deposit: "&c최소 입금액은 &6%min%원&c입니다."
-  early_withdrawal_warning: "&c중도 해지 시 &6%penalty%%&c의 페널티가 부과됩니다. &7(우클릭으로 확정)"
-  early_withdrawal_applied: "&c중도 해지로 &6%penalty%%&c의 페널티가 적용되었습니다."
-  matured: "&6%product% 적금이 만기되었습니다! 이자를 수령하세요!"
-  no_accounts: "&7보유 중인 계좌가 없습니다."
-  no_money: "&c돈이 부족합니다. &7(필요: %amount%원)"
-
-# 돈 관련 메시지
+# ========================================
+# 돈 관련 메시지 (Money)
+# ========================================
 money:
   balance: "&a{player}님의 잔액: &6{amount}원"
   give: "&a{player}님에게 &6{amount}원&a을 지급했습니다."
@@ -84,3 +108,12 @@ money:
   taken: "&a관리자가 &6{amount}원&a을 차감했습니다."
   changed: "&a관리자가 잔액을 &6{amount}원&a으로 설정했습니다."
   fail_amount: "&c금액은 양수여야 합니다."
+
+# ========================================
+# 공통 오류 메시지 (Common Errors)
+# ========================================
+error:
+  insufficient_funds: "&c돈이 부족합니다. &7(필요: {amount}원)"
+  insufficient_items: "&c재료 아이템이 부족합니다. &7({item} x{amount})"
+  invalid_amount: "&c유효하지 않은 수량입니다."
+  player_not_found: "&c해당 플레이어를 찾을 수 없습니다."

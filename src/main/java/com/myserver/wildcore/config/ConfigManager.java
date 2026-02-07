@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.UUID;
+import org.bukkit.Material;
 
 /**
  * 모든 설정 파일을 관리하는 클래스
@@ -62,6 +63,7 @@ public class ConfigManager {
     private Map<String, BuffBlockConfig> buffBlocks = new HashMap<>();
     private Map<org.bukkit.Material, MiningDropData> miningDrops = new HashMap<>();
     private Map<String, String> messages = new HashMap<>();
+    private Map<String, ClaimItemConfig> claimItemConfigs = new HashMap<>();
 
     // 저장 동기화를 위한 락 객체
     private final Object saveLock = new Object();
@@ -1565,5 +1567,115 @@ public class ConfigManager {
 
     public Map<String, BuffBlockConfig> getBuffBlocks() {
         return buffBlocks;
+    }
+
+    // =====================
+    // 클레임 시스템 메서드들
+    // =====================
+
+    /**
+     * 클레임 시스템 활성화 여부
+     */
+    public boolean isClaimSystemEnabled() {
+        return config.getBoolean("claim-system.enabled", true);
+    }
+
+    /**
+     * 클레임 미리보기 지속 시간 (초)
+     */
+    public int getClaimPreviewDuration() {
+        return config.getInt("claim-system.preview-duration", 5);
+    }
+
+    /**
+     * 클레임 블록 자동 지급 여부
+     */
+    public boolean isClaimAutoGrantBlocks() {
+        return config.getBoolean("claim-system.auto-grant-blocks", true);
+    }
+
+    /**
+     * 울타리 자동 설치 여부
+     */
+    public boolean isClaimAutoFence() {
+        return config.getBoolean("claim-system.auto-fence", true);
+    }
+
+    /**
+     * 바닥 블록 자동 설치 여부
+     */
+    public boolean isClaimAutoFloor() {
+        return config.getBoolean("claim-system.auto-floor", true);
+    }
+
+    /**
+     * 울타리 설치 시 블록 처리 모드 (SKIP/REPLACE)
+     */
+    public String getClaimFenceBlockMode() {
+        return config.getString("claim-system.fence-block-mode", "SKIP");
+    }
+
+    /**
+     * 울타리 설치 최대 높이 차이
+     */
+    public int getClaimMaxFenceHeightDiff() {
+        return config.getInt("claim-system.max-fence-height-diff", 5);
+    }
+
+    /**
+     * 허용된 월드 목록
+     */
+    public List<String> getClaimAllowedWorlds() {
+        return config.getStringList("claim-system.allowed-worlds");
+    }
+
+    /**
+     * 클레임 효과음 가져오기
+     */
+    public String getClaimSound(String type) {
+        return config.getString("claim-system.sounds." + type, "");
+    }
+
+    /**
+     * 클레임 메시지 가져오기
+     */
+    public String getClaimMessage(String key) {
+        return colorize(config.getString("claim-system.messages." + key, ""));
+    }
+
+    /**
+     * 아이템별 클레임 설정 가져오기
+     */
+    public ClaimItemConfig getClaimItemConfig(String itemId) {
+        if (claimItemConfigs.containsKey(itemId)) {
+            return claimItemConfigs.get(itemId);
+        }
+
+        // items.yml에서 해당 아이템의 claim 섹션 로드
+        if (itemsConfig.isConfigurationSection("items." + itemId + ".claim")) {
+            String path = "items." + itemId + ".claim";
+            int radius = itemsConfig.getInt(path + ".radius", 5);
+
+            String fenceStr = itemsConfig.getString(path + ".fence_material", "OAK_FENCE");
+            Material fence = Material.getMaterial(fenceStr);
+            if (fence == null)
+                fence = Material.OAK_FENCE;
+
+            String gateStr = itemsConfig.getString(path + ".gate_material", "OAK_FENCE_GATE");
+            Material gate = Material.getMaterial(gateStr);
+            if (gate == null)
+                gate = Material.OAK_FENCE_GATE;
+
+            String floorStr = itemsConfig.getString(path + ".floor_material", "LIME_CONCRETE");
+            Material floor = Material.getMaterial(floorStr);
+            if (floor == null)
+                floor = Material.LIME_CONCRETE;
+
+            ClaimItemConfig claimConfig = new ClaimItemConfig(itemId, radius, fence, gate, floor);
+            claimItemConfigs.put(itemId, claimConfig);
+            return claimConfig;
+        }
+
+        return null;
     }
 }

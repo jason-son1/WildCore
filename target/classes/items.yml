@@ -99,3 +99,82 @@ items:
       - ""
       - "&8WildCore Special Item"
 
+  # ========================================
+  # 농장 허가증 아이템 (GriefPrevention 연동)
+  # ========================================
+  
+  # 소형 농장 허가증 (11x11)
+  farm_deed_small:
+    material: "PAPER"
+    display_name: "&a[ 🏡 소형 농장 허가증 ]"
+    custom_model_data: 2001
+    glow: true
+    function: "claim_create"
+    lore:
+      - ""
+      - "&7우클릭 시 &f11x11 &7크기의 농장을 생성합니다."
+      - "&7테두리에 울타리가 자동으로 설치됩니다."
+      - ""
+      - "&e사용 조건:"
+      - "&7- 허용된 월드에서만 사용 가능"
+      - "&7- 다른 사유지와 겹칠 수 없음"
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Farm Deed"
+    claim:
+      radius: 5
+      fence_material: "OAK_FENCE"
+      gate_material: "OAK_FENCE_GATE"
+      floor_material: "LIME_CONCRETE"
+
+  # 중형 농장 허가증 (21x21)
+  farm_deed_medium:
+    material: "PAPER"
+    display_name: "&e[ 🏘️ 중형 농장 허가증 ]"
+    custom_model_data: 2002
+    glow: true
+    function: "claim_create"
+    lore:
+      - ""
+      - "&7우클릭 시 &f21x21 &7크기의 농장을 생성합니다."
+      - "&7테두리에 울타리가 자동으로 설치됩니다."
+      - ""
+      - "&e사용 조건:"
+      - "&7- 허용된 월드에서만 사용 가능"
+      - "&7- 다른 사유지와 겹칠 수 없음"
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Farm Deed"
+    claim:
+      radius: 10
+      fence_material: "SPRUCE_FENCE"
+      gate_material: "SPRUCE_FENCE_GATE"
+      floor_material: "YELLOW_CONCRETE"
+
+  # 대형 농장 허가증 (31x31)
+  farm_deed_large:
+    material: "PAPER"
+    display_name: "&6[ 🏰 대형 농장 허가증 ]"
+    custom_model_data: 2003
+    glow: true
+    function: "claim_create"
+    lore:
+      - ""
+      - "&7우클릭 시 &f31x31 &7크기의 농장을 생성합니다."
+      - "&7테두리에 울타리가 자동으로 설치됩니다."
+      - ""
+      - "&e사용 조건:"
+      - "&7- 허용된 월드에서만 사용 가능"
+      - "&7- 다른 사유지와 겹칠 수 없음"
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Farm Deed"
+    claim:
+      radius: 15
+      fence_material: "DARK_OAK_FENCE"
+      gate_material: "DARK_OAK_FENCE_GATE"
+      floor_material: "ORANGE_CONCRETE"
+

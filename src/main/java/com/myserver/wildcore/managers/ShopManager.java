@@ -357,6 +357,7 @@ public class ShopManager {
 
     /**
      * 아이템 매칭 확인
+     * 상점 아이템이 커스텀이면 ID 비교, 바닐라면 Material 비교 + 커스텀 아이템 제외
      */
     private boolean matchesItem(ItemStack stack, ShopItemConfig item) {
         if (item.isCustom()) {
@@ -367,7 +368,12 @@ public class ShopManager {
             // 바닐라 아이템 Material 비교
             try {
                 Material material = Material.valueOf(item.getId().toUpperCase());
-                return stack.getType() == material;
+                // 조건 1: Material 일치 확인
+                if (stack.getType() != material) {
+                    return false;
+                }
+                // 조건 2: WildCore 커스텀 아이템이 아닌지 확인 (순수 바닐라만 허용)
+                return !ItemUtil.isWildCoreCustomItem(plugin, stack);
             } catch (IllegalArgumentException e) {
                 return false;
             }

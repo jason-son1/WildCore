@@ -539,4 +539,49 @@ public class BankManager {
     public void reload() {
         loadData();
     }
+
+    /**
+     * 자유 예금 계좌의 다음 이자 지급까지 남은 시간 (밀리초)
+     */
+    public long getTimeUntilNextInterest(PlayerBankAccount account, BankProductConfig product) {
+        if (product == null || !product.isSavings()) {
+            return -1;
+        }
+
+        long intervalMillis = product.getInterestIntervalSeconds() * 1000L;
+        if (intervalMillis <= 0) {
+            return -1;
+        }
+
+        long elapsed = System.currentTimeMillis() - account.getLastInterestTime();
+        long remaining = intervalMillis - (elapsed % intervalMillis);
+        return remaining;
+    }
+
+    /**
+     * 시간(밀리초)을 읽기 쉬운 형식으로 변환
+     */
+    public String formatDuration(long millis) {
+        if (millis < 0) {
+            return "계산 불가";
+        }
+        if (millis == 0) {
+            return "지금";
+        }
+
+        long days = millis / (1000 * 60 * 60 * 24);
+        long hours = (millis % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
+        long minutes = (millis % (1000 * 60 * 60)) / (1000 * 60);
+        long seconds = (millis % (1000 * 60)) / 1000;
+
+        if (days > 0) {
+            return days + "일 " + hours + "시간";
+        } else if (hours > 0) {
+            return hours + "시간 " + minutes + "분";
+        } else if (minutes > 0) {
+            return minutes + "분 " + seconds + "초";
+        } else {
+            return seconds + "초";
+        }
+    }
 }

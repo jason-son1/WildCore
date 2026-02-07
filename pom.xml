@@ -68,6 +68,14 @@
             <version>1.18.34</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- GriefPrevention API -->
+        <dependency>
+            <groupId>com.github.TechFortress</groupId>
+            <artifactId>GriefPrevention</artifactId>
+            <version>16.18.4</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

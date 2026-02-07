@@ -11,6 +11,8 @@ import com.myserver.wildcore.listeners.NpcDamageListener;
 import com.myserver.wildcore.listeners.NpcInteractListener;
 import com.myserver.wildcore.listeners.PlayerListener;
 import com.myserver.wildcore.listeners.BuffBlockListener;
+import com.myserver.wildcore.listeners.FarmClaimListener;
+import com.myserver.wildcore.managers.ClaimManager;
 import com.myserver.wildcore.managers.EnchantManager;
 import com.myserver.wildcore.managers.NpcManager;
 import com.myserver.wildcore.managers.ShopManager;
@@ -42,6 +44,7 @@ public class WildCore extends JavaPlugin {
     private ShopManager shopManager;
     private BankManager bankManager;
     private MiningDropManager miningDropManager;
+    private ClaimManager claimManager;
     private AdminGuiListener adminGuiListener;
     private ActionBarMoneyTask actionBarMoneyTask;
 
@@ -68,6 +71,7 @@ public class WildCore extends JavaPlugin {
         shopManager = new ShopManager(this);
         bankManager = new BankManager(this);
         miningDropManager = new MiningDropManager(this);
+        claimManager = new ClaimManager(this);
         adminGuiListener = new AdminGuiListener(this);
 
         // 주식 스케줄러 시작
@@ -157,6 +161,12 @@ public class WildCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(adminGuiListener, this);
         getServer().getPluginManager().registerEvents(new ChatListener(this, adminGuiListener), this);
         getServer().getPluginManager().registerEvents(new BuffBlockListener(this), this);
+
+        // 클레임 시스템 리스너 등록 (GP가 있을 때만)
+        if (claimManager.isEnabled()) {
+            getServer().getPluginManager().registerEvents(new FarmClaimListener(this, claimManager), this);
+            getLogger().info("농장 허가증 시스템이 활성화되었습니다.");
+        }
     }
 
     /**
@@ -178,6 +188,7 @@ public class WildCore extends JavaPlugin {
         npcManager.reload();
         shopManager.reload();
         bankManager.reload();
+        claimManager.reload();
     }
 
     /**
@@ -224,5 +235,9 @@ public class WildCore extends JavaPlugin {
 
     public MiningDropManager getMiningDropManager() {
         return miningDropManager;
+    }
+
+    public ClaimManager getClaimManager() {
+        return claimManager;
     }
 }

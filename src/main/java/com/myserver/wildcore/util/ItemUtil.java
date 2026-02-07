@@ -142,6 +142,19 @@ public class ItemUtil {
     }
 
     /**
+     * 아이템이 WildCore 커스텀 아이템인지 확인 (ID 비교 없이 PDC 존재 여부만 확인)
+     * 상점에서 바닐라 아이템 판매 시 커스텀 아이템을 필터링하는 데 사용
+     */
+    public static boolean isWildCoreCustomItem(WildCore plugin, ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+        ItemMeta meta = item.getItemMeta();
+        NamespacedKey key = new NamespacedKey(plugin, WILDCORE_ITEM_KEY);
+        return meta.getPersistentDataContainer().has(key, PersistentDataType.STRING);
+    }
+
+    /**
      * 아이템의 기능 목록 가져오기
      */
     public static List<String> getFunctions(WildCore plugin, ItemStack item) {

@@ -14,6 +14,7 @@ depend:
 softdepend:
   - PlaceholderAPI
   - Essentials
+  - GriefPrevention
 
 commands:
   wildcore:
@@ -52,4 +53,7 @@ permissions:
     default: op
   wildcore.actionbar.money:
     description: 액션바 돈 표시 권한
+    default: true
+  wildcore.claim.use:
+    description: 사유지 생성 시스템 사용 권한
     default: true
