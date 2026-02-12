@@ -164,8 +164,7 @@ public class FarmClaimListener implements Listener {
         confirmItemMap.put(uuid, itemId);
 
         // 메시지 및 사운드
-        String message = plugin.getConfigManager().getClaimMessage("preview_start")
-                .replace("%seconds%", String.valueOf(previewDuration));
+        String message = plugin.getConfigManager().getClaimMessage("preview_start", "seconds", previewDuration);
         player.sendMessage(plugin.getConfigManager().getPrefix() + message);
         playSound(player, "preview");
 
@@ -196,9 +195,8 @@ public class FarmClaimListener implements Listener {
             int area = (radius * 2 + 1) * (radius * 2 + 1);
             int needed = claimManager.getNeededBlocks(player, area);
             if (needed > 0) {
-                String message = plugin.getConfigManager().getClaimMessage("create_fail_blocks")
-                        .replace("%needed%", String.valueOf(area))
-                        .replace("%have%", String.valueOf(area - needed));
+                String message = plugin.getConfigManager().getClaimMessage("create_fail_blocks",
+                        "needed", area, "have", area - needed);
                 player.sendMessage(plugin.getConfigManager().getPrefix() + message);
                 playSound(player, "fail");
                 return;
@@ -230,8 +228,7 @@ public class FarmClaimListener implements Listener {
 
             // 성공 메시지
             int size = claimConfig.getDiameter();
-            String message = plugin.getConfigManager().getClaimMessage("create_success")
-                    .replace("%size%", String.valueOf(size));
+            String message = plugin.getConfigManager().getClaimMessage("create_success", "size", size);
             player.sendMessage(plugin.getConfigManager().getPrefix() + message);
             playSound(player, "success");
 

@@ -206,11 +206,27 @@ public class BankMainGUI implements InventoryHolder {
 
     public void open() {
         player.openInventory(inventory);
+        // 자동 새로고침 시작 (1초마다 계좌 정보 갱신)
+        AutoRefreshGUI.startAutoRefresh(plugin, player, () -> {
+            if (player.getOpenInventory().getTopInventory().getHolder() instanceof BankMainGUI) {
+                updateDynamicItems();
+            } else {
+                AutoRefreshGUI.stopAutoRefresh(player);
+            }
+        }, 20L);
     }
 
     public void refresh() {
         createInventory();
         player.openInventory(inventory);
+    }
+
+    /**
+     * 동적 아이템만 갱신 (정보 및 계좌 타이머)
+     */
+    private void updateDynamicItems() {
+        setupInfoItem();
+        setupAccountItems();
     }
 
     public boolean isNewProductSlot(int slot) {

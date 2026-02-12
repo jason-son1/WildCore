@@ -13,6 +13,9 @@ import com.myserver.wildcore.gui.admin.StockAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopAdminGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
 import com.myserver.wildcore.gui.shop.ShopListGUI; // Import added
+import com.myserver.wildcore.gui.claim.ClaimMainGUI;
+import com.myserver.wildcore.managers.ClaimManager;
+import me.ryanhamshire.GriefPrevention.Claim;
 import com.myserver.wildcore.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -58,6 +61,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "shop" -> handleShop(sender, args);
             case "bank" -> handleBank(sender, args);
             case "npc" -> handleNpc(sender, args);
+            case "claim" -> handleClaim(sender, args);
             case "give" -> handleGive(sender, args);
             case "drop" -> handleDrop(sender, args);
             case "admin" -> handleAdmin(sender, args);
@@ -66,7 +70,7 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             case "help" -> sendHelp(sender);
             default -> {
                 sender.sendMessage(plugin.getConfigManager().getPrefix() +
-                        "§c알 수 없는 명령어입니다. /wildcore help 를 확인하세요.");
+                        "§c알 수 없는 명령어입니다. /wc help 를 확인하세요.");
             }
         }
 
@@ -338,6 +342,125 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
         plugin.getConfigManager().reloadBanksFromDisk();
         new BankMainGUI(plugin, player).open();
+    }
+
+    /**
+     * 사유지 명령어
+     * /wc claim - 현재 위치의 사유지 관리 GUI 열기
+     * /wc claim list - 내 사유지 목록
+     * /wc claim help - 도움말
+     */
+    private void handleClaim(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("general.player_only"));
+            return;
+        }
+
+        ClaimManager claimManager = plugin.getClaimManager();
+
+        if (!claimManager.isEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§c사유지 시스템이 비활성화 상태입니다.");
+            return;
+        }
+
+        if (!player.hasPermission("wildcore.claim.use")) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    plugin.getConfigManager().getMessage("general.no_permission"));
+            return;
+        }
+
+        // 서브커맨드 처리
+        if (args.length >= 2) {
+            String subCmd = args[1].toLowerCase();
+            switch (subCmd) {
+                case "list" -> showClaimList(player, claimManager);
+                case "help", "?" -> sendClaimHelp(player);
+                default -> {
+                    // 알 수 없는 서브커맨드면 도움말 표시
+                    sendClaimHelp(player);
+                }
+            }
+            return;
+        }
+
+        // /wc claim (현재 위치의 사유지 관리)
+        Claim claim = claimManager.getClaimAt(player.getLocation());
+        if (claim == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§c현재 사유지 안에 있지 않습니다.");
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§7내 사유지 목록 보기: §e/wc claim list");
+            return;
+        }
+
+        // 권한 확인 (주인 또는 관리자)
+        boolean isOwner = claimManager.isClaimOwner(claim, player.getUniqueId());
+        ClaimManager.TrustType trustLevel = claimManager.getPlayerTrustLevel(claim, player.getUniqueId());
+        boolean isManager = trustLevel == ClaimManager.TrustType.MANAGER;
+
+        if (!isOwner && !isManager && !player.hasPermission("wildcore.claim.admin")) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§c이 사유지를 관리할 권한이 없습니다.");
+            return;
+        }
+
+        // GUI 열기
+        new ClaimMainGUI(plugin, player, claim).open();
+    }
+
+    /**
+     * 사유지 목록 표시
+     */
+    private void showClaimList(Player player, ClaimManager claimManager) {
+        java.util.List<Claim> claims = claimManager.getPlayerClaims(player.getUniqueId());
+
+        if (claims.isEmpty()) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§c보유한 사유지가 없습니다.");
+            return;
+        }
+
+        player.sendMessage("");
+        player.sendMessage("§a§l[ 내 사유지 목록 ]");
+        player.sendMessage("");
+
+        int index = 1;
+        for (Claim claim : claims) {
+            String nickname = plugin.getClaimDataManager().getClaimNickname(claim.getID());
+            if (nickname == null || nickname.isEmpty()) {
+                nickname = "사유지 #" + claim.getID();
+            }
+
+            String size = claimManager.getClaimSize(claim);
+            var center = claimManager.getClaimCenter(claim);
+            String location = center != null ? center.getBlockX() + ", " + center.getBlockZ() : "알 수 없음";
+
+            player.sendMessage("§e" + index + ". §f" + nickname);
+            player.sendMessage("   §7크기: §f" + size + " §7| 위치: §f" + location);
+            index++;
+        }
+
+        player.sendMessage("");
+        player.sendMessage("§7사유지 안에서 §e/wc claim§7 명령어로 관리 GUI를 열 수 있습니다.");
+    }
+
+    /**
+     * 사유지 도움말
+     */
+    private void sendClaimHelp(Player player) {
+        player.sendMessage("§8§m                                        ");
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§6사유지 명령어");
+        player.sendMessage("§8§m                                        ");
+        player.sendMessage("§e/wc claim §7- 현재 위치 사유지 관리 GUI 열기");
+        player.sendMessage("§e/wc claim list §7- 내 사유지 목록 보기");
+        player.sendMessage("§e/wc claim help §7- 사유지 도움말");
+        player.sendMessage("§8§m                                        ");
+        player.sendMessage("§7§o※ 사유지 안에 서서 /wc claim 을 실행하면");
+        player.sendMessage("§7§o  관리 GUI가 열립니다. GUI에서 멤버 관리,");
+        player.sendMessage("§7§o  설정, 워프, 홈 설정 등을 할 수 있습니다.");
+        player.sendMessage("§8§m                                        ");
     }
 
     /**
@@ -678,19 +801,26 @@ public class MainCommand implements CommandExecutor, TabCompleter {
      */
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("§8§m                                        ");
-        sender.sendMessage(plugin.getConfigManager().getPrefix() + "§6명령어 도움말");
+        sender.sendMessage(plugin.getConfigManager().getPrefix() + "§6WildCore 명령어 도움말");
         sender.sendMessage("§8§m                                        ");
-        sender.sendMessage("§e/wildcore reload §7- 설정 리로드");
-        sender.sendMessage("§e/wildcore stock §7- 주식 시장 열기");
-        sender.sendMessage("§e/wildcore enchant §7- 강화소 열기");
-        sender.sendMessage("§e/wildcore shop §7- 상점 명령어");
-        sender.sendMessage("§e/wildcore bank §7- 은행 열기");
-        sender.sendMessage("§e/wildcore npc §7- NPC 관리 GUI");
-        sender.sendMessage("§e/wildcore give <플레이어> <아이템ID> [수량] §7- 아이템 지급");
-        sender.sendMessage("§e/wildcore drop <월드> <x> <y> <z> <아이템ID> [수량] §7- 아이템 드롭");
-        sender.sendMessage("§e/wildcore admin <stock|enchant|npc|mining> §7- 관리자 GUI");
-        sender.sendMessage("§e/wildcore money <give|take|set|check> <플레이어> [금액] §7- 돈 관리");
-        sender.sendMessage("§e/wildcore help §7- 도움말 보기");
+        sender.sendMessage("");
+        sender.sendMessage("§e§l[일반 명령어]");
+        sender.sendMessage("§e/wc stock §7- 주식 시장 열기");
+        sender.sendMessage("§e/wc enchant §7- 강화소 열기");
+        sender.sendMessage("§e/wc bank §7- 은행 열기");
+        sender.sendMessage("§e/wc shop §7- 상점 명령어 (§e/wc shop help§7)");
+        sender.sendMessage("§e/wc claim §7- 사유지 관리 (§e/wc claim help§7)");
+        sender.sendMessage("");
+        sender.sendMessage("§c§l[관리자 명령어]");
+        sender.sendMessage("§e/wc reload §7- 설정 리로드");
+        sender.sendMessage("§e/wc npc §7- NPC 관리 (§e/wc npc help§7)");
+        sender.sendMessage("§e/wc give <플레이어> <아이템ID> [수량] §7- 아이템 지급");
+        sender.sendMessage("§e/wc drop <월드> <x> <y> <z> <아이템ID> [수량] §7- 아이템 드롭");
+        sender.sendMessage("§e/wc admin <stock|enchant|npc|mining> §7- 관리자 GUI");
+        sender.sendMessage("§e/wc money §7- 돈 관리 (§e/wc money help§7)");
+        sender.sendMessage("§e/wc debug §7- 디버그 명령어");
+        sender.sendMessage("");
+        sender.sendMessage("§7§o세부 도움말: /wc <명령어> help");
         sender.sendMessage("§8§m                                        ");
     }
 
@@ -823,7 +953,8 @@ public class MainCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             completions.addAll(
-                    Arrays.asList("reload", "stock", "enchant", "shop", "bank", "npc", "give", "drop", "admin", "debug",
+                    Arrays.asList("reload", "stock", "enchant", "shop", "bank", "npc", "claim", "give", "drop", "admin",
+                            "debug",
                             "money",
                             "help"));
         } else if (args[0].equalsIgnoreCase("debug")) {
@@ -847,7 +978,9 @@ public class MainCommand implements CommandExecutor, TabCompleter {
             } else if (args[0].equalsIgnoreCase("npc")) {
                 completions.addAll(Arrays.asList("list", "tp", "remove", "respawn", "validate", "gui"));
             } else if (args[0].equalsIgnoreCase("money")) {
-                completions.addAll(Arrays.asList("give", "take", "set", "check"));
+                completions.addAll(Arrays.asList("give", "take", "set", "check", "help"));
+            } else if (args[0].equalsIgnoreCase("claim")) {
+                completions.addAll(Arrays.asList("list", "help"));
             }
         } else if (args.length == 3) {
             if (args[0].equalsIgnoreCase("give")) {

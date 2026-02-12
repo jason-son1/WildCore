@@ -209,13 +209,11 @@ public class StockManager {
 
         List<StockConfig> stocks = plugin.getConfigManager().getAllStocksSorted();
         for (StockConfig stock : stocks) {
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("stock", stock.getDisplayName());
-            replacements.put("price", getFormattedPrice(stock.getId()));
-            replacements.put("change", getFormattedChange(stock.getId()));
-
             plugin.getServer()
-                    .broadcastMessage(plugin.getConfigManager().getMessage("stock.price_update_entry", replacements));
+                    .broadcastMessage(plugin.getConfigManager().getMessage("stock.price_update_entry",
+                            "stock", stock.getDisplayName(),
+                            "price", getFormattedPrice(stock.getId()),
+                            "change", getFormattedChange(stock.getId())));
         }
 
         plugin.getServer().broadcastMessage(plugin.getConfigManager().getMessage("stock.price_update_footer"));
@@ -263,10 +261,8 @@ public class StockManager {
 
         // 돈 확인 및 차감
         if (!plugin.getEconomy().has(player, totalCost)) {
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("amount", priceFormat.format(totalCost));
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    plugin.getConfigManager().getMessage("stock.no_money", replacements));
+                    plugin.getConfigManager().getMessage("stock.no_money", "amount", priceFormat.format(totalCost)));
             plugin.getConfigManager().playSound(player, "error");
             return false;
         }
@@ -279,12 +275,12 @@ public class StockManager {
         data.addPurchase(amount, price);
 
         // 메시지 전송
-        Map<String, String> replacements = new HashMap<>();
-        replacements.put("stock", stock.getDisplayName());
-        replacements.put("amount", String.valueOf(amount));
-        replacements.put("price", priceFormat.format(totalCost));
         player.sendMessage(plugin.getConfigManager().getPrefix() +
-                plugin.getConfigManager().getMessage("stock.buy_success", replacements));
+                plugin.getConfigManager().getMessage("stock.buy_success",
+                        "stock", stock.getDisplayName(),
+                        "amount", String.valueOf(amount),
+                        "price", priceFormat.format(totalCost),
+                        "total", priceFormat.format(totalCost)));
         plugin.getConfigManager().playSound(player, "buy");
 
         saveAllData();
@@ -328,12 +324,12 @@ public class StockManager {
         plugin.getEconomy().depositPlayer(player, totalEarnings);
 
         // 메시지 전송
-        Map<String, String> replacements = new HashMap<>();
-        replacements.put("stock", stock.getDisplayName());
-        replacements.put("amount", String.valueOf(amount));
-        replacements.put("price", priceFormat.format(totalEarnings));
         player.sendMessage(plugin.getConfigManager().getPrefix() +
-                plugin.getConfigManager().getMessage("stock.sell_success", replacements));
+                plugin.getConfigManager().getMessage("stock.sell_success",
+                        "stock", stock.getDisplayName(),
+                        "amount", String.valueOf(amount),
+                        "price", priceFormat.format(totalEarnings),
+                        "total", priceFormat.format(totalEarnings)));
         plugin.getConfigManager().playSound(player, "sell");
 
         saveAllData();

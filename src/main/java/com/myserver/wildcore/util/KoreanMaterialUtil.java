@@ -11,6 +11,7 @@ import java.util.Map;
 public class KoreanMaterialUtil {
 
     private static final Map<Material, String> NAME_MAP = new HashMap<>();
+    private static final Map<String, Material> REVERSE_NAME_MAP = new HashMap<>();
 
     static {
         // 광물 & 원석
@@ -364,6 +365,11 @@ public class KoreanMaterialUtil {
         NAME_MAP.put(Material.GREEN_DYE, "초록색 염료");
         NAME_MAP.put(Material.RED_DYE, "빨간색 염료");
         NAME_MAP.put(Material.BLACK_DYE, "검은색 염료");
+
+        // 역방향 매핑 생성
+        for (Map.Entry<Material, String> entry : NAME_MAP.entrySet()) {
+            REVERSE_NAME_MAP.put(entry.getValue(), entry.getKey());
+        }
     }
 
     /**
@@ -400,5 +406,46 @@ public class KoreanMaterialUtil {
             }
         }
         return result.toString();
+    }
+
+    /**
+     * 한글 이름으로 Material을 검색합니다.
+     * 
+     * @param koreanName 한글 아이템 이름
+     * @return 해당하는 Material, 없으면 null
+     */
+    public static Material getMaterialByName(String koreanName) {
+        if (koreanName == null)
+            return null;
+        Material result = REVERSE_NAME_MAP.get(koreanName);
+        if (result == null) {
+            // 부분 일치 검색
+            for (Map.Entry<String, Material> entry : REVERSE_NAME_MAP.entrySet()) {
+                if (entry.getKey().contains(koreanName) || koreanName.contains(entry.getKey())) {
+                    return entry.getValue();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 입력된 문자열이 Material 이름인지 확인하고 Material을 반환합니다.
+     * 한글 이름이면 한글로, 영문이면 Material.getMaterial()로 처리합니다.
+     * 
+     * @param input 영문 Material 이름 또는 한글 아이템 이름
+     * @return 해당하는 Material, 없으면 null
+     */
+    public static Material parseMaterial(String input) {
+        if (input == null)
+            return null;
+
+        // 먼저 영문 Material 이름으로 시도
+        Material material = Material.getMaterial(input.toUpperCase());
+        if (material != null)
+            return material;
+
+        // 한글 이름으로 시도
+        return getMaterialByName(input);
     }
 }

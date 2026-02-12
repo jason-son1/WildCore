@@ -12,12 +12,14 @@ import com.myserver.wildcore.gui.BankDepositGUI;
 import com.myserver.wildcore.gui.BankStockInfoGUI; // Import added
 import com.myserver.wildcore.gui.EnchantSelectGUI;
 import com.myserver.wildcore.gui.RepairGUI;
+import com.myserver.wildcore.gui.AutoRefreshGUI;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import com.myserver.wildcore.gui.PlayerInfoGUI;
@@ -129,6 +131,14 @@ public class GuiListener implements Listener {
     public void onInventoryDrag(InventoryDragEvent event) {
         if (event.getInventory().getHolder() instanceof PlayerInfoGUI) {
             event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (event.getPlayer() instanceof Player player) {
+            // GUI 닫힐 때 자동 새로고침 중지
+            AutoRefreshGUI.stopAutoRefresh(player);
         }
     }
 

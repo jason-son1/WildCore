@@ -380,6 +380,22 @@ public class PlayerInfoGUI implements InventoryHolder {
 
     public void open() {
         player.openInventory(inventory);
+        // 자동 새로고침 시작 (1초마다 주식/은행 타이머 갱신)
+        AutoRefreshGUI.startAutoRefresh(plugin, player, () -> {
+            if (player.getOpenInventory().getTopInventory().getHolder() instanceof PlayerInfoGUI) {
+                updateDynamicSections();
+            } else {
+                AutoRefreshGUI.stopAutoRefresh(player);
+            }
+        }, 20L);
+    }
+
+    /**
+     * 동적 섹션만 갱신 (주식/은행 타이머)
+     */
+    private void updateDynamicSections() {
+        setupStockSection();
+        setupBankSection();
     }
 
     @Override

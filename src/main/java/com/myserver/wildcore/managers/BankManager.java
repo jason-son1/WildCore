@@ -245,24 +245,18 @@ public class BankManager {
 
         // 입금 한도 확인
         if (initialDeposit < product.getMinDeposit()) {
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("min", moneyFormat.format(product.getMinDeposit()));
-            sendMessage(player, "bank.min_deposit", replacements);
+            sendMessage(player, "bank.min_deposit", "min", moneyFormat.format(product.getMinDeposit()));
             return null;
         }
 
         if (initialDeposit > product.getMaxDeposit()) {
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("max", moneyFormat.format(product.getMaxDeposit()));
-            sendMessage(player, "bank.limit_exceeded", replacements);
+            sendMessage(player, "bank.limit_exceeded", "max", moneyFormat.format(product.getMaxDeposit()));
             return null;
         }
 
         // 돈 확인 및 차감
         if (!plugin.getEconomy().has(player, initialDeposit)) {
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("amount", moneyFormat.format(initialDeposit));
-            sendMessage(player, "bank.no_money", replacements);
+            sendMessage(player, "bank.no_money", "amount", moneyFormat.format(initialDeposit));
             plugin.getConfigManager().playSound(player, "error");
             return null;
         }
@@ -282,10 +276,9 @@ public class BankManager {
         accounts.put(account.getAccountId(), account);
 
         // 메시지 전송
-        Map<String, String> replacements = new HashMap<>();
-        replacements.put("product", product.getDisplayName());
-        replacements.put("amount", moneyFormat.format(initialDeposit));
-        sendMessage(player, "bank.account_created", replacements);
+        sendMessage(player, "bank.account_created",
+                "product", product.getDisplayName(),
+                "amount", moneyFormat.format(initialDeposit));
         plugin.getConfigManager().playSound(player, "buy");
 
         saveAllData();
@@ -316,9 +309,7 @@ public class BankManager {
 
         // 한도 확인
         if (account.getPrincipal() + amount > product.getMaxDeposit()) {
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("max", moneyFormat.format(product.getMaxDeposit()));
-            sendMessage(player, "bank.limit_exceeded", replacements);
+            sendMessage(player, "bank.limit_exceeded", "max", moneyFormat.format(product.getMaxDeposit()));
             return false;
         }
 
@@ -327,9 +318,7 @@ public class BankManager {
 
         // 돈 확인 및 차감
         if (!plugin.getEconomy().has(player, amount)) {
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("amount", moneyFormat.format(amount));
-            sendMessage(player, "bank.no_money", replacements);
+            sendMessage(player, "bank.no_money", "amount", moneyFormat.format(amount));
             plugin.getConfigManager().playSound(player, "error");
             return false;
         }
@@ -338,10 +327,9 @@ public class BankManager {
         account.deposit(amount);
 
         // 메시지 전송
-        Map<String, String> replacements = new HashMap<>();
-        replacements.put("product", product.getDisplayName());
-        replacements.put("amount", moneyFormat.format(amount));
-        sendMessage(player, "bank.deposit_success", replacements);
+        sendMessage(player, "bank.deposit_success",
+                "product", product.getDisplayName(),
+                "amount", moneyFormat.format(amount));
         plugin.getConfigManager().playSound(player, "buy");
 
         saveAllData();
@@ -384,11 +372,10 @@ public class BankManager {
         plugin.getEconomy().depositPlayer(player, amount);
 
         // 메시지 전송
-        Map<String, String> replacements = new HashMap<>();
-        replacements.put("product", product.getDisplayName());
-        replacements.put("amount", moneyFormat.format(amount));
-        replacements.put("interest", moneyFormat.format(interest));
-        sendMessage(player, "bank.withdraw_success", replacements);
+        sendMessage(player, "bank.withdraw_success",
+                "product", product.getDisplayName(),
+                "amount", moneyFormat.format(amount),
+                "interest", moneyFormat.format(interest));
         plugin.getConfigManager().playSound(player, "sell");
 
         saveAllData();
@@ -436,14 +423,12 @@ public class BankManager {
                 double penalty = account.getPrincipal() * product.getEarlyWithdrawalPenalty();
                 payout = account.getPrincipal() - penalty;
 
-                Map<String, String> replacements = new HashMap<>();
-                replacements.put("penalty", percentFormat.format(product.getEarlyWithdrawalPenalty() * 100));
-                sendMessage(player, "bank.early_withdrawal_applied", replacements);
+                sendMessage(player, "bank.early_withdrawal_applied", "penalty",
+                        percentFormat.format(product.getEarlyWithdrawalPenalty() * 100));
             } else {
                 // 중도 해지 확인 필요
-                Map<String, String> replacements = new HashMap<>();
-                replacements.put("penalty", percentFormat.format(product.getEarlyWithdrawalPenalty() * 100));
-                sendMessage(player, "bank.early_withdrawal_warning", replacements);
+                sendMessage(player, "bank.early_withdrawal_warning", "penalty",
+                        percentFormat.format(product.getEarlyWithdrawalPenalty() * 100));
                 return false;
             }
         } else {
@@ -527,9 +512,9 @@ public class BankManager {
                 plugin.getConfigManager().getMessage(key));
     }
 
-    private void sendMessage(Player player, String key, Map<String, String> replacements) {
+    private void sendMessage(Player player, String key, Object... args) {
         player.sendMessage(plugin.getConfigManager().getPrefix() +
-                plugin.getConfigManager().getMessage(key, replacements));
+                plugin.getConfigManager().getMessage(key, args));
     }
 
     public String formatMoney(double amount) {

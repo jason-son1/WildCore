@@ -183,7 +183,7 @@ public class ConfigManager {
         // messages.yml의 모든 키를 가져옴 (nested 포함)
         for (String key : messagesConfig.getKeys(true)) {
             if (messagesConfig.isString(key)) {
-                messages.put(key, colorize(messagesConfig.getString(key)));
+                messages.put(key, messagesConfig.getString(key));
             }
         }
     }
@@ -951,17 +951,27 @@ public class ConfigManager {
     }
 
     public String getMessage(String key) {
-        return messages.getOrDefault(key, "&cMessage not found: " + key);
+        return colorize(messages.getOrDefault(key, "&cMessage not found: " + key));
     }
 
     public String getMessage(String key, Map<String, String> replacements) {
-        String message = getMessage(key);
+        String message = messages.getOrDefault(key, "&cMessage not found: " + key);
         for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            String value = entry.getValue();
+            String value = entry.getValue() != null ? entry.getValue() : "";
             message = message.replace("%" + entry.getKey() + "%", value);
             message = message.replace("{" + entry.getKey() + "}", value);
         }
-        return colorize(message); // [FIX] 최종 결과에 색상 코드 적용 (플레이어 닉네임 등 변수에 &코드가 있을 경우를 위해)
+        return colorize(message);
+    }
+
+    public String getMessage(String key, Object... args) {
+        Map<String, String> replacements = new HashMap<>();
+        for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 < args.length) {
+                replacements.put(String.valueOf(args[i]), String.valueOf(args[i + 1]));
+            }
+        }
+        return getMessage(key, replacements);
     }
 
     public int getStockUpdateInterval() {
@@ -1702,6 +1712,22 @@ public class ConfigManager {
         return colorize(config.getString("claim-system.messages." + key, ""));
     }
 
+    public String getClaimMessage(String key, Object... args) {
+        String message = config.getString("claim-system.messages." + key, "");
+        Map<String, String> replacements = new HashMap<>();
+        for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 < args.length) {
+                replacements.put(String.valueOf(args[i]), String.valueOf(args[i + 1]));
+            }
+        }
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            String value = entry.getValue();
+            message = message.replace("{" + entry.getKey() + "}", value);
+            message = message.replace("%" + entry.getKey() + "%", value);
+        }
+        return colorize(message);
+    }
+
     /**
      * 아이템별 클레임 설정 가져오기
      */
@@ -1736,5 +1762,69 @@ public class ConfigManager {
         }
 
         return null;
+    }
+
+    // =====================
+    // Force Build 모드 설정
+    // =====================
+
+    /**
+     * Force Build 모드가 활성화되었는지 확인 (fence-block-mode가 FORCE인지)
+     */
+    public boolean isClaimForceBuildMode() {
+        return "FORCE".equalsIgnoreCase(getClaimFenceBlockMode());
+    }
+
+    /**
+     * 바닥 채우기 활성화 여부
+     */
+    public boolean isClaimFillBottom() {
+        return config.getBoolean("claim-system.force-build.fill-bottom", true);
+    }
+
+    /**
+     * 채움 블록 재질
+     */
+    public Material getClaimFillMaterial() {
+        String materialStr = config.getString("claim-system.force-build.fill-material", "DIRT");
+        Material mat = Material.getMaterial(materialStr);
+        return mat != null ? mat : Material.DIRT;
+    }
+
+    /**
+     * 내부 청소 활성화 여부
+     */
+    public boolean isClaimClearInside() {
+        return config.getBoolean("claim-system.force-build.clear-inside", false);
+    }
+
+    /**
+     * 제거할 블록 목록 (내부 청소용)
+     */
+    public Set<Material> getClaimClearableBlocks() {
+        List<String> blockList = config.getStringList("claim-system.force-build.clearable-blocks");
+        Set<Material> materials = new HashSet<>();
+        for (String name : blockList) {
+            Material mat = Material.getMaterial(name);
+            if (mat != null) {
+                materials.add(mat);
+            }
+        }
+        return materials;
+    }
+
+    /**
+     * 설치 불가 블록 목록 (블랙리스트)
+     */
+    public Set<Material> getClaimBlockBlacklist() {
+        List<String> blockList = config.getStringList("claim-system.block-blacklist");
+        Set<Material> materials = new HashSet<>();
+        for (String name : blockList) {
+            Material mat = Material.getMaterial(name);
+            if (mat != null) {
+                materials.add(mat);
+            }
+        }
+        return materials;
     }
 }

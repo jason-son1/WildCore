@@ -24,7 +24,7 @@ settings:
   # 액션바 설정
   actionbar:
     enabled: true
-    format: "&6보유 금액: &f%money%원"
+    format: "&6보유 금액: &f{money}원"
     update_interval: 20 # 틱 단위 (20틱 = 1초)
 
 # 메시지 설정 (messages.yml로 분리 가능)
@@ -35,28 +35,28 @@ messages:
   config_reloaded: "&a설정이 리로드되었습니다."
   
   # 경제
-  insufficient_funds: "&c돈이 부족합니다. &7(필요: %amount%원)"
-  insufficient_items: "&c재료 아이템이 부족합니다. &7(%item% x%amount%)"
+  insufficient_funds: "&c돈이 부족합니다. &7(필요: {amount}원)"
+  insufficient_items: "&c재료 아이템이 부족합니다. &7({item} x{amount})"
   
   # 인챈트
-  enchant_success: "&a강화에 성공했습니다! &7(%enchant%)"
+  enchant_success: "&a강화에 성공했습니다! &7({enchant})"
   enchant_fail: "&c강화에 실패하여 재료가 소멸되었습니다."
   enchant_destroy: "&4강화 대실패! 아이템이 파괴되었습니다."
   enchant_invalid_item: "&c이 아이템은 강화할 수 없습니다."
   
   # 주식
-  stock_buy_success: "&a%stock% 주식을 %amount%주 매수했습니다. &7(총액: %total%원)"
-  stock_sell_success: "&a%stock% 주식을 %amount%주 매도했습니다. &7(수익: %total%원)"
+  stock_buy_success: "&a{stock} 주식을 {amount}주 매수했습니다. &7(총액: {total}원)"
+  stock_sell_success: "&a{stock} 주식을 {amount}주 매도했습니다. &7(수익: {total}원)"
   stock_insufficient: "&c보유 주식이 부족합니다."
   stock_price_update: "&e주식 시장이 갱신되었습니다!"
   stock_price_update_header: "&6&l━━━━━━━━━━ 📈 주식 시세 업데이트 ━━━━━━━━━━"
-  stock_price_update_entry: "&7▸ &f%stock%: &6%price%원 &7(%change%)"
+  stock_price_update_entry: "&7▸ &f{stock}: &6{price}원 &7({change})"
   stock_price_update_footer: "&6&l━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   
   # 유틸리티
   save_ticket_used: "&a인벤토리 세이브권이 사용되었습니다! 아이템이 보존됩니다."
   warp_ticket_used: "&a워프권이 사용되었습니다! 스폰으로 이동합니다."
-  item_given: "&a%player%님에게 %item%을(를) %amount%개 지급했습니다."
+  item_given: "&a{player}님에게 {item}을(를) {amount}개 지급했습니다."
   
   # 시스템 비활성화
   stock_disabled: "&c주식 시스템이 현재 비활성화 상태입니다."
@@ -81,11 +81,61 @@ claim-system:
   # 울타리 아래 바닥 블록 자동 설치 여부 (경계 표시용 색깔 블록)
   auto-floor: true
   
-  # 울타리 설치 시 기존 블록 처리 방식 (SKIP: 건너뜀, REPLACE: 교체)
-  fence-block-mode: "SKIP"
+  # 울타리 설치 시 기존 블록 처리 방식
+  # SKIP: 기존 블록 건너뜀 (지형 따라감)
+  # REPLACE: 공기가 아닌 블록 교체
+  # FORCE: 지형 무시하고 고정 Y좌표에 강제 설치
+  fence-block-mode: "FORCE"
   
-  # 울타리 설치 최대 Y축 차이 (중심점 대비)
+  # 울타리 설치 최대 Y축 차이 (중심점 대비, SKIP/REPLACE 모드에서만 사용)
   max-fence-height-diff: 5
+  
+  # 강제 설치 모드(FORCE) 설정
+  force-build:
+    # 바닥 채우기 (울타리 아래가 비어있을 때 기둥 생성)
+    fill-bottom: true
+    # 채움 블록 재질
+    fill-material: "DIRT"
+    # 내부 잡초/나무 제거
+    clear-inside: false
+    # 제거할 블록 목록 (clear-inside가 true일 때)
+    clearable-blocks:
+      - "GRASS"
+      - "TALL_GRASS"
+      - "FERN"
+      - "LARGE_FERN"
+      - "DANDELION"
+      - "POPPY"
+      - "BLUE_ORCHID"
+      - "ALLIUM"
+      - "AZURE_BLUET"
+      - "RED_TULIP"
+      - "ORANGE_TULIP"
+      - "WHITE_TULIP"
+      - "PINK_TULIP"
+      - "OXEYE_DAISY"
+      - "CORNFLOWER"
+      - "LILY_OF_THE_VALLEY"
+      - "WITHER_ROSE"
+      - "SUNFLOWER"
+      - "LILAC"
+      - "ROSE_BUSH"
+      - "PEONY"
+      - "DEAD_BUSH"
+  
+  # 설치 불가 블록 (절대 교체 안 함)
+  block-blacklist:
+    - "BEDROCK"
+    - "END_PORTAL_FRAME"
+    - "END_PORTAL"
+    - "NETHER_PORTAL"
+    - "BARRIER"
+    - "COMMAND_BLOCK"
+    - "CHAIN_COMMAND_BLOCK"
+    - "REPEATING_COMMAND_BLOCK"
+    - "STRUCTURE_BLOCK"
+    - "JIGSAW"
+    - "SPAWNER"
   
   # 허용된 월드 목록 (빈 리스트면 모든 월드 허용)
   allowed-worlds:
@@ -100,10 +150,11 @@ claim-system:
   
   # 메시지
   messages:
-    preview_start: "&a설치 가능한 지역입니다! &e%seconds%초 안에 다시 우클릭하여 확정하세요."
-    create_success: "&a✔ 성공적으로 농장을 건설했습니다! &7(크기: %size%x%size%)"
+    preview_start: "&a설치 가능한 지역입니다! &e{seconds}초 안에 다시 우클릭하여 확정하세요."
+    create_success: "&a✔ 성공적으로 농장을 건설했습니다! &7(크기: {size}x{size})"
     create_fail_overlap: "&c이곳에는 사유지를 설치할 수 없습니다. (다른 사유지와 겹침)"
     create_fail_world: "&c이 아이템은 허용된 월드에서만 사용할 수 있습니다."
-    create_fail_blocks: "&c클레임 블록이 부족합니다. (필요: %needed%, 보유: %have%)"
+    create_fail_blocks: "&c클레임 블록이 부족합니다. (필요: {needed}, 보유: {have})"
     preview_cancelled: "&e미리보기가 취소되었습니다."
     gp_not_found: "&c[경고] GriefPrevention 플러그인을 찾을 수 없어 사유지 기능이 비활성화되었습니다."
+

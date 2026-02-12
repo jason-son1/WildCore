@@ -13,6 +13,9 @@ import com.myserver.wildcore.listeners.PlayerListener;
 import com.myserver.wildcore.listeners.BuffBlockListener;
 import com.myserver.wildcore.listeners.FarmClaimListener;
 import com.myserver.wildcore.managers.ClaimManager;
+import com.myserver.wildcore.managers.ClaimDataManager;
+import com.myserver.wildcore.listeners.ClaimProtectionListener;
+import com.myserver.wildcore.gui.claim.ClaimGUIListener;
 import com.myserver.wildcore.managers.EnchantManager;
 import com.myserver.wildcore.managers.NpcManager;
 import com.myserver.wildcore.managers.ShopManager;
@@ -22,6 +25,7 @@ import com.myserver.wildcore.managers.MiningDropManager;
 import com.myserver.wildcore.managers.RepairManager;
 import com.myserver.wildcore.placeholder.WildCorePlaceholder;
 import com.myserver.wildcore.tasks.ActionBarMoneyTask;
+import com.myserver.wildcore.gui.AutoRefreshGUI;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -46,6 +50,7 @@ public class WildCore extends JavaPlugin {
     private BankManager bankManager;
     private MiningDropManager miningDropManager;
     private ClaimManager claimManager;
+    private ClaimDataManager claimDataManager;
     private RepairManager repairManager;
     private AdminGuiListener adminGuiListener;
     private ActionBarMoneyTask actionBarMoneyTask;
@@ -74,6 +79,7 @@ public class WildCore extends JavaPlugin {
         bankManager = new BankManager(this);
         miningDropManager = new MiningDropManager(this);
         claimManager = new ClaimManager(this);
+        claimDataManager = new ClaimDataManager(this);
         repairManager = new RepairManager(this);
         adminGuiListener = new AdminGuiListener(this);
 
@@ -133,6 +139,9 @@ public class WildCore extends JavaPlugin {
             bankManager.saveAllData();
         }
 
+        // GUI 자동 새로고침 태스크 모두 중지
+        AutoRefreshGUI.stopAll();
+
         getLogger().info("WildCore 플러그인이 비활성화되었습니다.");
     }
 
@@ -168,6 +177,9 @@ public class WildCore extends JavaPlugin {
         // 클레임 시스템 리스너 등록 (GP가 있을 때만)
         if (claimManager.isEnabled()) {
             getServer().getPluginManager().registerEvents(new FarmClaimListener(this, claimManager), this);
+            getServer().getPluginManager()
+                    .registerEvents(new ClaimProtectionListener(this, claimManager, claimDataManager), this);
+            getServer().getPluginManager().registerEvents(new ClaimGUIListener(this), this);
             getLogger().info("농장 허가증 시스템이 활성화되었습니다.");
         }
     }
@@ -192,6 +204,7 @@ public class WildCore extends JavaPlugin {
         shopManager.reload();
         bankManager.reload();
         claimManager.reload();
+        claimDataManager.reload();
         repairManager.reload();
     }
 
@@ -243,6 +256,10 @@ public class WildCore extends JavaPlugin {
 
     public ClaimManager getClaimManager() {
         return claimManager;
+    }
+
+    public ClaimDataManager getClaimDataManager() {
+        return claimDataManager;
     }
 
     public RepairManager getRepairManager() {

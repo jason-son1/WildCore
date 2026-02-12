@@ -19,9 +19,9 @@ softdepend:
 commands:
   wildcore:
     description: WildCore 플러그인 메인 명령어
-    usage: /<command> <reload|stock|enchant|give>
+    usage: /<command> <reload|stock|enchant|claim|give|help>
     aliases: [wc]
-    permission: wildcore.admin
+    permission: wildcore.use
 
 permissions:
   wildcore.admin:
@@ -57,3 +57,9 @@ permissions:
   wildcore.claim.use:
     description: 사유지 생성 시스템 사용 권한
     default: true
+  wildcore.claim.admin:
+    description: 사유지 관리자 권한 (다른 플레이어 사유지 관리)
+    default: op
+  wildcore.claim.bypass:
+    description: 사유지 보호 우회 권한
+    default: op

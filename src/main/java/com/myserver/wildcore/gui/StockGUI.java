@@ -124,8 +124,33 @@ public class StockGUI extends PaginatedGui<StockConfig> {
         lore.add("");
         lore.add("§7현재 페이지: §e" + page + " / " + totalPages);
         lore.add("§7총 종목: §e" + totalItems + "개");
+        lore.add("");
+        lore.add("§7⏱ 다음 가격 변동: §e" + plugin.getStockManager().getFormattedTimeUntilNextUpdate());
 
         return createItem(Material.GOLD_INGOT, "§6[ 내 포트폴리오 ]", lore);
+    }
+
+    @Override
+    public void open(int page) {
+        super.open(page);
+        // 자동 새로고침 시작 (1초마다 타이머 업데이트)
+        AutoRefreshGUI.startAutoRefresh(plugin, player, () -> {
+            if (player.getOpenInventory().getTopInventory().getHolder() instanceof StockGUI) {
+                updateInfoItemOnly();
+            } else {
+                AutoRefreshGUI.stopAutoRefresh(player);
+            }
+        }, 20L);
+    }
+
+    /**
+     * 정보 아이콘만 업데이트 (타이머 갱신용)
+     */
+    private void updateInfoItemOnly() {
+        if (inventory == null)
+            return;
+        ItemStack infoItem = createInfoItem(currentPage + 1, getTotalPages(), getItems().size());
+        inventory.setItem(SLOT_INFO, infoItem);
     }
 
     /**
