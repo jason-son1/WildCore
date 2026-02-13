@@ -4,16 +4,21 @@ import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.claim.ClaimFlags;
 import com.myserver.wildcore.managers.ClaimDataManager;
 import com.myserver.wildcore.managers.ClaimManager;
+import com.myserver.wildcore.managers.CropGrowthManager;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
@@ -21,10 +26,11 @@ import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.PlayerDropItemEvent;
-
+import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
+import org.bukkit.scheduler.BukkitTask;
 
 /**
  * GriefPrevention 이벤트를 리스닝하여 WildCore 데이터를 동기화합니다.
@@ -35,11 +41,16 @@ public class ClaimProtectionListener implements Listener {
     private final WildCore plugin;
     private final ClaimManager claimManager;
     private final ClaimDataManager claimDataManager;
+    private final CropGrowthManager cropGrowthManager;
+    private BukkitTask mobEntryTask;
 
-    public ClaimProtectionListener(WildCore plugin, ClaimManager claimManager, ClaimDataManager claimDataManager) {
+    public ClaimProtectionListener(WildCore plugin, ClaimManager claimManager, ClaimDataManager claimDataManager,
+            CropGrowthManager cropGrowthManager) {
         this.plugin = plugin;
         this.claimManager = claimManager;
         this.claimDataManager = claimDataManager;
+        this.cropGrowthManager = cropGrowthManager;
+        startMobEntryTask();
     }
 
     // =====================
@@ -157,8 +168,13 @@ public class ClaimProtectionListener implements Listener {
         if (claim == null)
             return;
 
-        // 적대적 몹 (몬스터) 스폰 제한
+        // 적대적 몹 (몬스터) 입장/스폰 제한
         if (entity instanceof Monster) {
+            // MOB_ENTRY 플래그: 활성화 시 (true) 적대적 몹이 사유지에 스폰되는 것을 차단
+            if (getFlag(claim, ClaimFlags.MOB_ENTRY)) {
+                event.setCancelled(true);
+                return;
+            }
             if (!getFlag(claim, ClaimFlags.MOB_SPAWN)) {
                 event.setCancelled(true);
             }
@@ -256,6 +272,23 @@ public class ClaimProtectionListener implements Listener {
     }
 
     /**
+     * 블록 폭발 피해 제한 (침대, 리스폰 앵커 등)
+     */
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent event) {
+        if (!claimManager.isEnabled())
+            return;
+
+        event.blockList().removeIf(block -> {
+            Claim claim = claimManager.getClaimAt(block.getLocation());
+            if (claim != null) {
+                return !getFlag(claim, ClaimFlags.EXPLOSIONS);
+            }
+            return false;
+        });
+    }
+
+    /**
      * 엔더맨 그리핑 제한
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -301,7 +334,7 @@ public class ClaimProtectionListener implements Listener {
     }
 
     /**
-     * 농작물/덩굴 성장 제한
+     * 농작물/덩굴 성장 제한 + 작물 성장 버프 가속
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBlockGrow(BlockGrowEvent event) {
@@ -320,11 +353,35 @@ public class ClaimProtectionListener implements Listener {
             if (!getFlag(claim, ClaimFlags.VINE_GROWTH)) {
                 event.setCancelled(true);
             }
+            return;
         }
-        // 일반 농작물
-        else {
-            if (!getFlag(claim, ClaimFlags.CROP_GROWTH)) {
-                event.setCancelled(true);
+
+        // 일반 농작물 성장 플래그 확인
+        if (!getFlag(claim, ClaimFlags.CROP_GROWTH)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        // 작물 성장 버프 가속 처리
+        if (cropGrowthManager != null && cropGrowthManager.hasActiveBuff(claim.getID())) {
+            double multiplier = cropGrowthManager.getBuffMultiplier(claim.getID());
+            if (multiplier > 1.0 && block.getBlockData() instanceof Ageable ageable) {
+                // 추가 성장 단계 계산 (예: 2.0x → 1번 추가, 3.0x → 2번 추가)
+                int additionalGrowth = (int) (multiplier - 1);
+                double fractional = (multiplier - 1) - additionalGrowth;
+                if (Math.random() < fractional) {
+                    additionalGrowth++;
+                }
+
+                if (additionalGrowth > 0) {
+                    int currentAge = ageable.getAge();
+                    int maxAge = ageable.getMaximumAge();
+                    int newAge = Math.min(currentAge + additionalGrowth, maxAge);
+                    if (newAge > currentAge) {
+                        ageable.setAge(newAge);
+                        block.setBlockData(ageable);
+                    }
+                }
             }
         }
     }
@@ -360,6 +417,50 @@ public class ClaimProtectionListener implements Listener {
             if (System.currentTimeMillis() % 2000 < 50) {
                 attacker.sendMessage(plugin.getConfigManager().getPrefix() +
                         "§c이 사유지의 동물을 공격할 수 없습니다.");
+            }
+        }
+    }
+
+    /**
+     * 낚시 제한 (외부인)
+     */
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    public void onPlayerFish(PlayerFishEvent event) {
+        if (!claimManager.isEnabled())
+            return;
+
+        // 낚시 찌가 물에 닿았을 때만 체크 (불필요한 체크 방지)
+        if (event.getState() != PlayerFishEvent.State.FISHING
+                && event.getState() != PlayerFishEvent.State.CAUGHT_FISH
+                && event.getState() != PlayerFishEvent.State.CAUGHT_ENTITY) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+
+        // 낚시 찌 위치 또는 플레이어 위치의 Claim 확인
+        Location hookLocation = event.getHook().getLocation();
+        Claim claim = claimManager.getClaimAt(hookLocation);
+        if (claim == null)
+            return;
+
+        // 본인 땅이거나 Trust된 경우 허용
+        if (claimManager.isClaimOwner(claim, player.getUniqueId()) ||
+                claimManager.getPlayerTrustLevel(claim, player.getUniqueId()) != null) {
+            return;
+        }
+
+        // OP나 관리자 무시
+        if (player.isOp() || player.hasPermission("wildcore.claim.bypass")) {
+            return;
+        }
+
+        // FISHING 플래그가 꺼져있으면 낚시 차단
+        if (!getFlag(claim, ClaimFlags.FISHING)) {
+            event.setCancelled(true);
+            if (System.currentTimeMillis() % 3000 < 50) {
+                player.sendMessage(plugin.getConfigManager().getPrefix() +
+                        "§c이 사유지에서는 낚시가 허용되지 않습니다.");
             }
         }
     }
@@ -680,5 +781,47 @@ public class ClaimProtectionListener implements Listener {
         Claim fromClaim = claimManager.getClaimAt(event.getFrom());
         Claim toClaim = claimManager.getClaimAt(event.getTo());
         return fromClaim != null && toClaim == null;
+    }
+
+    // =====================
+    // MOB_ENTRY 주기적 태스크
+    // =====================
+
+    /**
+     * MOB_ENTRY 플래그가 활성화된 사유지에서 적대적 몹을 주기적으로 제거합니다.
+     * 외부에서 걸어 들어오는 몹을 차단하기 위한 보완 기능입니다.
+     * 10초 간격으로 실행됩니다.
+     */
+    private void startMobEntryTask() {
+        mobEntryTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (!claimManager.isEnabled())
+                return;
+
+            for (World world : plugin.getServer().getWorlds()) {
+                for (Entity entity : world.getEntities()) {
+                    if (!(entity instanceof Monster monster))
+                        continue;
+
+                    Claim claim = claimManager.getClaimAt(monster.getLocation());
+                    if (claim == null)
+                        continue;
+
+                    // MOB_ENTRY 플래그가 활성화(true)면 몹 제거
+                    if (getFlag(claim, ClaimFlags.MOB_ENTRY)) {
+                        monster.remove();
+                    }
+                }
+            }
+        }, 200L, 200L); // 10초 간격 (200 ticks)
+    }
+
+    /**
+     * MOB_ENTRY 태스크 중지 (플러그인 비활성화 시)
+     */
+    public void stopMobEntryTask() {
+        if (mobEntryTask != null) {
+            mobEntryTask.cancel();
+            mobEntryTask = null;
+        }
     }
 }

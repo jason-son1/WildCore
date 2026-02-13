@@ -14,7 +14,11 @@ import com.myserver.wildcore.listeners.BuffBlockListener;
 import com.myserver.wildcore.listeners.FarmClaimListener;
 import com.myserver.wildcore.managers.ClaimManager;
 import com.myserver.wildcore.managers.ClaimDataManager;
+import com.myserver.wildcore.managers.ClaimChunkLoader;
+import com.myserver.wildcore.managers.CropGrowthManager;
+import com.myserver.wildcore.managers.ClaimScoreboardManager;
 import com.myserver.wildcore.listeners.ClaimProtectionListener;
+import com.myserver.wildcore.listeners.CropGrowthBuffListener;
 import com.myserver.wildcore.gui.claim.ClaimGUIListener;
 import com.myserver.wildcore.managers.EnchantManager;
 import com.myserver.wildcore.managers.NpcManager;
@@ -53,7 +57,11 @@ public class WildCore extends JavaPlugin {
     private ClaimDataManager claimDataManager;
     private RepairManager repairManager;
     private AdminGuiListener adminGuiListener;
+    private ChatListener chatListener;
     private ActionBarMoneyTask actionBarMoneyTask;
+    private CropGrowthManager cropGrowthManager;
+    private ClaimChunkLoader claimChunkLoader;
+    private ClaimScoreboardManager claimScoreboardManager;
 
     @Override
     public void onEnable() {
@@ -81,6 +89,18 @@ public class WildCore extends JavaPlugin {
         claimManager = new ClaimManager(this);
         claimDataManager = new ClaimDataManager(this);
         repairManager = new RepairManager(this);
+
+        // 작물 성장 버프 매니저 초기화
+        cropGrowthManager = new CropGrowthManager(this);
+
+        // 청크 로더 초기화 및 저장된 청크 로드
+        if (claimManager.isEnabled()) {
+            claimChunkLoader = new ClaimChunkLoader(this);
+            claimChunkLoader.loadAllChunks();
+
+            // 스코어보드 매니저 초기화
+            claimScoreboardManager = new ClaimScoreboardManager(this);
+        }
         adminGuiListener = new AdminGuiListener(this);
 
         // 주식 스케줄러 시작
@@ -139,6 +159,21 @@ public class WildCore extends JavaPlugin {
             bankManager.saveAllData();
         }
 
+        // 청크 로더 정리
+        if (claimChunkLoader != null) {
+            claimChunkLoader.unloadAllChunks();
+        }
+
+        // 작물 성장 버프 매니저 정리
+        if (cropGrowthManager != null) {
+            cropGrowthManager.shutdown();
+        }
+
+        // 스코어보드 매니저 정리
+        if (claimScoreboardManager != null) {
+            claimScoreboardManager.shutdown();
+        }
+
         // GUI 자동 새로고침 태스크 모두 중지
         AutoRefreshGUI.stopAll();
 
@@ -171,15 +206,18 @@ public class WildCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new NpcInteractListener(this), this);
         getServer().getPluginManager().registerEvents(new NpcDamageListener(this), this);
         getServer().getPluginManager().registerEvents(adminGuiListener, this);
-        getServer().getPluginManager().registerEvents(new ChatListener(this, adminGuiListener), this);
+        chatListener = new ChatListener(this, adminGuiListener);
+        getServer().getPluginManager().registerEvents(chatListener, this);
         getServer().getPluginManager().registerEvents(new BuffBlockListener(this), this);
 
         // 클레임 시스템 리스너 등록 (GP가 있을 때만)
         if (claimManager.isEnabled()) {
             getServer().getPluginManager().registerEvents(new FarmClaimListener(this, claimManager), this);
             getServer().getPluginManager()
-                    .registerEvents(new ClaimProtectionListener(this, claimManager, claimDataManager), this);
+                    .registerEvents(
+                            new ClaimProtectionListener(this, claimManager, claimDataManager, cropGrowthManager), this);
             getServer().getPluginManager().registerEvents(new ClaimGUIListener(this), this);
+            getServer().getPluginManager().registerEvents(new CropGrowthBuffListener(this), this);
             getLogger().info("농장 허가증 시스템이 활성화되었습니다.");
         }
     }
@@ -206,6 +244,10 @@ public class WildCore extends JavaPlugin {
         claimManager.reload();
         claimDataManager.reload();
         repairManager.reload();
+
+        if (cropGrowthManager != null) {
+            cropGrowthManager.reload();
+        }
     }
 
     /**
@@ -264,5 +306,21 @@ public class WildCore extends JavaPlugin {
 
     public RepairManager getRepairManager() {
         return repairManager;
+    }
+
+    public ChatListener getChatListener() {
+        return chatListener;
+    }
+
+    public CropGrowthManager getCropGrowthManager() {
+        return cropGrowthManager;
+    }
+
+    public ClaimChunkLoader getClaimChunkLoader() {
+        return claimChunkLoader;
+    }
+
+    public ClaimScoreboardManager getClaimScoreboardManager() {
+        return claimScoreboardManager;
     }
 }

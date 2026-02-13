@@ -4,6 +4,7 @@ import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.npc.NpcType;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -142,6 +143,7 @@ public class ConfigManager {
         loadBuffBlocks();
         loadMiningDrops();
         loadRepairOptions();
+        loadCropBuffTiers();
 
         // 수정 캐시 초기화
         clearModifiedCaches();
@@ -1826,5 +1828,95 @@ public class ConfigManager {
             }
         }
         return materials;
+    }
+
+    // =====================
+    // 작물 성장 버프 설정 (단계별)
+    // =====================
+
+    /**
+     * 작물 성장 버프 단계 데이터
+     */
+    public static class CropBuffTier {
+        private final int tier;
+        private final String name;
+        private final double multiplier;
+        private final long duration; // seconds
+
+        public CropBuffTier(int tier, String name, double multiplier, long duration) {
+            this.tier = tier;
+            this.name = name;
+            this.multiplier = multiplier;
+            this.duration = duration;
+        }
+
+        public int getTier() {
+            return tier;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public double getMultiplier() {
+            return multiplier;
+        }
+
+        public long getDuration() {
+            return duration;
+        }
+    }
+
+    private final Map<Integer, CropBuffTier> cropBuffTiers = new HashMap<>();
+
+    /**
+     * 작물 성장 버프 단계 설정 로드
+     */
+    private void loadCropBuffTiers() {
+        cropBuffTiers.clear();
+        ConfigurationSection section = config.getConfigurationSection("claim-system.crop-growth-buff.tiers");
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                try {
+                    int tier = Integer.parseInt(key);
+                    String path = "claim-system.crop-growth-buff.tiers." + key;
+                    String name = colorize(config.getString(path + ".name", "버프 " + tier + "단계"));
+                    double multiplier = config.getDouble(path + ".multiplier", 1.5);
+                    long duration = config.getLong(path + ".duration", 1800);
+                    cropBuffTiers.put(tier, new CropBuffTier(tier, name, multiplier, duration));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        // 기본값 (설정이 없을 경우)
+        if (cropBuffTiers.isEmpty()) {
+            cropBuffTiers.put(1, new CropBuffTier(1, "기초 성장 촉진제", 1.5, 1800));
+            cropBuffTiers.put(2, new CropBuffTier(2, "고급 성장 촉진제", 2.0, 2700));
+            cropBuffTiers.put(3, new CropBuffTier(3, "최상급 성장 촉진제", 3.0, 3600));
+        }
+
+        plugin.getLogger().info("작물 성장 버프 " + cropBuffTiers.size() + "단계 로드됨");
+    }
+
+    /**
+     * 특정 단계의 버프 정보 가져오기
+     */
+    public CropBuffTier getCropBuffTier(int tier) {
+        return cropBuffTiers.get(tier);
+    }
+
+    /**
+     * 모든 버프 단계 가져오기
+     */
+    public Map<Integer, CropBuffTier> getCropBuffTiers() {
+        return cropBuffTiers;
+    }
+
+    /**
+     * 아이템의 crop_buff.tier 값 가져오기
+     */
+    public int getItemCropBuffTier(String itemId) {
+        return itemsConfig.getInt("items." + itemId + ".crop_buff.tier", 1);
     }
 }

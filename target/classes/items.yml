@@ -178,3 +178,70 @@ items:
       gate_material: "DARK_OAK_FENCE_GATE"
       floor_material: "ORANGE_CONCRETE"
 
+  # ========================================
+  # 작물 성장 촉진제 아이템
+  # ========================================
+
+  # 기초 성장 촉진제 (1.5x, 30분)
+  crop_buff_tier1:
+    material: "BONE_MEAL"
+    display_name: "&a[ 🌱 기초 성장 촉진제 ]"
+    custom_model_data: 3001
+    glow: true
+    function: "crop_growth_buff"
+    crop_buff:
+      tier: 1
+    lore:
+      - ""
+      - "&7사유지에서 우클릭 시"
+      - "&7작물 성장 속도가 &a2.0배&7로 증가합니다."
+      - ""
+      - "&e지속시간: &f30분"
+      - "&e배율: &a2.0x"
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Special Item"
+
+  # 고급 성장 촉진제 (2.0x, 45분)
+  crop_buff_tier2:
+    material: "GLOW_BERRIES"
+    display_name: "&e[ 🌿 고급 성장 촉진제 ]"
+    custom_model_data: 3002
+    glow: true
+    function: "crop_growth_buff"
+    crop_buff:
+      tier: 2
+    lore:
+      - ""
+      - "&7사유지에서 우클릭 시"
+      - "&7작물 성장 속도가 &e3.0배&7로 증가합니다."
+      - ""
+      - "&e지속시간: &f45분"
+      - "&e배율: &e3.0x"
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Special Item"
+
+  # 최상급 성장 촉진제 (3.0x, 60분)
+  crop_buff_tier3:
+    material: "GOLDEN_APPLE"
+    display_name: "&6[ 🌾 최상급 성장 촉진제 ]"
+    custom_model_data: 3003
+    glow: true
+    function: "crop_growth_buff"
+    crop_buff:
+      tier: 3
+    lore:
+      - ""
+      - "&7사유지에서 우클릭 시"
+      - "&7작물 성장 속도가 &64.0배&7로 증가합니다."
+      - ""
+      - "&e지속시간: &f60분"
+      - "&e배율: &64.0x"
+      - ""
+      - "&c(사용 시 1개 소모)"
+      - ""
+      - "&8WildCore Special Item"
+

@@ -135,15 +135,12 @@ public class BankMainGUI implements InventoryHolder {
             // 적금 만기 확인
             account.checkAndUpdateMaturity();
 
-            Material material = Material.getMaterial(product.getMaterial());
-            if (material == null)
-                material = Material.GOLD_INGOT;
-
             List<String> lore = new ArrayList<>();
             lore.add("");
-            lore.add("§7계좌 ID: §f" + account.getAccountId());
-            lore.add("§7상품: §f" + product.getDisplayName());
+            lore.add("§8계좌 #" + account.getAccountId());
             lore.add("");
+
+            // 자산 정보 섹션
             lore.add("§7잔액: §6" + moneyFormat.format(account.getPrincipal()) + "원");
             lore.add("§7누적 이자: §a+" + moneyFormat.format(account.getAccumulatedInterest()) + "원");
 
@@ -154,40 +151,110 @@ public class BankMainGUI implements InventoryHolder {
             }
 
             lore.add("");
+            lore.add("§7─────────────────");
+
+            Material iconMaterial;
+            boolean glow = false;
+            String titlePrefix;
 
             if (product.isSavings()) {
+                iconMaterial = Material.SUNFLOWER;
+                titlePrefix = "§a";
+
+                // 이자 정보
                 lore.add("§7유형: §a자유 예금");
                 lore.add("§7이자율: §6" + String.format("%.2f%%", product.getInterestRate() * 100) + " "
                         + product.getFormattedInterestInterval());
+                if (product.isCompoundInterest()) {
+                    lore.add("§d✦ 복리 적용");
+                }
+
+                // 다음 이자 타이머 + 프로그레스 바
+                long timeUntilInterest = plugin.getBankManager().getTimeUntilNextInterest(account, product);
+                long intervalMillis = product.getInterestIntervalSeconds() * 1000L;
                 lore.add("");
-                lore.add("§e좌클릭: §f입금");
-                lore.add("§e우클릭: §f출금");
-                lore.add("§eShift+우클릭: §f계좌 해지");
+                lore.add("§7⏱ 다음 이자까지: §e" + plugin.getBankManager().formatDuration(timeUntilInterest));
+
+                if (intervalMillis > 0 && timeUntilInterest >= 0) {
+                    double progress = 1.0 - ((double) timeUntilInterest / intervalMillis);
+                    lore.add("§7" + buildProgressBar(progress, 20));
+                }
+
+                // 조작 안내
+                lore.add("");
+                lore.add("§a▶ 좌클릭: §f입금하기");
+                lore.add("§c▶ 우클릭: §f출금하기");
+                lore.add("§4▶ Shift+우클릭: §f계좌 해지");
             } else if (product.isTermDeposit()) {
+                // 정기 적금
                 lore.add("§7유형: §b정기 적금");
+
                 if (account.isMatured()) {
-                    lore.add("§6⭐ 만기 도달! 이자 수령 가능");
+                    iconMaterial = Material.NETHER_STAR;
+                    titlePrefix = "§6";
+                    glow = true;
+
                     double interest = account.getPrincipal() * product.getInterestRate();
-                    lore.add("§7예상 수령액: §6" + moneyFormat.format(account.getPrincipal() + interest) + "원");
                     lore.add("");
-                    lore.add("§e클릭하여 수령하기");
+                    lore.add("§6§l⭐ 만기 도달!");
+                    lore.add("§7만기 이자: §a+" + moneyFormat.format(interest) + "원");
+                    lore.add("§7수령 가능액: §6§l" + moneyFormat.format(account.getPrincipal() + interest) + "원");
+                    lore.add("");
+                    lore.add("§7" + buildProgressBar(1.0, 20));
+                    lore.add("");
+                    lore.add("§e▶ 클릭하여 수령하기");
                 } else {
-                    lore.add("§7남은 기간: §f" + account.getFormattedTimeRemaining());
+                    iconMaterial = Material.CLOCK;
+                    titlePrefix = "§b";
+
+                    long remaining = account.getTimeUntilExpiry();
+                    long totalDuration = product.getDurationSeconds() * 1000L;
+                    double progress = totalDuration > 0 ? 1.0 - ((double) remaining / totalDuration) : 0;
+
                     lore.add("§7만기 이자율: §6" + String.format("%.1f%%", product.getInterestRate() * 100));
                     lore.add("");
-                    lore.add("§c우클릭: 중도 해지 (페널티 " + String.format("%.1f%%", product.getEarlyWithdrawalPenalty() * 100)
-                            + ")");
+                    lore.add("§7⏱ 만기까지: §e" + account.getFormattedTimeRemaining());
+                    lore.add("§7진행률: §f" + String.format("%.1f%%", progress * 100));
+                    lore.add("§7" + buildProgressBar(progress, 20));
+                    lore.add("");
+                    lore.add("§c▶ Shift+우클릭: §f중도 해지");
+                    lore.add("§8  (페널티 " + String.format("%.1f%%", product.getEarlyWithdrawalPenalty() * 100) + ")");
                 }
+            } else {
+                iconMaterial = Material.GOLD_INGOT;
+                titlePrefix = "§e";
             }
 
-            // 만기 표시
-            boolean glow = account.isMatured();
-
+            String displayTitle = titlePrefix + product.getDisplayName() + " §7(#"
+                    + account.getAccountId().substring(0, 4) + ")";
             inventory.setItem(ACCOUNT_SLOTS[slotIndex], ItemUtil.createItem(
-                    material, "§e" + product.getDisplayName(), lore, 1, null, 0, glow, null));
+                    iconMaterial, displayTitle, lore, 1, null, 0, glow, null));
 
             slotIndex++;
         }
+    }
+
+    /**
+     * 프로그레스 바 생성
+     * 
+     * @param progress 0.0 ~ 1.0
+     * @param length   바 길이 (칸 수)
+     */
+    private String buildProgressBar(double progress, int length) {
+        progress = Math.max(0, Math.min(1.0, progress));
+        int filled = (int) (progress * length);
+        int empty = length - filled;
+
+        StringBuilder bar = new StringBuilder("§8[");
+        bar.append("§a");
+        for (int i = 0; i < filled; i++)
+            bar.append("■");
+        bar.append("§7");
+        for (int i = 0; i < empty; i++)
+            bar.append("□");
+        bar.append("§8]");
+        bar.append(" §f").append(String.format("%.0f%%", progress * 100));
+        return bar.toString();
     }
 
     /**

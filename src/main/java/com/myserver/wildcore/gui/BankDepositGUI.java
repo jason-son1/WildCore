@@ -2,6 +2,7 @@ package com.myserver.wildcore.gui;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.BankProductConfig;
+import com.myserver.wildcore.config.PlayerBankAccount;
 import com.myserver.wildcore.util.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -60,8 +61,8 @@ public class BankDepositGUI implements InventoryHolder {
             inventory.setItem(i, background);
         }
 
-        // 상단 장식
-        ItemStack topBorder = ItemUtil.createItem(Material.YELLOW_STAINED_GLASS_PANE, " ", null, 1, null, 0, false,
+        // 상단 장식 (입금 테마 = 녹색)
+        ItemStack topBorder = ItemUtil.createItem(Material.LIME_STAINED_GLASS_PANE, " ", null, 1, null, 0, false,
                 null);
         for (int i = 0; i < 9; i++) {
             inventory.setItem(i, topBorder);
@@ -93,6 +94,9 @@ public class BankDepositGUI implements InventoryHolder {
             lore.add("§7유형: §a자유 예금");
             lore.add("§7이자율: §6" + String.format("%.2f%%", product.getInterestRate() * 100) + " "
                     + product.getFormattedInterestInterval());
+            if (product.isCompoundInterest()) {
+                lore.add("§d✦ 복리 적용");
+            }
         } else if (product.isTermDeposit()) {
             lore.add("§7유형: §b정기 적금");
             lore.add("§7만기 이자: §6" + String.format("%.1f%%", product.getInterestRate() * 100));
@@ -100,17 +104,35 @@ public class BankDepositGUI implements InventoryHolder {
         }
 
         lore.add("");
-        lore.add("§7최소: §6" + moneyFormat.format(product.getMinDeposit()) + "원");
-        lore.add("§7최대: §6" + moneyFormat.format(product.getMaxDeposit()) + "원");
+        lore.add("§7─────────────────");
+        lore.add("§7최소 입금: §6" + moneyFormat.format(product.getMinDeposit()) + "원");
+        lore.add("§7최대 입금: §6" + moneyFormat.format(product.getMaxDeposit()) + "원");
         lore.add("");
-        lore.add("§7보유 금액: §6" + moneyFormat.format(plugin.getEconomy().getBalance(player)) + "원");
+        lore.add("§7보유 금액: §e" + moneyFormat.format(plugin.getEconomy().getBalance(player)) + "원");
 
+        // 기존 계좌라면 현재 잔액 표시
+        if (accountId != null) {
+            PlayerBankAccount account = plugin.getBankManager().getAccount(player.getUniqueId(), accountId);
+            if (account != null) {
+                lore.add("§7현재 계좌 잔액: §6" + moneyFormat.format(account.getPrincipal()) + "원");
+            }
+        }
+
+        String title = accountId == null ? "§a[ 계좌 개설 - " + product.getDisplayName() + " ]"
+                : "§a[ 입금 - " + product.getDisplayName() + " ]";
         inventory.setItem(SLOT_INFO, ItemUtil.createItem(
-                material, "§6" + product.getDisplayName(), lore, 1, null, 0, false, null));
+                material, title, lore, 1, null, 0, false, null));
     }
 
     private void setupAmountButtons(BankProductConfig product) {
         double playerBalance = plugin.getEconomy().getBalance(player);
+        double currentAccountBalance = 0;
+        if (accountId != null) {
+            PlayerBankAccount account = plugin.getBankManager().getAccount(player.getUniqueId(), accountId);
+            if (account != null) {
+                currentAccountBalance = account.getPrincipal();
+            }
+        }
 
         for (int i = 0; i < AMOUNT_SLOTS.length && i < PRESET_AMOUNTS.length; i++) {
             double amount = PRESET_AMOUNTS[i];
@@ -119,10 +141,12 @@ public class BankDepositGUI implements InventoryHolder {
             lore.add("");
 
             boolean canAfford = playerBalance >= amount;
-            boolean withinLimits = amount >= product.getMinDeposit() && amount <= product.getMaxDeposit();
+            boolean withinLimits = amount >= product.getMinDeposit()
+                    && (currentAccountBalance + amount) <= product.getMaxDeposit();
 
             if (!canAfford) {
-                lore.add("§c잔액이 부족합니다.");
+                lore.add("§c보유 금액이 부족합니다.");
+                lore.add("§7보유: §6" + moneyFormat.format(playerBalance) + "원");
             } else if (!withinLimits) {
                 if (amount < product.getMinDeposit()) {
                     lore.add("§c최소 입금액보다 적습니다.");
@@ -130,6 +154,11 @@ public class BankDepositGUI implements InventoryHolder {
                     lore.add("§c최대 입금액을 초과합니다.");
                 }
             } else {
+                lore.add("§7입금 후 잔여금: §e" + moneyFormat.format(playerBalance - amount) + "원");
+                if (accountId != null) {
+                    lore.add("§7입금 후 계좌: §6" + moneyFormat.format(currentAccountBalance + amount) + "원");
+                }
+                lore.add("");
                 lore.add("§a클릭하여 입금");
             }
 
@@ -137,7 +166,7 @@ public class BankDepositGUI implements InventoryHolder {
 
             inventory.setItem(AMOUNT_SLOTS[i], ItemUtil.createItem(
                     buttonMaterial,
-                    (canAfford && withinLimits ? "§6" : "§7") + moneyFormat.format(amount) + "원",
+                    (canAfford && withinLimits ? "§a" : "§7") + moneyFormat.format(amount) + "원",
                     lore, 1, null, 0, false, null));
         }
     }

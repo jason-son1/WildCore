@@ -1,3 +1,4 @@
+com\myserver\wildcore\managers\CropGrowthManager$BuffData.class
 com\myserver\wildcore\managers\EnchantManager.class
 com\myserver\wildcore\gui\EnchantGUI.class
 com\myserver\wildcore\listeners\GuiListener.class
@@ -56,9 +57,11 @@ com\myserver\wildcore\listeners\CustomItemProtectListener$1.class
 com\myserver\wildcore\managers\EnchantManager$EnchantProcess.class
 com\myserver\wildcore\listeners\NpcInteractListener.class
 com\myserver\wildcore\config\PlayerStockData.class
+com\myserver\wildcore\managers\ClaimScoreboardManager.class
 com\myserver\wildcore\listeners\ShopInteractListener.class
 com\myserver\wildcore\listeners\CustomItemProtectListener.class
 com\myserver\wildcore\managers\MiningDropManager.class
+com\myserver\wildcore\managers\CropGrowthManager.class
 com\myserver\wildcore\gui\claim\ClaimMemberGUI$1.class
 com\myserver\wildcore\gui\claim\ClaimSettingsGUI.class
 com\myserver\wildcore\gui\admin\MiningRewardGUI.class
@@ -76,6 +79,7 @@ com\myserver\wildcore\config\CustomItemConfig.class
 com\myserver\wildcore\config\ConfigManager.class
 com\myserver\wildcore\gui\AutoRefreshGUI.class
 com\myserver\wildcore\gui\admin\StockAdminGUI.class
+com\myserver\wildcore\gui\BankWithdrawGUI.class
 com\myserver\wildcore\tasks\ActionBarMoneyTask.class
 com\myserver\wildcore\config\ClaimItemConfig.class
 com\myserver\wildcore\gui\BankDepositGUI.class
@@ -95,9 +99,13 @@ com\myserver\wildcore\gui\MyStockGUI.class
 com\myserver\wildcore\config\BankProductType.class
 com\myserver\wildcore\gui\EnchantSelectGUI.class
 com\myserver\wildcore\gui\BankMainGUI.class
+com\myserver\wildcore\config\ConfigManager$CropBuffTier.class
 com\myserver\wildcore\listeners\NpcDamageListener.class
 com\myserver\wildcore\gui\shop\ShopAdminGUI.class
 com\myserver\wildcore\gui\admin\NpcListGUI.class
+com\myserver\wildcore\managers\ClaimChunkLoader.class
 com\myserver\wildcore\commands\DebugCommand.class
+com\myserver\wildcore\gui\claim\ClaimListGUI.class
 com\myserver\wildcore\listeners\ClaimProtectionListener.class
 com\myserver\wildcore\gui\EnchantProcessGUI$3.class
+com\myserver\wildcore\listeners\CropGrowthBuffListener.class

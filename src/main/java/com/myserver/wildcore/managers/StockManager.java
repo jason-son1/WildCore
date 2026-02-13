@@ -63,6 +63,11 @@ public class StockManager {
      * 데이터 파일 로드
      */
     private void loadData() {
+        // 메모리 초기화
+        playerStocks.clear();
+        currentPrices.clear();
+        priceHistory.clear();
+
         File dataFolder = new File(plugin.getDataFolder(), "data");
         if (!dataFolder.exists()) {
             dataFolder.mkdirs();
@@ -219,26 +224,97 @@ public class StockManager {
         plugin.getServer().broadcastMessage(plugin.getConfigManager().getMessage("stock.price_update_footer"));
     }
 
+    // 평균 회귀 강도 (기준가로 돌아오는 힘)
+    private static final double REVERSION_STRENGTH = 0.1;
+    // 모멘텀 가중치 (최근 추세 반영)
+    private static final double MOMENTUM_WEIGHT = 0.3;
+    // 이벤트 발생 확률 (급등/급락)
+    private static final double EVENT_PROBABILITY = 0.05;
+    // 이벤트 배율 범위
+    private static final double EVENT_MIN_MULTIPLIER = 2.0;
+    private static final double EVENT_MAX_MULTIPLIER = 3.0;
+
     /**
-     * 단일 주식 가격 업데이트
-     * 공식: P_new = P_old * (1 + Random(-volatility, +volatility))
+     * 단일 주식 가격 업데이트 (현실적 시뮬레이션)
+     *
+     * 알고리즘 구성요소:
+     * 1. 랜덤 노이즈: 기본 변동성 기반 무작위 변동
+     * 2. 평균 회귀: basePrice로 돌아가려는 힘 (가격이 멀어질수록 강해짐)
+     * 3. 모멘텀: 최근 가격 추세를 반영 (상승/하락 관성)
+     * 4. 이벤트: 낮은 확률로 급등/급락 발생
+     * 5. 가격 보정: min/max 범위 내로 제한
      */
     private void updatePrice(StockConfig stock) {
         double currentPrice = currentPrices.getOrDefault(stock.getId(), stock.getBasePrice());
         previousPrices.put(stock.getId(), currentPrice);
 
-        // 변동폭 계산 (-volatility ~ +volatility)
-        double change = (random.nextDouble() * 2 - 1) * stock.getVolatility();
+        double basePrice = stock.getBasePrice();
+        double volatility = stock.getVolatility();
+
+        // 1. 랜덤 노이즈 (-volatility ~ +volatility)
+        double noise = (random.nextDouble() * 2 - 1) * volatility;
+
+        // 2. 평균 회귀 (기준가에서 멀어질수록 되돌아오는 힘)
+        double reversion = 0;
+        if (basePrice > 0) {
+            reversion = ((basePrice - currentPrice) / basePrice) * REVERSION_STRENGTH;
+        }
+
+        // 3. 모멘텀 (최근 가격 추세 반영)
+        double momentum = 0;
+        List<Double> history = priceHistory.get(stock.getId());
+        if (history != null && history.size() >= 3) {
+            // 최근 3회 변동률 평균 계산
+            double sumChange = 0;
+            int count = 0;
+            for (int i = history.size() - 1; i >= Math.max(0, history.size() - 3) && i > 0; i--) {
+                double prevPrice = history.get(i - 1);
+                if (prevPrice > 0) {
+                    sumChange += (history.get(i) - prevPrice) / prevPrice;
+                    count++;
+                }
+            }
+            if (count > 0) {
+                momentum = (sumChange / count) * MOMENTUM_WEIGHT;
+            }
+        }
+
+        // 4. 최종 변동률 계산
+        double change = noise + reversion + momentum;
+
+        // 5. 이벤트 시스템 (낮은 확률로 급등/급락)
+        if (random.nextDouble() < EVENT_PROBABILITY) {
+            double eventMultiplier = EVENT_MIN_MULTIPLIER +
+                    random.nextDouble() * (EVENT_MAX_MULTIPLIER - EVENT_MIN_MULTIPLIER);
+            // 이벤트 방향은 기존 변동 방향 유지
+            change *= eventMultiplier;
+            plugin.debug("주식 이벤트 발생! " + stock.getDisplayName() +
+                    " 배율: " + String.format("%.1f", eventMultiplier));
+        }
+
+        // 6. 새 가격 계산
         double newPrice = currentPrice * (1 + change);
 
-        // 최소/최대 가격 보정
+        // 7. 최소/최대 가격 보정
+        double minPrice = stock.getMinPrice();
+        double maxPrice = stock.getMaxPrice();
+        if (minPrice > 0) {
+            newPrice = Math.max(minPrice, newPrice);
+        }
+        if (maxPrice > 0) {
+            newPrice = Math.min(maxPrice, newPrice);
+        }
+
+        // 가격이 0 이하로 떨어지지 않도록 보장
+        newPrice = Math.max(0.1, newPrice);
+
         currentPrices.put(stock.getId(), newPrice);
 
         // 기록 업데이트
-        List<Double> history = priceHistory.computeIfAbsent(stock.getId(), k -> new ArrayList<>());
-        history.add(newPrice);
-        if (history.size() > 20) {
-            history.remove(0);
+        List<Double> priceList = priceHistory.computeIfAbsent(stock.getId(), k -> new ArrayList<>());
+        priceList.add(newPrice);
+        if (priceList.size() > 20) {
+            priceList.remove(0);
         }
     }
 
@@ -351,9 +427,10 @@ public class StockManager {
         }
 
         // 플레이어 데이터 저장
+        dataConfig.set("players", null); // 기존 데이터 초기화
         for (Map.Entry<UUID, Map<String, PlayerStockData>> playerEntry : playerStocks.entrySet()) {
             Map<String, PlayerStockData> stocks = playerEntry.getValue();
-            if (stocks == null)
+            if (stocks == null || stocks.isEmpty()) // 빈 데이터는 저장하지 않음
                 continue;
             for (Map.Entry<String, PlayerStockData> stockEntry : stocks.entrySet()) {
                 String path = "players." + playerEntry.getKey().toString() + "." + stockEntry.getKey();
@@ -376,6 +453,7 @@ public class StockManager {
      */
     public void reload() {
         stopScheduler();
+        loadData(); // 데이터 다시 로드
         initializePrices();
         startScheduler();
     }

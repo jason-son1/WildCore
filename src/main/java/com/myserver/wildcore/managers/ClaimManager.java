@@ -176,9 +176,9 @@ public class ClaimManager {
             }
         }
 
-        // GP API를 통한 사유지 생성
-        int y1 = world.getMinHeight();
-        int y2 = world.getMaxHeight();
+        // GP API를 통한 사유지 생성 (Y축: 중심 좌표 기준 ±50)
+        int y1 = Math.max(world.getMinHeight(), center.getBlockY() - 50);
+        int y2 = Math.min(world.getMaxHeight(), center.getBlockY() + 50);
 
         return dataStore.createClaim(
                 world,

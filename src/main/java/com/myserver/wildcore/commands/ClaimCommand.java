@@ -1,6 +1,7 @@
 package com.myserver.wildcore.commands;
 
 import com.myserver.wildcore.WildCore;
+import com.myserver.wildcore.gui.claim.ClaimListGUI;
 import com.myserver.wildcore.gui.claim.ClaimMainGUI;
 import com.myserver.wildcore.managers.ClaimManager;
 import me.ryanhamshire.GriefPrevention.Claim;
@@ -16,8 +17,8 @@ import java.util.stream.Collectors;
 
 /**
  * 사유지 관리 명령어
- * /claim - 현재 위치의 사유지 관리 GUI 열기
- * /claim list - 내 사유지 목록
+ * /claim - 사유지 관리 GUI 열기 (다중 사유지 지원)
+ * /claim list - 내 사유지 목록 (채팅)
  */
 public class ClaimCommand implements CommandExecutor, TabCompleter {
 
@@ -42,35 +43,27 @@ public class ClaimCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // /claim list
+        // /claim list (채팅 목록)
         if (args.length > 0 && args[0].equalsIgnoreCase("list")) {
             showClaimList(player);
             return true;
         }
 
-        // /claim (현재 위치의 사유지 관리)
-        Claim claim = claimManager.getClaimAt(player.getLocation());
-        if (claim == null) {
+        // /claim — 사유지 목록 GUI 열기
+        List<Claim> claims = claimManager.getPlayerClaims(player.getUniqueId());
+
+        if (claims.isEmpty()) {
             player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§c현재 사유지 안에 있지 않습니다.");
-            player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§7내 사유지 목록 보기: /claim list");
+                    "§c보유한 사유지가 없습니다.");
             return true;
         }
 
-        // 권한 확인 (주인 또는 관리자)
-        boolean isOwner = claimManager.isClaimOwner(claim, player.getUniqueId());
-        ClaimManager.TrustType trustLevel = claimManager.getPlayerTrustLevel(claim, player.getUniqueId());
-        boolean isManager = trustLevel == ClaimManager.TrustType.MANAGER;
-
-        if (!isOwner && !isManager && !player.hasPermission("wildcore.claim.admin")) {
-            player.sendMessage(plugin.getConfigManager().getPrefix() +
-                    "§c이 사유지를 관리할 권한이 없습니다.");
-            return true;
+        // 사유지가 1개면 바로 관리 GUI, 여러 개면 목록 GUI
+        if (claims.size() == 1) {
+            new ClaimMainGUI(plugin, player, claims.get(0)).open();
+        } else {
+            new ClaimListGUI(plugin, player).open();
         }
-
-        // GUI 열기
-        new ClaimMainGUI(plugin, player, claim).open();
         return true;
     }
 

@@ -6,6 +6,7 @@ import com.myserver.wildcore.config.PlayerBankAccount;
 import com.myserver.wildcore.config.PlayerStockData;
 import com.myserver.wildcore.config.StockConfig;
 import com.myserver.wildcore.util.ItemUtil;
+import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -46,9 +47,13 @@ public class PlayerInfoGUI implements InventoryHolder {
 
     private static final int SLOT_SERVER = 49; // 서버 정보 (Row 6)
 
+    // 사유지 섹션 (Row 5: 슬롯 36-44)
+    private static final int SLOT_CLAIM = 40; // 사유지 요약
+
     // 클릭 가능한 슬롯 목록 (View-Only 안내용)
     private final Set<Integer> stockSlots = new HashSet<>();
     private final Set<Integer> bankSlots = new HashSet<>();
+    private final Set<Integer> claimSlots = new HashSet<>();
 
     public PlayerInfoGUI(WildCore plugin, Player player) {
         this.plugin = plugin;
@@ -99,7 +104,10 @@ public class PlayerInfoGUI implements InventoryHolder {
         // 5. 은행 정보 (상세)
         setupBankSection();
 
-        // 6. 서버 정보
+        // 6. 사유지 정보
+        setupClaimSection();
+
+        // 7. 서버 정보
         setupServerInfo();
     }
 
@@ -261,6 +269,7 @@ public class PlayerInfoGUI implements InventoryHolder {
 
         double totalBalance = 0;
         double totalPendingInterest = 0;
+        double totalAccumulatedInterest = 0;
         int savingsCount = 0;
         int termCount = 0;
 
@@ -272,6 +281,7 @@ public class PlayerInfoGUI implements InventoryHolder {
         } else {
             for (PlayerBankAccount account : accounts) {
                 totalBalance += account.getPrincipal();
+                totalAccumulatedInterest += account.getAccumulatedInterest();
                 BankProductConfig product = plugin.getConfigManager().getBankProduct(account.getProductId());
                 if (product != null) {
                     totalPendingInterest += plugin.getBankManager().calculateAccruedInterest(account, product);
@@ -291,6 +301,7 @@ public class PlayerInfoGUI implements InventoryHolder {
             summaryLore.add("");
             summaryLore.add("§7예치금 합계: §6" + String.format("%,.0f", totalBalance) + "원");
             summaryLore.add("§7예상 이자: §a+" + String.format("%,.0f", totalPendingInterest) + "원");
+            summaryLore.add("§7누적 이자 수익: §a+" + String.format("%,.0f", totalAccumulatedInterest) + "원");
             summaryLore.add("");
             summaryLore.add("§7─────────────────");
             summaryLore.add("§f총 은행자산: §6§l" + String.format("%,.0f", totalBalance + totalPendingInterest) + "원");
@@ -315,16 +326,33 @@ public class PlayerInfoGUI implements InventoryHolder {
             List<String> accountLore = new ArrayList<>();
             accountLore.add("");
 
+            // 개설일자 표시
+            java.time.Instant createdInstant = java.time.Instant.ofEpochMilli(account.getCreatedTime());
+            String createdDate = java.time.LocalDateTime.ofInstant(createdInstant, java.time.ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            accountLore.add("§8개설: " + createdDate);
+            accountLore.add("");
+
             if (product.isSavings()) {
                 // 자유 예금
                 double pendingInterest = plugin.getBankManager().calculateAccruedInterest(account, product);
                 long timeUntilInterest = plugin.getBankManager().getTimeUntilNextInterest(account, product);
+                long intervalMillis = product.getInterestIntervalSeconds() * 1000L;
 
                 accountLore.add("§7잔액: §e" + String.format("%,.0f", account.getPrincipal()) + "원");
                 accountLore.add("§7누적 이자: §a+" + String.format("%,.0f", account.getAccumulatedInterest()) + "원");
                 accountLore.add("");
                 accountLore.add("§7─────────────────");
+                accountLore.add("§7이자율: §6" + String.format("%.2f%%", product.getInterestRate() * 100)
+                        + " " + product.getFormattedInterestInterval());
                 accountLore.add("§7⏱ 다음 이자까지: §e" + plugin.getBankManager().formatDuration(timeUntilInterest));
+
+                // 프로그레스 바
+                if (intervalMillis > 0 && timeUntilInterest >= 0) {
+                    double progress = 1.0 - ((double) timeUntilInterest / intervalMillis);
+                    accountLore.add("§7" + buildProgressBar(progress, 15));
+                }
+
                 accountLore.add("§7예상 이자: §a+" + String.format("%,.0f", pendingInterest) + "원");
 
                 inventory.setItem(SLOTS_BANK_DETAIL[i], ItemUtil.createItem(Material.SUNFLOWER,
@@ -342,8 +370,15 @@ public class PlayerInfoGUI implements InventoryHolder {
                 if (isMatured) {
                     accountLore.add("§a§l만기 도달! 수령 가능");
                     accountLore.add("§7이자: §a+" + String.format("%,.0f", maturityInterest) + "원");
+                    accountLore.add("§7" + buildProgressBar(1.0, 15));
                 } else {
+                    long remaining = account.getTimeUntilExpiry();
+                    long totalDuration = product.getDurationSeconds() * 1000L;
+                    double progress = totalDuration > 0 ? 1.0 - ((double) remaining / totalDuration) : 0;
+
                     accountLore.add("§7⏱ 만기까지: §e" + account.getFormattedTimeRemaining());
+                    accountLore.add("§7진행률: §f" + String.format("%.1f%%", progress * 100));
+                    accountLore.add("§7" + buildProgressBar(progress, 15));
                     accountLore.add("§7만기 시 이자: §a+" + String.format("%,.0f", maturityInterest) + "원");
                 }
 
@@ -354,6 +389,29 @@ public class PlayerInfoGUI implements InventoryHolder {
             }
             bankSlots.add(SLOTS_BANK_DETAIL[i]);
         }
+    }
+
+    /**
+     * 프로그레스 바 생성
+     * 
+     * @param progress 0.0 ~ 1.0
+     * @param length   바 길이 (칸 수)
+     */
+    private String buildProgressBar(double progress, int length) {
+        progress = Math.max(0, Math.min(1.0, progress));
+        int filled = (int) (progress * length);
+        int empty = length - filled;
+
+        StringBuilder bar = new StringBuilder("§8[");
+        bar.append("§a");
+        for (int i = 0; i < filled; i++)
+            bar.append("■");
+        bar.append("§7");
+        for (int i = 0; i < empty; i++)
+            bar.append("□");
+        bar.append("§8]");
+        bar.append(" §f").append(String.format("%.0f%%", progress * 100));
+        return bar.toString();
     }
 
     private void setupServerInfo() {
@@ -410,5 +468,59 @@ public class PlayerInfoGUI implements InventoryHolder {
 
     public boolean isBankSlot(int slot) {
         return bankSlots.contains(slot);
+    }
+
+    public boolean isClaimSlot(int slot) {
+        return claimSlots.contains(slot);
+    }
+
+    private void setupClaimSection() {
+        if (!plugin.getClaimManager().isEnabled()) {
+            // GP가 없으면 기본 아이템만 표시
+            List<String> disabledLore = new ArrayList<>();
+            disabledLore.add("");
+            disabledLore.add("§7사유지 시스템이 비활성화되어 있습니다.");
+            inventory.setItem(SLOT_CLAIM, ItemUtil.createItem(Material.BARRIER, "§8사유지",
+                    disabledLore, 1, null, 0, false, plugin));
+            return;
+        }
+
+        java.util.List<Claim> claims = plugin.getClaimManager().getPlayerClaims(player.getUniqueId());
+
+        List<String> claimLore = new ArrayList<>();
+        claimLore.add("");
+
+        if (claims.isEmpty()) {
+            claimLore.add("§7보유한 사유지가 없습니다.");
+            claimLore.add("");
+            claimLore.add("§7/wc claim 명령어로 사유지를");
+            claimLore.add("§7생성할 수 있습니다.");
+        } else {
+            claimLore.add("§7보유 사유지: §f" + claims.size() + "개");
+            claimLore.add("");
+
+            int showCount = Math.min(3, claims.size());
+            for (int i = 0; i < showCount; i++) {
+                Claim claim = claims.get(i);
+                var metadata = plugin.getClaimDataManager().getClaimData(claim.getID());
+                String name = (metadata.getNickname() != null && !metadata.getNickname().isEmpty())
+                        ? metadata.getNickname()
+                        : "사유지 #" + claim.getID();
+                String size = plugin.getClaimManager().getClaimSize(claim);
+                claimLore.add("§a▶ §f" + name + " §8(" + size + ")");
+            }
+
+            if (claims.size() > 3) {
+                claimLore.add("§8... 외 " + (claims.size() - 3) + "개");
+            }
+
+            claimLore.add("");
+            claimLore.add("§7─────────────────");
+            claimLore.add("§e클릭하여 사유지 관리 GUI를 엽니다.");
+        }
+
+        inventory.setItem(SLOT_CLAIM, ItemUtil.createItem(Material.OAK_FENCE, "§2§l사유지 관리",
+                claimLore, 1, null, 0, !claims.isEmpty(), plugin));
+        claimSlots.add(SLOT_CLAIM);
     }
 }

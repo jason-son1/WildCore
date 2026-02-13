@@ -5,11 +5,13 @@ import com.myserver.wildcore.config.ShopItemConfig;
 import com.myserver.wildcore.gui.EnchantGUI;
 import com.myserver.wildcore.gui.PaginatedGui;
 import com.myserver.wildcore.gui.StockGUI;
+import com.myserver.wildcore.gui.claim.ClaimMainGUI;
 import com.myserver.wildcore.gui.shop.ShopGUI;
 import com.myserver.wildcore.gui.BankMainGUI;
 import com.myserver.wildcore.gui.BankProductListGUI;
 import com.myserver.wildcore.gui.BankDepositGUI;
-import com.myserver.wildcore.gui.BankStockInfoGUI; // Import added
+import com.myserver.wildcore.gui.BankWithdrawGUI;
+import com.myserver.wildcore.gui.BankStockInfoGUI;
 import com.myserver.wildcore.gui.EnchantSelectGUI;
 import com.myserver.wildcore.gui.RepairGUI;
 import com.myserver.wildcore.gui.AutoRefreshGUI;
@@ -89,11 +91,25 @@ public class GuiListener implements Listener {
 
             int slot = event.getRawSlot();
 
-            // 주식/은행 정보 버튼 클릭 (상호작용 없음 -> 상호작용 추가)
+            // 주식/은행 정보 버튼 클릭
             if (playerInfoGUI.isStockSlot(slot) || playerInfoGUI.isBankSlot(slot)) {
-
-                // BankStockInfoGUI 열기
                 new com.myserver.wildcore.gui.BankStockInfoGUI(plugin, player).open();
+                return;
+            }
+
+            // 사유지 버튼 클릭
+            if (playerInfoGUI.isClaimSlot(slot)) {
+                if (plugin.getClaimManager().isEnabled()) {
+                    java.util.List<me.ryanhamshire.GriefPrevention.Claim> claims = plugin.getClaimManager()
+                            .getPlayerClaims(player.getUniqueId());
+                    if (claims.isEmpty()) {
+                        player.sendMessage(plugin.getConfigManager().getPrefix() +
+                                "§e보유한 사유지가 없습니다. /wc claim 으로 생성하세요.");
+                    } else {
+                        // 첫 번째 사유지의 GUI를 열기
+                        new ClaimMainGUI(plugin, player, claims.get(0)).open();
+                    }
+                }
                 return;
             }
             return;
@@ -123,6 +139,13 @@ public class GuiListener implements Listener {
         if (event.getInventory().getHolder() instanceof BankDepositGUI depositGUI) {
             event.setCancelled(true);
             handleBankDepositClick(player, event, depositGUI);
+            return;
+        }
+
+        // 은행 출금 GUI 처리
+        if (event.getInventory().getHolder() instanceof BankWithdrawGUI withdrawGUI) {
+            event.setCancelled(true);
+            handleBankWithdrawClick(player, event, withdrawGUI);
             return;
         }
     }
@@ -390,9 +413,8 @@ public class GuiListener implements Listener {
                     // 입금 GUI 열기
                     new BankDepositGUI(plugin, player, product.getId(), accountId).open();
                 } else if (click.isRightClick() && !click.isShiftClick()) {
-                    // 출금 (10000원 고정, 후에 GUI로 개선 가능)
-                    plugin.getBankManager().withdraw(player, accountId, 10000);
-                    bankMainGUI.refresh();
+                    // 출금 GUI 열기
+                    new BankWithdrawGUI(plugin, player, accountId).open();
                 } else if (click.isShiftClick() && click.isRightClick()) {
                     // 계좌 해지
                     plugin.getBankManager().closeAccount(player, accountId, false);
@@ -497,6 +519,37 @@ public class GuiListener implements Listener {
                     player.closeInventory();
                     new BankMainGUI(plugin, player).open();
                 }
+            }
+        }
+    }
+
+    /**
+     * 은행 출금 GUI 클릭 처리
+     */
+    private void handleBankWithdrawClick(Player player, InventoryClickEvent event, BankWithdrawGUI withdrawGUI) {
+        int slot = event.getRawSlot();
+
+        // 뒤로가기
+        if (withdrawGUI.isBackSlot(slot)) {
+            new BankMainGUI(plugin, player).open();
+            return;
+        }
+
+        // 직접 입력 버튼
+        if (withdrawGUI.isCustomSlot(slot)) {
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getPrefix() +
+                    "§7출금할 금액을 채팅으로 입력해주세요. (취소: 'cancel')");
+            return;
+        }
+
+        // 금액 버튼 클릭
+        double amount = withdrawGUI.getAmountAtSlot(slot);
+        if (amount > 0) {
+            String accountId = withdrawGUI.getAccountId();
+            if (plugin.getBankManager().withdraw(player, accountId, amount)) {
+                player.closeInventory();
+                new BankMainGUI(plugin, player).open();
             }
         }
     }

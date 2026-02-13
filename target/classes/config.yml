@@ -66,6 +66,21 @@ messages:
 # 사유지 생성(Claim) 시스템 설정
 # ========================================
 claim-system:
+  # 작물 성장 버프 설정 (단계별)
+  crop-growth-buff:
+    tiers:
+      1:
+        name: "기초 성장 촉진제"
+        multiplier: 2.0
+        duration: 1800    # 30분
+      2:
+        name: "고급 성장 촉진제"
+        multiplier: 3.0
+        duration: 2700    # 45분
+      3:
+        name: "최상급 성장 촉진제"
+        multiplier: 4.0
+        duration: 3600    # 60분
   # 시스템 활성화 여부
   enabled: true
   

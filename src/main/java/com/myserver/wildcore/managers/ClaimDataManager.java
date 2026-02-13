@@ -56,6 +56,7 @@ public class ClaimDataManager {
                     metadata.setNickname(claimsConfig.getString(path + ".nickname", ""));
                     metadata.setCreatedAt(claimsConfig.getLong(path + ".created_at", System.currentTimeMillis()));
                     metadata.setIcon(claimsConfig.getString(path + ".icon", "GRASS_BLOCK"));
+                    metadata.setChunkLoaded(claimsConfig.getBoolean(path + ".chunk_loaded", false));
 
                     // 홈 위치 로드
                     if (claimsConfig.contains(path + ".home")) {
@@ -127,6 +128,7 @@ public class ClaimDataManager {
         claimsConfig.set(path + ".nickname", metadata.getNickname());
         claimsConfig.set(path + ".created_at", metadata.getCreatedAt());
         claimsConfig.set(path + ".icon", metadata.getIcon());
+        claimsConfig.set(path + ".chunk_loaded", metadata.isChunkLoaded());
 
         // 홈 위치 저장
         Location home = metadata.getHome();
@@ -255,6 +257,7 @@ public class ClaimDataManager {
         private Location home;
         private long createdAt;
         private String icon;
+        private boolean chunkLoaded;
         private final Map<String, Boolean> flags = new HashMap<>();
 
         public ClaimMetadata(Long claimId) {
@@ -262,6 +265,7 @@ public class ClaimDataManager {
             this.nickname = "";
             this.createdAt = System.currentTimeMillis();
             this.icon = "GRASS_BLOCK";
+            this.chunkLoaded = false;
         }
 
         public Long getClaimId() {
@@ -298,6 +302,14 @@ public class ClaimDataManager {
 
         public void setIcon(String icon) {
             this.icon = icon != null ? icon : "GRASS_BLOCK";
+        }
+
+        public boolean isChunkLoaded() {
+            return chunkLoaded;
+        }
+
+        public void setChunkLoaded(boolean chunkLoaded) {
+            this.chunkLoaded = chunkLoaded;
         }
 
         public Map<String, Boolean> getFlags() {

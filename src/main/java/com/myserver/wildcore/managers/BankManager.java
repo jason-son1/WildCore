@@ -42,6 +42,9 @@ public class BankManager {
      * 데이터 파일 로드
      */
     private void loadData() {
+        // 메모리 초기화
+        playerAccounts.clear();
+
         File dataFolder = new File(plugin.getDataFolder(), "data");
         if (!dataFolder.exists()) {
             dataFolder.mkdirs();
