@@ -12,7 +12,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -41,7 +40,6 @@ public class ClaimProtectionListener implements Listener {
     private final WildCore plugin;
     private final ClaimManager claimManager;
     private final ClaimDataManager claimDataManager;
-    private final CropGrowthManager cropGrowthManager;
     private BukkitTask mobEntryTask;
 
     public ClaimProtectionListener(WildCore plugin, ClaimManager claimManager, ClaimDataManager claimDataManager,
@@ -49,7 +47,6 @@ public class ClaimProtectionListener implements Listener {
         this.plugin = plugin;
         this.claimManager = claimManager;
         this.claimDataManager = claimDataManager;
-        this.cropGrowthManager = cropGrowthManager;
         startMobEntryTask();
     }
 
@@ -334,7 +331,8 @@ public class ClaimProtectionListener implements Listener {
     }
 
     /**
-     * 농작물/덩굴 성장 제한 + 작물 성장 버프 가속
+     * 농작물/덩굴 성장 제한
+     * (작물 성장 가속은 CropGrowthTask 스케줄러가 別도로 처리합니다)
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBlockGrow(BlockGrowEvent event) {
@@ -359,30 +357,6 @@ public class ClaimProtectionListener implements Listener {
         // 일반 농작물 성장 플래그 확인
         if (!getFlag(claim, ClaimFlags.CROP_GROWTH)) {
             event.setCancelled(true);
-            return;
-        }
-
-        // 작물 성장 버프 가속 처리
-        if (cropGrowthManager != null && cropGrowthManager.hasActiveBuff(claim.getID())) {
-            double multiplier = cropGrowthManager.getBuffMultiplier(claim.getID());
-            if (multiplier > 1.0 && block.getBlockData() instanceof Ageable ageable) {
-                // 추가 성장 단계 계산 (예: 2.0x → 1번 추가, 3.0x → 2번 추가)
-                int additionalGrowth = (int) (multiplier - 1);
-                double fractional = (multiplier - 1) - additionalGrowth;
-                if (Math.random() < fractional) {
-                    additionalGrowth++;
-                }
-
-                if (additionalGrowth > 0) {
-                    int currentAge = ageable.getAge();
-                    int maxAge = ageable.getMaximumAge();
-                    int newAge = Math.min(currentAge + additionalGrowth, maxAge);
-                    if (newAge > currentAge) {
-                        ageable.setAge(newAge);
-                        block.setBlockData(ageable);
-                    }
-                }
-            }
         }
     }
 

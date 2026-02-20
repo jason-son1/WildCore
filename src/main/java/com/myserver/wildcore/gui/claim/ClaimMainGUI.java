@@ -278,7 +278,10 @@ public class ClaimMainGUI implements InventoryHolder {
             if (buffData != null) {
                 lore.add("§7상태: §a활성 (" + buffData.getTierName() + "§a)");
                 lore.add("§7단계: §f" + buffData.getTier() + "단계");
-                lore.add("§7배율: §a" + buffData.getMultiplier() + "x");
+                lore.add("§7주기: §a" + buffData.getIntervalSeconds() + "초 §7| 확률: §a"
+                        + (int) (buffData.getGrowthChance() * 100) + "%");
+                int cropCount = plugin.getCropGrowthManager().getCropTracker().getCropCount(claim.getID());
+                lore.add("§7추적 작물: §a" + cropCount + "개");
                 lore.add("§7남은 시간: §f" + formatTime(buffData.getRemainingSeconds()));
             }
         } else {

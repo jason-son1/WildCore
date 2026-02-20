@@ -4,22 +4,30 @@ import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.config.ConfigManager;
 import com.myserver.wildcore.managers.ClaimManager;
 import com.myserver.wildcore.managers.CropGrowthManager;
+import com.myserver.wildcore.managers.CropTracker;
 import com.myserver.wildcore.util.ItemUtil;
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * 작물 성장 버프 아이템 사용을 처리하는 리스너입니다.
- * crop_growth_buff 기능이 있는 커스텀 아이템을 사유지 안에서 우클릭하면
- * 해당 아이템의 단계(tier)에 맞는 버프가 적용됩니다.
- * 상위 단계 아이템은 하위 단계 버프를 교체할 수 있습니다.
+ * 작물 성장 버프 시스템 리스너입니다.
+ *
+ * 1) crop_growth_buff 기능이 있는 커스텀 아이템을 사유지 안에서 우클릭하면
+ * 해당 아이템의 단계(tier)에 맞는 스케줄러 기반 버프가 활성화됩니다.
+ * 2) 작물 심기/파괴 이벤트를 감지하여 CropTracker의 좌표 캐시를 동기화합니다.
+ *
+ * 기존 BlockGrowEvent 기반의 수동적 성장 가속은 제거되었으며,
+ * CropGrowthTask가 능동적으로 작물 성장을 관리합니다.
  */
 public class CropGrowthBuffListener implements Listener {
 
@@ -33,6 +41,9 @@ public class CropGrowthBuffListener implements Listener {
         this.cropGrowthManager = plugin.getCropGrowthManager();
     }
 
+    /**
+     * 버프 아이템 사용 처리
+     */
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         // 우클릭만 처리
@@ -95,7 +106,9 @@ public class CropGrowthBuffListener implements Listener {
                     player.sendMessage(plugin.getConfigManager().getPrefix() +
                             "§c이미 " + currentBuff.getTierName() + " §c버프가 활성화되어 있습니다!");
                     player.sendMessage(plugin.getConfigManager().getPrefix() +
-                            "§7남은 시간: " + formatTime(remaining) + " §7| 배율: §a" + currentBuff.getMultiplier() + "x");
+                            "§7남은 시간: " + formatTime(remaining)
+                            + " §7| 주기: §a" + currentBuff.getIntervalSeconds() + "초"
+                            + " §7| 확률: §a" + (int) (currentBuff.getGrowthChance() * 100) + "%");
                     if (tier < currentBuff.getTier()) {
                         player.sendMessage(plugin.getConfigManager().getPrefix() +
                                 "§7현재 더 높은 단계의 버프가 적용 중입니다.");
@@ -114,20 +127,77 @@ public class CropGrowthBuffListener implements Listener {
         // 아이템 소모
         item.setAmount(item.getAmount() - 1);
 
-        // 버프 활성화
+        // 버프 활성화 (새 스케줄러 기반 파라미터 전달)
         cropGrowthManager.activateBuff(claim.getID(), tier, tierConfig.getName(),
-                tierConfig.getMultiplier(), tierConfig.getDuration());
+                tierConfig.getDuration(), tierConfig.getIntervalSeconds(),
+                tierConfig.getGrowthChance(), tierConfig.getGrowthAmount());
+
+        // 추적 중인 작물 수 표시
+        int cropCount = cropGrowthManager.getCropTracker().getCropCount(claim.getID());
 
         // 성공 메시지
         player.sendMessage(plugin.getConfigManager().getPrefix() +
                 "§a🌾 " + tierConfig.getName() + " §a버프가 활성화되었습니다!");
         player.sendMessage(plugin.getConfigManager().getPrefix() +
-                "§7단계: §f" + tier + "단계 §7| 배율: §a" + tierConfig.getMultiplier() + "x §7| 지속시간: §f"
-                + formatTime(tierConfig.getDuration()));
+                "§7단계: §f" + tier + "단계 §7| 주기: §a" + tierConfig.getIntervalSeconds() + "초"
+                + " §7| 확률: §a" + (int) (tierConfig.getGrowthChance() * 100) + "%"
+                + " §7| 성장량: §a" + tierConfig.getGrowthAmount() + "단계");
+        player.sendMessage(plugin.getConfigManager().getPrefix() +
+                "§7지속시간: §f" + formatTime(tierConfig.getDuration())
+                + " §7| 등록된 작물: §a" + cropCount + "개");
 
         // 효과음 (단계에 따라 피치 변경)
         float pitch = 1.0f + (tier * 0.2f);
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, pitch);
+    }
+
+    /**
+     * 작물 심기 감지 -> CropTracker에 좌표 추가
+     */
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        Block block = event.getBlock();
+
+        // 작물 블록인지 확인
+        if (!CropTracker.isCropBlock(block.getType()))
+            return;
+
+        // 사유지 확인
+        Claim claim = claimManager.getClaimAt(block.getLocation());
+        if (claim == null)
+            return;
+
+        // 해당 사유지에 활성 버프가 있는 경우에만 추적
+        if (!cropGrowthManager.hasActiveBuff(claim.getID()))
+            return;
+
+        cropGrowthManager.getCropTracker().addCrop(claim.getID(), block.getLocation());
+        plugin.debug("CropTracker: 작물 심기 감지 - claim=" + claim.getID()
+                + " pos=" + block.getX() + "," + block.getY() + "," + block.getZ());
+    }
+
+    /**
+     * 작물 파괴 감지 -> CropTracker에서 좌표 제거
+     */
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Block block = event.getBlock();
+
+        // 작물 블록인지 확인
+        if (!CropTracker.isCropBlock(block.getType()))
+            return;
+
+        // 사유지 확인
+        Claim claim = claimManager.getClaimAt(block.getLocation());
+        if (claim == null) {
+            // 사유지 밖이지만 혹시 추적 중일 수 있으므로 전체에서 제거
+            cropGrowthManager.getCropTracker().removeCropFromAll(block.getLocation());
+            return;
+        }
+
+        cropGrowthManager.getCropTracker().removeCrop(claim.getID(), block.getLocation());
+        plugin.debug("CropTracker: 작물 파괴 감지 - claim=" + claim.getID()
+                + " pos=" + block.getX() + "," + block.getY() + "," + block.getZ());
     }
 
     private String formatTime(long seconds) {
@@ -136,62 +206,5 @@ public class CropGrowthBuffListener implements Listener {
         long minutes = seconds / 60;
         long secs = seconds % 60;
         return minutes + ":" + String.format("%02d", secs);
-    }
-
-    /**
-     * 작물 성장 이벤트 처리 (버프 적용)
-     */
-    @EventHandler
-    public void onBlockGrow(org.bukkit.event.block.BlockGrowEvent event) {
-        if (event.isCancelled())
-            return;
-
-        // 사유지 확인
-        Claim claim = claimManager.getClaimAt(event.getBlock().getLocation());
-        if (claim == null)
-            return;
-
-        // 버프 확인
-        if (!cropGrowthManager.hasActiveBuff(claim.getID()))
-            return;
-
-        double multiplier = cropGrowthManager.getBuffMultiplier(claim.getID());
-        if (multiplier <= 1.0)
-            return;
-
-        // Ageable 작물인지 확인 (밀, 당근, 감자 등)
-        if (event.getNewState().getBlockData() instanceof org.bukkit.block.data.Ageable) {
-            org.bukkit.block.data.Ageable ageable = (org.bukkit.block.data.Ageable) event.getNewState().getBlockData();
-            org.bukkit.block.data.Ageable current = (org.bukkit.block.data.Ageable) event.getBlock().getBlockData();
-
-            int currentAge = current.getAge();
-            int nextAge = ageable.getAge();
-            int limit = ageable.getMaximumAge();
-
-            // 성장이 일어나는 경우에만
-            if (nextAge > currentAge) {
-                // 배율 적용 (확률적 추가 성장)
-                // 예: 배율 2.0 -> 기본 1 + 추가 1 (100% 확률)
-                // 예: 배율 1.5 -> 기본 1 + 추가 1 (50% 확률)
-                double bonusGrowthChance = multiplier - 1.0;
-                int guaranteedBonus = (int) bonusGrowthChance;
-                double randomBonus = bonusGrowthChance - guaranteedBonus;
-
-                int bonus = guaranteedBonus;
-                if (Math.random() < randomBonus) {
-                    bonus++;
-                }
-
-                if (bonus > 0) {
-                    int targetAge = Math.min(limit, nextAge + bonus);
-                    ageable.setAge(targetAge);
-                    event.getNewState().setBlockData(ageable);
-
-                    // 디버그 (필요시)
-                    // plugin.debug("Applied growth buff: " + currentAge + " -> " + targetAge + "
-                    // (x" + multiplier + ")");
-                }
-            }
-        }
     }
 }

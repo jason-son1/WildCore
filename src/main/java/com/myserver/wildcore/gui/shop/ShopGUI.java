@@ -9,6 +9,8 @@ import com.myserver.wildcore.util.KoreanMaterialUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -120,6 +122,21 @@ public class ShopGUI extends PaginatedGui<ShopItemConfig> {
         return ItemUtil.createItem(material, displayName, lore, 1, null, 0, false, null);
     }
 
+    /**
+     * 포션 메타를 적용한 ItemStack 생성 (GUI 디스플레이용)
+     */
+    private ItemStack applyPotionMeta(ItemStack display, ShopItemConfig item) {
+        if (item.hasPotionData() && display.getItemMeta() instanceof PotionMeta potionMeta) {
+            try {
+                PotionType potionType = PotionType.valueOf(item.getPotionType());
+                potionMeta.setBasePotionType(potionType);
+                display.setItemMeta(potionMeta);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return display;
+    }
+
     @Override
     protected String getTitle(int page, int totalPages) {
         String shopName = shop.getDisplayName();
@@ -159,6 +176,11 @@ public class ShopGUI extends PaginatedGui<ShopItemConfig> {
         return getItemAtSlot(slot);
     }
 
+    @Override
+    protected ItemStack createFinalItemDisplay(ShopItemConfig item, ItemStack baseDisplay) {
+        return applyPotionMeta(baseDisplay, item);
+    }
+
     /**
      * 상점 설정 가져오기
      */
@@ -189,7 +211,26 @@ public class ShopGUI extends PaginatedGui<ShopItemConfig> {
         } else {
             try {
                 Material material = Material.valueOf(item.getId().toUpperCase());
-                return stack.getType() == material;
+                if (stack.getType() != material) {
+                    return false;
+                }
+                // 포션 타입 비교
+                if (item.hasPotionData()) {
+                    if (!(stack.getItemMeta() instanceof PotionMeta potionMeta)) {
+                        return false;
+                    }
+                    PotionType basePotionType = potionMeta.getBasePotionType();
+                    if (basePotionType == null) {
+                        return false;
+                    }
+                    try {
+                        PotionType expectedType = PotionType.valueOf(item.getPotionType());
+                        return basePotionType == expectedType;
+                    } catch (IllegalArgumentException e) {
+                        return false;
+                    }
+                }
+                return true;
             } catch (IllegalArgumentException e) {
                 return false;
             }

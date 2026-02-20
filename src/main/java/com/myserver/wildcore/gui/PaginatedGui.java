@@ -98,7 +98,9 @@ public abstract class PaginatedGui<T> implements InventoryHolder {
         for (int i = startIndex; i < endIndex; i++) {
             T item = items.get(i);
             int slot = i - startIndex; // 0~44 슬롯에 순서대로 배치
-            inventory.setItem(slot, createItemDisplay(item));
+            ItemStack display = createItemDisplay(item);
+            display = createFinalItemDisplay(item, display);
+            inventory.setItem(slot, display);
         }
 
         // 네비게이션 바 (45~53 슬롯)
@@ -153,6 +155,14 @@ public abstract class PaginatedGui<T> implements InventoryHolder {
      */
     protected ItemStack createItem(Material material, String name, List<String> lore) {
         return ItemUtil.createItem(material, name, lore, 1, null, 0, false, null);
+    }
+
+    /**
+     * createItemDisplay 후 추가 가공을 위한 훅 메소드.
+     * 하위 클래스에서 오버라이드하여 아이템별 메타데이터(예: PotionMeta)를 적용할 수 있습니다.
+     */
+    protected ItemStack createFinalItemDisplay(T item, ItemStack baseDisplay) {
+        return baseDisplay;
     }
 
     /**

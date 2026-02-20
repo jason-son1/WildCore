@@ -1218,9 +1218,11 @@ public class ConfigManager {
                                     shopsConfig.getString(itemPath + ".id", "STONE"),
                                     shopsConfig.getDouble(itemPath + ".buy_price", -1),
                                     shopsConfig.getDouble(itemPath + ".sell_price", -1),
-                                    colorize(shopsConfig.getString(itemPath + ".display_name")), // [NEW] 표시 이름 로드
-                                    colorize(shopsConfig.getStringList(itemPath + ".lore")) // [NEW] 설명 로드
-                            );
+                                    colorize(shopsConfig.getString(itemPath + ".display_name")),
+                                    colorize(shopsConfig.getStringList(itemPath + ".lore")),
+                                    shopsConfig.getString(itemPath + ".potion_type", null),
+                                    shopsConfig.getBoolean(itemPath + ".potion_extended", false),
+                                    shopsConfig.getBoolean(itemPath + ".potion_upgraded", false));
                             items.put(slot, item);
                         } catch (NumberFormatException ignored) {
                         }
@@ -1284,7 +1286,10 @@ public class ConfigManager {
                             shopsConfig.getDouble(itemPath + ".buy_price", -1),
                             shopsConfig.getDouble(itemPath + ".sell_price", -1),
                             colorize(shopsConfig.getString(itemPath + ".display_name")),
-                            colorize(shopsConfig.getStringList(itemPath + ".lore")));
+                            colorize(shopsConfig.getStringList(itemPath + ".lore")),
+                            shopsConfig.getString(itemPath + ".potion_type", null),
+                            shopsConfig.getBoolean(itemPath + ".potion_extended", false),
+                            shopsConfig.getBoolean(itemPath + ".potion_upgraded", false));
                     items.put(slot, item);
                 } catch (NumberFormatException ignored) {
                 }
@@ -1340,8 +1345,14 @@ public class ConfigManager {
                 shopsConfig.set(itemPath + ".id", item.getId());
                 shopsConfig.set(itemPath + ".buy_price", item.getBuyPrice());
                 shopsConfig.set(itemPath + ".sell_price", item.getSellPrice());
-                shopsConfig.set(itemPath + ".display_name", item.getDisplayName()); // [NEW]
-                shopsConfig.set(itemPath + ".lore", item.getLore()); // [NEW]
+                shopsConfig.set(itemPath + ".display_name", item.getDisplayName());
+                shopsConfig.set(itemPath + ".lore", item.getLore());
+                // 포션 메타데이터 저장
+                if (item.hasPotionData()) {
+                    shopsConfig.set(itemPath + ".potion_type", item.getPotionType());
+                    shopsConfig.set(itemPath + ".potion_extended", item.isPotionExtended());
+                    shopsConfig.set(itemPath + ".potion_upgraded", item.isPotionUpgraded());
+                }
             }
 
             try {
@@ -1836,18 +1847,24 @@ public class ConfigManager {
 
     /**
      * 작물 성장 버프 단계 데이터
+     * 스케줄러 기반 능동형 성장 시스템에서 사용됩니다.
      */
     public static class CropBuffTier {
         private final int tier;
         private final String name;
-        private final double multiplier;
         private final long duration; // seconds
+        private final int intervalSeconds; // 스케줄러 검사 주기 (초)
+        private final double growthChance; // 성장 확률 (0.0 ~ 1.0)
+        private final int growthAmount; // 성공 시 성장 단계(Age) 증가량
 
-        public CropBuffTier(int tier, String name, double multiplier, long duration) {
+        public CropBuffTier(int tier, String name, long duration,
+                int intervalSeconds, double growthChance, int growthAmount) {
             this.tier = tier;
             this.name = name;
-            this.multiplier = multiplier;
             this.duration = duration;
+            this.intervalSeconds = intervalSeconds;
+            this.growthChance = growthChance;
+            this.growthAmount = growthAmount;
         }
 
         public int getTier() {
@@ -1858,12 +1875,20 @@ public class ConfigManager {
             return name;
         }
 
-        public double getMultiplier() {
-            return multiplier;
-        }
-
         public long getDuration() {
             return duration;
+        }
+
+        public int getIntervalSeconds() {
+            return intervalSeconds;
+        }
+
+        public double getGrowthChance() {
+            return growthChance;
+        }
+
+        public int getGrowthAmount() {
+            return growthAmount;
         }
     }
 
@@ -1881,9 +1906,12 @@ public class ConfigManager {
                     int tier = Integer.parseInt(key);
                     String path = "claim-system.crop-growth-buff.tiers." + key;
                     String name = colorize(config.getString(path + ".name", "버프 " + tier + "단계"));
-                    double multiplier = config.getDouble(path + ".multiplier", 1.5);
                     long duration = config.getLong(path + ".duration", 1800);
-                    cropBuffTiers.put(tier, new CropBuffTier(tier, name, multiplier, duration));
+                    int intervalSeconds = config.getInt(path + ".interval-seconds", 20);
+                    double growthChance = config.getDouble(path + ".growth-chance", 0.10);
+                    int growthAmount = config.getInt(path + ".growth-amount", 1);
+                    cropBuffTiers.put(tier, new CropBuffTier(tier, name, duration,
+                            intervalSeconds, growthChance, growthAmount));
                 } catch (NumberFormatException ignored) {
                 }
             }
@@ -1891,9 +1919,9 @@ public class ConfigManager {
 
         // 기본값 (설정이 없을 경우)
         if (cropBuffTiers.isEmpty()) {
-            cropBuffTiers.put(1, new CropBuffTier(1, "기초 성장 촉진제", 1.5, 1800));
-            cropBuffTiers.put(2, new CropBuffTier(2, "고급 성장 촉진제", 2.0, 2700));
-            cropBuffTiers.put(3, new CropBuffTier(3, "최상급 성장 촉진제", 3.0, 3600));
+            cropBuffTiers.put(1, new CropBuffTier(1, "기초 성장 촉진제", 1800, 20, 0.10, 1));
+            cropBuffTiers.put(2, new CropBuffTier(2, "고급 성장 촉진제", 2700, 15, 0.15, 1));
+            cropBuffTiers.put(3, new CropBuffTier(3, "최상급 성장 촉진제", 3600, 10, 0.20, 2));
         }
 
         plugin.getLogger().info("작물 성장 버프 " + cropBuffTiers.size() + "단계 로드됨");
@@ -1918,5 +1946,30 @@ public class ConfigManager {
      */
     public int getItemCropBuffTier(String itemId) {
         return itemsConfig.getInt("items." + itemId + ".crop_buff.tier", 1);
+    }
+
+    // =====================
+    // 작물 성장 버프 전역 설정
+    // =====================
+
+    /**
+     * 스케줄러 메인 틱 간격 (tick 단위, 기본 20틱 = 1초)
+     */
+    public int getCropGrowthSchedulerTickInterval() {
+        return config.getInt("claim-system.crop-growth-buff.scheduler-tick-interval", 20);
+    }
+
+    /**
+     * 틱당 최대 처리 작물 수
+     */
+    public int getCropGrowthMaxCropsPerTick() {
+        return config.getInt("claim-system.crop-growth-buff.max-crops-per-tick", 50);
+    }
+
+    /**
+     * 성장 시 파티클 효과 표시 여부
+     */
+    public boolean isCropGrowthShowParticles() {
+        return config.getBoolean("claim-system.crop-growth-buff.show-particles", true);
     }
 }

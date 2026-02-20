@@ -25,6 +25,7 @@ com\myserver\wildcore\gui\StockGUI.class
 com\myserver\wildcore\gui\EnchantProcessGUI.class
 com\myserver\wildcore\gui\admin\EnchantTypeSelectorGUI.class
 com\myserver\wildcore\managers\StockManager$1.class
+com\myserver\wildcore\tasks\CropGrowthTask$CropProcessEntry.class
 com\myserver\wildcore\config\MiningReward.class
 com\myserver\wildcore\util\StructureBuilder.class
 com\myserver\wildcore\gui\claim\ClaimGUIListener.class
@@ -56,6 +57,7 @@ com\myserver\wildcore\managers\ShopManager.class
 com\myserver\wildcore\listeners\CustomItemProtectListener$1.class
 com\myserver\wildcore\managers\EnchantManager$EnchantProcess.class
 com\myserver\wildcore\listeners\NpcInteractListener.class
+com\myserver\wildcore\managers\CropTracker$BlockPos.class
 com\myserver\wildcore\config\PlayerStockData.class
 com\myserver\wildcore\managers\ClaimScoreboardManager.class
 com\myserver\wildcore\listeners\ShopInteractListener.class
@@ -75,12 +77,14 @@ com\myserver\wildcore\commands\ClaimCommand.class
 com\myserver\wildcore\util\ItemUtil.class
 com\myserver\wildcore\npc\NpcType.class
 com\myserver\wildcore\managers\StockManager.class
+com\myserver\wildcore\tasks\CropGrowthTask.class
 com\myserver\wildcore\config\CustomItemConfig.class
 com\myserver\wildcore\config\ConfigManager.class
 com\myserver\wildcore\gui\AutoRefreshGUI.class
 com\myserver\wildcore\gui\admin\StockAdminGUI.class
 com\myserver\wildcore\gui\BankWithdrawGUI.class
 com\myserver\wildcore\tasks\ActionBarMoneyTask.class
+com\myserver\wildcore\managers\CropTracker.class
 com\myserver\wildcore\config\ClaimItemConfig.class
 com\myserver\wildcore\gui\BankDepositGUI.class
 com\myserver\wildcore\gui\admin\AdminGuiListener$InputType.class

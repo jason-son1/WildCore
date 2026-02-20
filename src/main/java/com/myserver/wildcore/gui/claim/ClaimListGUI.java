@@ -2,6 +2,7 @@ package com.myserver.wildcore.gui.claim;
 
 import com.myserver.wildcore.WildCore;
 import com.myserver.wildcore.managers.ClaimDataManager.ClaimMetadata;
+import com.myserver.wildcore.managers.CropGrowthManager;
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -142,8 +143,11 @@ public class ClaimListGUI implements InventoryHolder {
         // 작물 버프 상태
         if (plugin.getCropGrowthManager() != null && plugin.getCropGrowthManager().hasActiveBuff(claim.getID())) {
             long remaining = plugin.getCropGrowthManager().getRemainingBuffTime(claim.getID());
-            double multiplier = plugin.getCropGrowthManager().getBuffMultiplier(claim.getID());
-            lore.add("§7작물 버프: §a" + multiplier + "x §7(남은 시간: §f" + formatTime(remaining) + "§7)");
+            CropGrowthManager.BuffData buffData = plugin.getCropGrowthManager().getBuffData(claim.getID());
+            if (buffData != null) {
+                lore.add("§7작물 버프: §a" + buffData.getIntervalSeconds() + "초/"
+                        + (int) (buffData.getGrowthChance() * 100) + "% §7(남은: §f" + formatTime(remaining) + "§7)");
+            }
         } else {
             lore.add("§7작물 버프: §c비활성");
         }

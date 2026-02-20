@@ -92,6 +92,7 @@ public class WildCore extends JavaPlugin {
 
         // 작물 성장 버프 매니저 초기화
         cropGrowthManager = new CropGrowthManager(this);
+        cropGrowthManager.init();
 
         // 청크 로더 초기화 및 저장된 청크 로드
         if (claimManager.isEnabled()) {

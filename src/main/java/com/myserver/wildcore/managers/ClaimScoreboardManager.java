@@ -121,7 +121,8 @@ public class ClaimScoreboardManager {
         objective.getScore("§a§l━━━━━━━━━━━━━━━").setScore(5);
         objective.getScore(" ").setScore(4);
         objective.getScore("§e🌾 작물 성장 버프").setScore(3);
-        objective.getScore("§7배율: §a" + buffData.getMultiplier() + "x").setScore(2);
+        objective.getScore("§7주기: §a" + buffData.getIntervalSeconds() + "초 §7| 확률: §a"
+                + (int) (buffData.getGrowthChance() * 100) + "%").setScore(2);
         objective.getScore("§7남은 시간: §f" + timeStr).setScore(1);
         objective.getScore("§a§l━━━━━━━━━━━━━━━━").setScore(0);
 

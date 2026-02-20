@@ -134,6 +134,9 @@ public class StockManager {
             }
         }
 
+        // 다음 업데이트 시각 로드
+        nextUpdateTime = dataConfig.getLong("nextUpdateTime", 0);
+
         plugin.getLogger().info("주식 데이터 로드 완료");
     }
 
@@ -151,6 +154,8 @@ public class StockManager {
 
     /**
      * 스케줄러 시작
+     * 저장된 nextUpdateTime을 기반으로 초기 딜레이를 계산하여
+     * 서버 재시작 시에도 타이머가 이어서 진행됩니다.
      */
     public void startScheduler() {
         if (!plugin.getConfigManager().isStockSystemEnabled()) {
@@ -160,8 +165,22 @@ public class StockManager {
         updateIntervalSeconds = plugin.getConfigManager().getStockUpdateInterval();
         int intervalTicks = updateIntervalSeconds * 20; // 초 -> 틱 변환
 
-        // 초기 다음 업데이트 시간 설정
-        nextUpdateTime = System.currentTimeMillis() + (updateIntervalSeconds * 1000L);
+        // 저장된 다음 업데이트 시각 기반으로 초기 딜레이 계산
+        long now = System.currentTimeMillis();
+        long initialDelayTicks;
+
+        if (nextUpdateTime > now) {
+            // 저장된 다음 업데이트 시각이 아직 미래 → 남은 시간만큼 대기
+            long remainingMillis = nextUpdateTime - now;
+            initialDelayTicks = Math.max(1, (remainingMillis / 1000) * 20);
+            plugin.getLogger().info("주식 스케줄러: 저장된 타이머 복원 (남은 시간: " +
+                    (remainingMillis / 1000) + "초)");
+        } else {
+            // 저장된 시각이 과거이거나 없음 → 즉시 1회 업데이트 후 정상 간격
+            initialDelayTicks = 1;
+            nextUpdateTime = now + (updateIntervalSeconds * 1000L);
+            plugin.getLogger().info("주식 스케줄러: 업데이트 시각이 지남, 즉시 업데이트 실행");
+        }
 
         schedulerTask = new BukkitRunnable() {
             @Override
@@ -170,7 +189,7 @@ public class StockManager {
                 // 다음 업데이트 시간 갱신
                 nextUpdateTime = System.currentTimeMillis() + (updateIntervalSeconds * 1000L);
             }
-        }.runTaskTimerAsynchronously(plugin, intervalTicks, intervalTicks);
+        }.runTaskTimerAsynchronously(plugin, initialDelayTicks, intervalTicks);
 
         plugin.getLogger().info("주식 가격 업데이트 스케줄러 시작 (간격: " +
                 updateIntervalSeconds + "초)");
@@ -425,6 +444,9 @@ public class StockManager {
         for (Map.Entry<String, List<Double>> entry : priceHistory.entrySet()) {
             dataConfig.set("history." + entry.getKey(), entry.getValue());
         }
+
+        // 다음 업데이트 시각 저장
+        dataConfig.set("nextUpdateTime", nextUpdateTime);
 
         // 플레이어 데이터 저장
         dataConfig.set("players", null); // 기존 데이터 초기화

@@ -70,6 +70,7 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\manag
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\ClaimManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\ClaimScoreboardManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\CropGrowthManager.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\CropTracker.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\EnchantManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\MiningDropManager.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\managers\NpcManager.java
@@ -80,6 +81,7 @@ e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\npc\N
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\npc\NpcType.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\placeholder\WildCorePlaceholder.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\tasks\ActionBarMoneyTask.java
+e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\tasks\CropGrowthTask.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\EnchantNameUtil.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\ItemGroupUtil.java
 e:\Minecraft\minecraft plugin\WildCore\src\main\java\com\myserver\wildcore\util\ItemUtil.java

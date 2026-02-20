@@ -10,7 +10,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -129,19 +132,36 @@ public class ShopEditorGUI implements InventoryHolder {
             }
         }
 
-        List<String> lore = List.of(
-                "",
-                "§7슬롯: §e" + slot,
-                "§7타입: §f" + item.getType(),
-                "§7ID: §f" + item.getId(),
-                "",
-                "§7구매가: " + (item.canBuy() ? "§6" + String.format("%,.2f", item.getBuyPrice()) + "원" : "§c구매 불가"),
-                "§7판매가: " + (item.canSell() ? "§6" + String.format("%,.2f", item.getSellPrice()) + "원" : "§c판매 불가"),
-                "",
-                "§e좌클릭: §f가격 설정",
-                "§cShift+우클릭: §f제거");
+        List<String> lore = new ArrayList<>();
+        lore.add("");
+        lore.add("§7슬롯: §e" + slot);
+        lore.add("§7타입: §f" + item.getType());
+        lore.add("§7ID: §f" + item.getId());
+        if (item.hasPotionData()) {
+            lore.add("§7포션: §d" + item.getPotionType()
+                    + (item.isPotionExtended() ? " (연장)" : "")
+                    + (item.isPotionUpgraded() ? " (강화)" : ""));
+        }
+        lore.add("");
+        lore.add("§7구매가: " + (item.canBuy() ? "§6" + String.format("%,.2f", item.getBuyPrice()) + "원" : "§c구매 불가"));
+        lore.add("§7판매가: " + (item.canSell() ? "§6" + String.format("%,.2f", item.getSellPrice()) + "원" : "§c판매 불가"));
+        lore.add("");
+        lore.add("§e좌클릭: §f가격 설정");
+        lore.add("§cShift+우클릭: §f제거");
 
-        return ItemUtil.createItem(material, displayName, lore, 1, null, 0, false, null);
+        ItemStack display = ItemUtil.createItem(material, displayName, lore, 1, null, 0, false, null);
+
+        // 포션 메타 적용 (에디터 아이콘에도 올바른 포션 색상/타입 표시)
+        if (item.hasPotionData() && display.getItemMeta() instanceof PotionMeta potionMeta) {
+            try {
+                PotionType potionType = PotionType.valueOf(item.getPotionType());
+                potionMeta.setBasePotionType(potionType);
+                display.setItemMeta(potionMeta);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        return display;
     }
 
     /**
@@ -177,8 +197,27 @@ public class ShopEditorGUI implements InventoryHolder {
             id = item.getType().name();
         }
 
+        // 포션 메타데이터 추출
+        String potionType = null;
+        boolean potionExtended = false;
+        boolean potionUpgraded = false;
+        if (item.getItemMeta() instanceof PotionMeta potionMeta) {
+            PotionType basePotionType = potionMeta.getBasePotionType();
+            if (basePotionType != null) {
+                potionType = basePotionType.name();
+                // PotionType enum 이름에서 연장/강화 여부 파악
+                String ptName = potionType;
+                if (ptName.startsWith("LONG_")) {
+                    potionExtended = true;
+                } else if (ptName.startsWith("STRONG_")) {
+                    potionUpgraded = true;
+                }
+            }
+        }
+
         // 기본 가격으로 등록 (나중에 수정)
-        ShopItemConfig shopItem = new ShopItemConfig(slot, type, id, 100.0, 50.0);
+        ShopItemConfig shopItem = new ShopItemConfig(slot, type, id, 100.0, 50.0, null, null,
+                potionType, potionExtended, potionUpgraded);
         shop.setItem(slot, shopItem);
 
         // 저장
@@ -235,7 +274,12 @@ public class ShopEditorGUI implements InventoryHolder {
                 oldItem.getType(),
                 oldItem.getId(),
                 price,
-                oldItem.getSellPrice());
+                oldItem.getSellPrice(),
+                oldItem.getDisplayName(),
+                oldItem.getLore(),
+                oldItem.getPotionType(),
+                oldItem.isPotionExtended(),
+                oldItem.isPotionUpgraded());
         shop.setItem(pendingPriceSlot, newItem);
 
         waitingForBuyPrice = false;
@@ -261,7 +305,12 @@ public class ShopEditorGUI implements InventoryHolder {
                 oldItem.getType(),
                 oldItem.getId(),
                 oldItem.getBuyPrice(),
-                price);
+                price,
+                oldItem.getDisplayName(),
+                oldItem.getLore(),
+                oldItem.getPotionType(),
+                oldItem.isPotionExtended(),
+                oldItem.isPotionUpgraded());
         shop.setItem(pendingPriceSlot, newItem);
         plugin.getConfigManager().saveShop(shop);
 

@@ -16,6 +16,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -307,7 +309,20 @@ public class ShopManager {
             // 바닐라 아이템
             try {
                 Material material = Material.valueOf(item.getId().toUpperCase());
-                return new ItemStack(material, amount);
+                ItemStack stack = new ItemStack(material, amount);
+
+                // 포션 메타데이터 적용
+                if (item.hasPotionData() && stack.getItemMeta() instanceof PotionMeta potionMeta) {
+                    try {
+                        PotionType potionType = PotionType.valueOf(item.getPotionType());
+                        potionMeta.setBasePotionType(potionType);
+                        stack.setItemMeta(potionMeta);
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("잘못된 PotionType: " + item.getPotionType());
+                    }
+                }
+
+                return stack;
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("잘못된 Material: " + item.getId());
                 return null;
@@ -373,7 +388,26 @@ public class ShopManager {
                     return false;
                 }
                 // 조건 2: WildCore 커스텀 아이템이 아닌지 확인 (순수 바닐라만 허용)
-                return !ItemUtil.isWildCoreCustomItem(plugin, stack);
+                if (ItemUtil.isWildCoreCustomItem(plugin, stack)) {
+                    return false;
+                }
+                // 조건 3: 포션 타입 비교 (포션 아이템인 경우)
+                if (item.hasPotionData()) {
+                    if (!(stack.getItemMeta() instanceof PotionMeta potionMeta)) {
+                        return false;
+                    }
+                    PotionType basePotionType = potionMeta.getBasePotionType();
+                    if (basePotionType == null) {
+                        return false;
+                    }
+                    try {
+                        PotionType expectedType = PotionType.valueOf(item.getPotionType());
+                        return basePotionType == expectedType;
+                    } catch (IllegalArgumentException e) {
+                        return false;
+                    }
+                }
+                return true;
             } catch (IllegalArgumentException e) {
                 return false;
             }

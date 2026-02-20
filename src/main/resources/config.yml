@@ -68,19 +68,31 @@ messages:
 claim-system:
   # 작물 성장 버프 설정 (단계별)
   crop-growth-buff:
+    # 스케줄러 메인 틱 간격 (tick, 20틱=1초). 낮을수록 정밀하지만 부하 증가
+    scheduler-tick-interval: 20
+    # 틱당 최대 처리 작물 수 (성능 제한)
+    max-crops-per-tick: 50
+    # 성장 시 파티클 효과
+    show-particles: true
     tiers:
       1:
         name: "기초 성장 촉진제"
-        multiplier: 2.0
-        duration: 1800    # 30분
+        duration: 1800          # 30분
+        interval-seconds: 20    # 20초마다 검사
+        growth-chance: 0.10     # 10% 확률
+        growth-amount: 1        # 1단계 성장
       2:
         name: "고급 성장 촉진제"
-        multiplier: 3.0
-        duration: 2700    # 45분
+        duration: 2700          # 45분
+        interval-seconds: 15    # 15초마다 검사
+        growth-chance: 0.15     # 15% 확률
+        growth-amount: 1        # 1단계 성장
       3:
         name: "최상급 성장 촉진제"
-        multiplier: 4.0
-        duration: 3600    # 60분
+        duration: 3600          # 60분
+        interval-seconds: 10    # 10초마다 검사
+        growth-chance: 0.20     # 20% 확률
+        growth-amount: 2        # 2단계 성장
   # 시스템 활성화 여부
   enabled: true
   
